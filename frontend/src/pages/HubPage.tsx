@@ -141,11 +141,20 @@ export const HubPage: React.FC<HubPageProps> = ({
   )
 
   return (
-    <div className="animate-slide-up" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+    <div className="animate-slide-up" style={{
+  display: 'flex',
+  flexDirection: 'column',
+  gap: '32px',
+  padding: '24px',
+  borderRadius: '12px',
+  background: 'linear-gradient(to bottom, var(--bg-base), var(--bg-surface))',
+  boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+  backdropFilter: 'blur(8px)'
+}}>
 
       {/* ── SEÇÃO 1: Catálogo de Modelos ── */}
       <section>
-        <SectionLabel count="8 PROCEDIMENTOS & MODELOS">
+        <SectionLabel count="7 PROCEDIMENTOS & MODELOS NDT / NR-13">
           Catálogo de Modelos Técnicos
         </SectionLabel>
         <p style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '15px', color: 'var(--text-muted)', marginBottom: '16px', marginTop: '-6px' }}>
@@ -288,114 +297,6 @@ export const HubPage: React.FC<HubPageProps> = ({
               </div>
             </div>
           ))}
-          {/* 8º Card: Solicitar Novo Modelo */}
-          <div
-            className="animate-slide-up"
-            onClick={() => alert('Para solicitar novos procedimentos técnicos (ex: Termografia, TOFD, Dureza, Estanqueidade), entre em contato com suporte@axosrelatorios.com.br ou solicite no menu Configurações da Empresa.')}
-            style={{
-              background: 'var(--bg-surface)',
-              border: '1px dashed var(--border-strong)',
-              borderRadius: '3px',
-              padding: '20px',
-              cursor: 'pointer',
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'space-between',
-              gap: '14px',
-              transition: 'all 0.18s ease-in-out',
-              position: 'relative',
-              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.borderColor = 'var(--accent)'
-              e.currentTarget.style.transform = 'translateY(-2px)'
-              e.currentTarget.style.boxShadow = '0 8px 14px -3px rgba(15, 23, 42, 0.06)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.borderColor = 'var(--border-strong)'
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.04)'
-            }}
-          >
-            <div style={{ paddingLeft: '6px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                <span style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  padding: '3px 8px',
-                  background: 'var(--bg-surface-alt)',
-                  border: '1px dashed var(--border)',
-                  borderRadius: '3px',
-                  color: 'var(--accent)',
-                  letterSpacing: '0.04em',
-                }}>
-                  + CUSTOM
-                </span>
-                <span style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: '13px',
-                  color: 'var(--text-faint)',
-                }}>
-                  SOLICITAR
-                </span>
-              </div>
-
-              <h4 style={{
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-                fontSize: '18px',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-                margin: '0 0 4px 0',
-                letterSpacing: '-0.01em',
-              }}>
-                Solicitar Novo Modelo
-              </h4>
-
-              <span style={{
-                display: 'block',
-                fontFamily: "'DM Mono', monospace",
-                fontSize: '13px',
-                color: 'var(--accent)',
-                fontWeight: 500,
-                marginBottom: '8px',
-              }}>
-                Procedimentos Sob Medida
-              </span>
-
-              <p style={{
-                fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-                fontSize: '14px',
-                color: 'var(--text-muted)',
-                lineHeight: 1.5,
-                margin: 0,
-              }}>
-                Precisa de procedimentos adicionais (ex: Termografia, TOFD, Dureza ou Estanqueidade)? Inclua modelos sob medida para sua planta industrial.
-              </p>
-            </div>
-
-            <div style={{
-              borderTop: '1px solid var(--border)',
-              paddingTop: '12px',
-              paddingLeft: '6px',
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            }}>
-              <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-muted)', fontWeight: 500 }}>
-                Qualificação Técnica
-              </span>
-              <span
-                style={{
-                  fontFamily: "'DM Mono', monospace",
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  color: 'var(--accent)',
-                  letterSpacing: '0.02em',
-                }}
-              >
-                Solicitar +
-              </span>
-            </div>
-          </div>
         </div>
       </section>
 

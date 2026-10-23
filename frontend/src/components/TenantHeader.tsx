@@ -47,6 +47,9 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
     setIsModalOpen(false)
   }
 
+  const logoScale = tenant.logoScale || 100
+  const scaleRatio = logoScale / 100
+
   return (
     <header className="w-full select-none sticky top-0 z-40" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif" }}>
 
@@ -78,13 +81,61 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
           {/* Esquerda: Logo + Identidade */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', minWidth: 0 }}>
             
-            {/* Logo ou sigla */}
+            {/* Logo ou sigla com Escala Dinâmica - Card Quadrado (Aspect Ratio 1:1) */}
             {tenant.logoUrl ? (
-              <div style={{ flexShrink: 0, height: '48px', padding: '0 14px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', transition: 'background 0.2s ease, border-color 0.2s ease' }}>
-                <img src={tenant.logoUrl} alt={tenant.tradeName} style={{ height: '30px', maxWidth: '140px', objectFit: 'contain' }} />
+              <div
+                style={{
+                  flexShrink: 0,
+                  width: `${Math.round(48 * scaleRatio)}px`,
+                  height: `${Math.round(48 * scaleRatio)}px`,
+                  minWidth: '42px',
+                  minHeight: '42px',
+                  aspectRatio: '1 / 1',
+                  background: 'var(--bg-surface-alt)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  overflow: 'hidden',
+                  padding: '4px',
+                  boxSizing: 'border-box',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <img
+                  src={tenant.logoUrl}
+                  alt={tenant.tradeName}
+                  style={{
+                    maxHeight: '100%',
+                    maxWidth: '100%',
+                    objectFit: 'contain',
+                    transition: 'all 0.15s ease',
+                  }}
+                />
               </div>
             ) : (
-              <div style={{ flexShrink: 0, height: '48px', minWidth: '48px', background: 'var(--btn-pri-bg)', borderRadius: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '21px', fontWeight: 600, color: '#ffffff', letterSpacing: '-0.02em', padding: '0 12px' }}>
+              <div
+                style={{
+                  flexShrink: 0,
+                  width: `${Math.round(48 * scaleRatio)}px`,
+                  height: `${Math.round(48 * scaleRatio)}px`,
+                  minWidth: '42px',
+                  minHeight: '42px',
+                  aspectRatio: '1 / 1',
+                  background: 'var(--btn-pri-bg)',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
+                  fontSize: `${Math.round(20 * scaleRatio)}px`,
+                  fontWeight: 600,
+                  color: '#ffffff',
+                  letterSpacing: '-0.02em',
+                  transition: 'all 0.2s ease',
+                }}
+              >
                 {tenant.tradeName.split(' ').slice(0, 2).map(w => w[0]).join('')}
               </div>
             )}
@@ -145,7 +196,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
 
             <button
               type="button"
-              onClick={() => { setFormData(tenant); setIsModalOpen(true) }}
+              onClick={() => { setFormData({ ...tenant, logoScale: tenant.logoScale ?? 100 }); setIsModalOpen(true) }}
               style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '3px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text-primary)' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
@@ -188,9 +239,12 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
               border: '1px solid var(--border)',
               borderRadius: '3px',
               width: '100%',
-              maxWidth: '560px',
+              maxWidth: '580px',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
               overflow: 'hidden',
+              maxHeight: '90vh',
+              display: 'flex',
+              flexDirection: 'column',
             }}
           >
             {/* Header do modal */}
@@ -199,6 +253,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
               borderBottom: '1px solid var(--border)',
               padding: '16px 24px',
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              flexShrink: 0,
             }}>
               <div>
                 <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>
@@ -221,34 +276,205 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
             </div>
 
             {/* Conteúdo do modal */}
-            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
 
-              {/* Upload de Logo */}
-              <div style={{ padding: '16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '3px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)', marginBottom: '8px' }}>
-                  Logotipo da Empresa
-                </label>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{
-                    width: '120px', height: '46px',
-                    background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: '3px',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                  }}>
-                    {formData.logoUrl ? (
-                      <img src={formData.logoUrl} alt="Logo" style={{ maxHeight: '100%', maxWidth: '100%', objectFit: 'contain' }} />
-                    ) : (
-                      <span style={{ fontSize: '13px', color: 'var(--text-faint)' }}>SEM LOGO</span>
-                    )}
-                  </div>
-                  <label className="btn-industrial" style={{ padding: '8px 14px', borderRadius: '3px', cursor: 'pointer' }}>
-                    Carregar Imagem
-                    <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+              {/* Upload de Logo + Dispositivo de Zoom */}
+              <div style={{ padding: '16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '3px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
+                    Logotipo da Empresa
                   </label>
                   {formData.logoUrl && (
-                    <button type="button" onClick={() => setFormData((p) => ({ ...p, logoUrl: '' }))} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '12px', fontWeight: 600 }}>
-                      Remover
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, logoUrl: '' }))}
+                      style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: '12px', fontWeight: 600 }}
+                    >
+                      Remover Imagem
                     </button>
                   )}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  {/* Caixa de Visualização da Logo com Escala Aplicada - Card Quadrado */}
+                  <div style={{
+                    width: '64px', height: '64px', minWidth: '64px', minHeight: '64px',
+                    aspectRatio: '1 / 1',
+                    background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: '6px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '6px',
+                    boxSizing: 'border-box',
+                  }}>
+                    {formData.logoUrl ? (
+                      <img
+                        src={formData.logoUrl}
+                        alt="Logo Preview"
+                        style={{
+                          maxHeight: '100%',
+                          maxWidth: '100%',
+                          objectFit: 'contain',
+                          transform: `scale(${((formData.logoScale ?? 100) / 100)})`,
+                          transition: 'transform 0.15s ease',
+                        }}
+                      />
+                    ) : (
+                      <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-faint)' }}>SEM LOGO</span>
+                    )}
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <label className="btn-industrial" style={{ padding: '8px 14px', borderRadius: '3px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                      {formData.logoUrl ? 'Substituir Imagem' : 'Carregar Imagem'}
+                      <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+                    </label>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Formatos: PNG, SVG ou JPG (fundo transparente recomendado)</span>
+                  </div>
+                </div>
+
+                {/* ── DISPOSITIVO DE AUMENTAR E DIMINUIR A LOGO (ZOOM & ESCALA) ── */}
+                <div style={{
+                  paddingTop: '12px',
+                  borderTop: '1px solid var(--border)',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--accent)' }}>
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                      </svg>
+                      <span style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
+                        Dispositivo de Escala da Logo (Zoom)
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        fontFamily: "'DM Mono', monospace",
+                        fontSize: '13px',
+                        fontWeight: 700,
+                        color: 'var(--accent)',
+                        background: 'var(--bg-surface)',
+                        border: '1px solid var(--border)',
+                        padding: '2px 8px',
+                        borderRadius: '3px',
+                      }}>
+                        {formData.logoScale ?? 100}%
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setFormData((p) => ({ ...p, logoScale: 100 }))}
+                        title="Redefinir escala para 100%"
+                        style={{
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          color: 'var(--text-muted)',
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          textDecoration: 'underline',
+                        }}
+                      >
+                        Padrão
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Barra de Controle: Botão [-], Slider, Botão [+] */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, logoScale: Math.max(50, (p.logoScale ?? 100) - 10) }))}
+                      title="Diminuir tamanho da logo (-10%)"
+                      className="btn-industrial"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        fontWeight: 700,
+                        padding: 0,
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      −
+                    </button>
+
+                    <input
+                      type="range"
+                      min="50"
+                      max="200"
+                      step="5"
+                      value={formData.logoScale ?? 100}
+                      onChange={(e) => setFormData((p) => ({ ...p, logoScale: Number(e.target.value) }))}
+                      style={{
+                        flex: 1,
+                        accentColor: 'var(--accent)',
+                        cursor: 'pointer',
+                        height: '6px',
+                      }}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={() => setFormData((p) => ({ ...p, logoScale: Math.min(200, (p.logoScale ?? 100) + 10) }))}
+                      title="Aumentar tamanho da logo (+10%)"
+                      className="btn-industrial"
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '18px',
+                        fontWeight: 700,
+                        padding: 0,
+                        borderRadius: '3px',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      +
+                    </button>
+                  </div>
+
+                  {/* Atalhos Rápidos de Zoom */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-faint)' }}>Predefinições:</span>
+                    {[
+                      { label: '70% Compacto', val: 70 },
+                      { label: '100% Padrão', val: 100 },
+                      { label: '130% Médio', val: 130 },
+                      { label: '160% Grande', val: 160 },
+                      { label: '200% Máximo', val: 200 },
+                    ].map((preset) => (
+                      <button
+                        key={preset.val}
+                        type="button"
+                        onClick={() => setFormData((p) => ({ ...p, logoScale: preset.val }))}
+                        style={{
+                          padding: '2px 8px',
+                          fontSize: '11px',
+                          fontFamily: "'DM Mono', monospace",
+                          fontWeight: (formData.logoScale ?? 100) === preset.val ? 700 : 500,
+                          background: (formData.logoScale ?? 100) === preset.val ? 'var(--accent)' : 'var(--bg-surface)',
+                          color: (formData.logoScale ?? 100) === preset.val ? '#ffffff' : 'var(--text-secondary)',
+                          border: '1px solid var(--border)',
+                          borderRadius: '3px',
+                          cursor: 'pointer',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 

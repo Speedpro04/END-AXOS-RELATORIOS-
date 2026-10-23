@@ -8,6 +8,7 @@ export interface TenantProfile {
   contactEmail: string
   contactPhone: string
   logoUrl?: string
+  logoScale?: number
   primaryColor?: string
 }
 
@@ -21,4 +22,5 @@ export const DEFAULT_TENANT: TenantProfile = {
   contactEmail: 'operacoes@qualitec-ndt.com.br',
   contactPhone: '(11) 3490-8800',
   logoUrl: '',
+  logoScale: 100,
 }

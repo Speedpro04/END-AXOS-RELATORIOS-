@@ -78,10 +78,10 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
   }
 
   return (
-    <div className="bg-white border border-[#E2E8F0] shadow-2xs flex flex-col" style={{ borderRadius: '6px' }}>
+    <div className="bg-white border border-[#CBD5E1] shadow-2xs flex flex-col" style={{ borderRadius: '6px' }}>
       
       {/* Barra de Ações Superior Limpa */}
-      <div className="p-4 border-b border-[#E2E8F0] bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="p-4 border-b border-[#CBD5E1] bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Busca */}
           <div className="relative min-w-[260px] flex-1 max-w-md">
@@ -142,18 +142,18 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-[#F8FAFC] text-[#64748B] text-[13px] font-semibold uppercase tracking-wider border-b border-[#E2E8F0]">
-              <th className="py-3 px-4">Código / Laudo</th>
-              <th className="py-3 px-4">Ensaio &amp; Norma</th>
-              <th className="py-3 px-4">TAG do Equipamento</th>
-              <th className="py-3 px-4">Unidade / Área</th>
-              <th className="py-3 px-4">Data Emissão</th>
-              <th className="py-3 px-4">Inspetor Responsável</th>
-              <th className="py-3 px-4 text-center">Veredito</th>
-              <th className="py-3 px-4 text-right">Ações</th>
+            <tr className="bg-[#F8FAFC] text-[#475569] text-[13px] font-semibold uppercase tracking-wider border-b border-[#CBD5E1]">
+              <th className="py-3.5 px-4">Código / Laudo</th>
+              <th className="py-3.5 px-4">Ensaio &amp; Norma</th>
+              <th className="py-3.5 px-4">TAG do Equipamento</th>
+              <th className="py-3.5 px-4">Unidade / Área</th>
+              <th className="py-3.5 px-4">Data Emissão</th>
+              <th className="py-3.5 px-4">Inspetor Responsável</th>
+              <th className="py-3.5 px-4 text-center">Veredito</th>
+              <th className="py-3.5 px-4 text-right">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#F1F5F9] text-[15px] text-[#0F172A]">
+          <tbody className="divide-y divide-[#CBD5E1] text-[15px] text-[#0F172A]">
             {filteredReports.length === 0 ? (
               <tr>
                 <td colSpan={8} className="py-12 text-center text-[#94A3B8] bg-white">
@@ -249,7 +249,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       </div>
 
       {/* Sub-barra da Tabela */}
-      <div className="p-3 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between text-[14px] text-[#94A3B8]">
+      <div className="p-3 bg-[#F8FAFC] border-t border-[#CBD5E1] flex items-center justify-between text-[14px] text-[#64748B]">
         <span>Mostrando {filteredReports.length} de {reports.length} laudos auditados</span>
         <span className="text-[#64748B]">Ambiente Seguro • Registro Rastreável</span>
       </div>

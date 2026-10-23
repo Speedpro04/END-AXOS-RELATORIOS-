@@ -72,7 +72,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
           key={index}
           className="animate-slide-up"
           style={{
-            background: 'var(--bg-surface)',
+            background: 'rgba(255,255,255,0.45)',
             border: '1px solid var(--border)',
             borderRadius: '3px',
             padding: '18px',

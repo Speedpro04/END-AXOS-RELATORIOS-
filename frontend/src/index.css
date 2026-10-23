@@ -27,73 +27,73 @@
    ===================================================================== */
 
 :root {
-  /* Superfícies — tons mais suaves, arejados e confortáveis */
-  --bg-base:          #f8fafc;
-  --bg-surface:       #ffffff;
-  --bg-surface-alt:   #f1f5f9;
-  --bg-topbar:        #1e293b;
+  /* Fundo de campo sem ofuscamento (cinza-gelo cimento industrial fosco) */
+  --bg-base:          #EAEFF4;  /* fundo do app fosco, reduz ofuscamento sob sol e claridade */
+  --bg-surface:       #FFFFFF;  /* BRANCO PURO reservado EXCLUSIVAMENTE para cards e áreas preenchíveis */
+  --bg-surface-alt:   #DFE5EC;  /* superfícies secundárias, barras de navegação e abas */
+  --bg-topbar:        #1E293B;  /* status bar escura sólida para alto contraste industrial */
 
-  /* Bordas */
-  --border:           #e2e8f0;
-  --border-strong:    #cbd5e1;
+  /* Bordas com alto contraste para visibilidade em campo */
+  --border:           #CBD5E1;
+  --border-strong:    #94A3B8;
 
-  /* Textos */
-  --text-primary:     #1e293b;
-  --text-secondary:   #475569;
-  --text-muted:       #64748b;
-  --text-faint:       #94a3b8;
+  /* Textos nítidos */
+  --text-primary:     #0F172A;
+  --text-secondary:   #334155;
+  --text-muted:       #64748B;
+  --text-faint:       #94A3B8;
 
-  /* Acento — tom azul celeste suave, amansado e sem saturação agressiva */
+  /* Acento — tom azul industrial qualificado */
   --accent:           #0284c7;
   --accent-hover:     #0369a1;
-  --accent-subtle:    #f0f9ff;
-  --accent-subtle-border: #e0f2fe;
+  --accent-subtle:    #F0F9FF;
+  --accent-subtle-border: #BAE6FD;
 
   /* Status bar */
-  --topbar-bg:        #1e293b;
-  --topbar-brand:     #38bdf8;
-  --topbar-muted:     #94a3b8;
-  --topbar-time:      #cbd5e1;
+  --topbar-bg:        #1E293B;
+  --topbar-brand:     #38BDF8;
+  --topbar-muted:     #94A3B8;
+  --topbar-time:      #E2E8F0;
   --topbar-divider:   #334155;
 
   /* Nav tag ativo */
-  --nav-active-bg:    #f0f9ff;
-  --nav-active-border:#bae6fd;
-  --nav-active-color: #0284c7;
-  --nav-tag-bg:       #f8fafc;
-  --nav-tag-border:   #e2e8f0;
-  --nav-tag-color:    #64748b;
+  --nav-active-bg:    #FFFFFF;
+  --nav-active-border:#0284C7;
+  --nav-active-color: #0284C7;
+  --nav-tag-bg:       #E2E8F0;
+  --nav-tag-border:   #CBD5E1;
+  --nav-tag-color:    #475569;
 
-  /* Input */
-  --input-bg:         #ffffff;
-  --input-border:     #cbd5e1;
-  --input-text:       #1e293b;
-  --input-placeholder:#94a3b8;
-  --input-focus-ring: rgba(2, 132, 199, 0.10);
+  /* Input — Branco puro para preenchimento em campo com borda nítida de 1px */
+  --input-bg:         #FFFFFF;
+  --input-border:     #CBD5E1;
+  --input-text:       #0F172A;
+  --input-placeholder:#94A3B8;
+  --input-focus-ring: rgba(2, 132, 199, 0.15);
 
   /* Botão secundário */
-  --btn-sec-bg:       #ffffff;
-  --btn-sec-border:   #e2e8f0;
-  --btn-sec-text:     #475569;
-  --btn-sec-hover-bg: #f8fafc;
-  --btn-sec-hover-border: #cbd5e1;
-  --btn-sec-hover-text:   #1e293b;
+  --btn-sec-bg:       #FFFFFF;
+  --btn-sec-border:   #CBD5E1;
+  --btn-sec-text:     #334155;
+  --btn-sec-hover-bg: #F1F5F9;
+  --btn-sec-hover-border: #94A3B8;
+  --btn-sec-hover-text:   #0F172A;
 
   /* Botão primário */
-  --btn-pri-bg:       #334155;
-  --btn-pri-border:   #334155;
-  --btn-pri-text:     #ffffff;
-  --btn-pri-hover-bg: #1e293b;
+  --btn-pri-bg:       #0284C7;
+  --btn-pri-border:   #0284C7;
+  --btn-pri-text:     #FFFFFF;
+  --btn-pri-hover-bg: #0369A1;
 
   /* Scrollbar */
-  --scrollbar-track:  #f8fafc;
-  --scrollbar-thumb:  #cbd5e1;
-  --scrollbar-hover:  #94a3b8;
+  --scrollbar-track:  #EAEFF4;
+  --scrollbar-thumb:  #CBD5E1;
+  --scrollbar-hover:  #94A3B8;
 
   /* Modal */
-  --modal-overlay:    rgba(15, 23, 42, 0.35);
-  --modal-bg:         #ffffff;
-  --modal-header-bg:  #f8fafc;
+  --modal-overlay:    rgba(15, 23, 42, 0.45);
+  --modal-bg:         #FFFFFF;
+  --modal-header-bg:  #0B0F17;
 }
 
 /* ── DARK MODE — Grafite Neutro Industrial ── */
@@ -489,3 +489,87 @@ html.dark .border-t.border-\[\#E2E8F0\] { border-color: var(--border) !important
 html.dark .text-slate-900 { color: var(--accent) !important; }
 html.dark .text-slate-700 { color: var(--text-secondary) !important; }
 html.dark .text-slate-800 { color: var(--text-primary) !important; }
+
+/* =====================================================================
+   LOGIN PAGE — Card Branco 700x875px, Fundo Gelo, Borda 1px Cinza
+   ===================================================================== */
+.login-page-bg {
+  background-color: #f1f5f9 !important;
+}
+
+.login-card {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  border-radius: 6px !important;
+}
+
+.login-field {
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #1e293b !important;
+  border-radius: 3px !important;
+  padding: 11px 14px !important;
+  font-size: 15px !important;
+  width: 100% !important;
+  outline: none !important;
+  box-shadow: none !important;
+  transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+
+.login-field:focus {
+  border-color: #0284c7 !important;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12) !important;
+}
+
+.login-field option {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+}
+
+/* Campo Unidade em Grafite Industrial (#24272B) */
+html.dark .login-card select,
+html.dark select.login-field-graphite,
+.login-card select,
+select.login-field-graphite {
+  background-color: #24272B !important;
+  background: #24272B !important;
+  border: 1px solid #34383D !important;
+  color: #E6E8EA !important;
+  border-radius: 3px !important;
+}
+
+html.dark .login-card select option,
+html.dark select.login-field-graphite option,
+.login-card select option,
+select.login-field-graphite option {
+  background-color: #24272B !important;
+  background: #24272B !important;
+  color: #E6E8EA !important;
+}
+
+.login-btn-submit {
+  background-color: #0284c7 !important;
+  background: #0284c7 !important;
+  border: 1px solid #0284c7 !important;
+  color: #ffffff !important;
+  border-radius: 3px !important;
+  padding: 13px 20px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  box-shadow: 0 2px 4px rgba(2, 132, 199, 0.2) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+.login-btn-submit:hover {
+  background-color: #0369a1 !important;
+  background: #0369a1 !important;
+  border-color: #0369a1 !important;
+  box-shadow: 0 4px 8px rgba(2, 132, 199, 0.25) !important;
+}

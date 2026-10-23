@@ -58,8 +58,6 @@ export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) 
     }, 350)
   }
 
-  const activeRoleData = ROLES.find((r) => r.id === activeRole)!
-
   return (
     <div style={{
       minHeight: '100vh',
@@ -67,253 +65,253 @@ export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) 
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: '#f8fafc',
+      backgroundColor: '#f1f5f9', /* Cor gelo de fundo */
       fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
       color: '#1e293b',
       padding: '32px 16px',
     }}>
-      {/* ── CONTAINER UNIFICADO DELIMITADO EM 1210px ── */}
-      <div style={{
-        width: '100%',
-        maxWidth: '1210px',
-        display: 'flex',
-        backgroundColor: '#ffffff',
-        borderRadius: '3px',
-        border: '1px solid #e2e8f0',
-        boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.04), 0 8px 10px -6px rgba(15, 23, 42, 0.02)',
-        overflow: 'hidden',
-      }}>
-
-        {/* ── PAINEL ESQUERDO: Logo de 370px e Saudação ── */}
-        <div
-          className="login-hero-panel"
-          style={{
-            background: 'linear-gradient(160deg, #ffffff 0%, #f8fafc 60%, #f1f5f9 100%)',
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '36px',
-            borderRight: '1px solid #e2e8f0',
-          }}
-        >
-          <img
-            src="/logo-seal.jpg"
-            alt="AXOS Relatórios"
-            style={{
-              width: '370px',
-              height: '370px',
-              objectFit: 'contain',
-              borderRadius: '50%',
-              boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.06), 0 8px 10px -6px rgba(15, 23, 42, 0.03)',
-            }}
-          />
-          <h2 style={{
-            marginTop: '30px',
-            fontSize: '34px',
-            fontWeight: 600,
-            color: '#1e293b',
-            letterSpacing: '-0.02em',
-            textAlign: 'center',
-            margin: '30px 0 0 0',
-          }}>
-            Seja bem vindo
-          </h2>
-        </div>
-
-        {/* ── PAINEL DIREITO: Formulário de Autenticação ── */}
-        <div style={{
-          flex: 1,
+      {/* ── CARD CENTRALIZADO DE LOGIN (Quadrado: 700px x 700px) ── */}
+      <div
+        className="login-card"
+        style={{
+          width: '100%',
+          maxWidth: '700px',
+          height: '700px',
+          minHeight: '700px',
+          aspectRatio: '1 / 1',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'center',
           alignItems: 'center',
-          padding: '44px 36px',
           backgroundColor: '#ffffff',
+          borderRadius: '6px', /* Raio de 6px no card principal */
+          border: '1px solid #cbd5e1', /* Linha de borda de 1px cinza pra destacar */
+          boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02)',
+          padding: '40px 48px',
+          boxSizing: 'border-box',
+        }}
+      >
+        <div style={{
+          width: '100%',
+          maxWidth: '500px',
+          display: 'flex',
+          flexDirection: 'column',
         }}>
-          <div style={{
-            width: '100%',
-            maxWidth: '440px',
-          }}>
-            
-            {/* Header do Card */}
-            <div style={{ marginBottom: '24px' }}>
-              <div style={{
-                display: 'inline-block',
-                fontSize: '14px',
-                fontWeight: 600,
-                letterSpacing: '0.04em',
-                textTransform: 'uppercase',
-                color: '#0284c7',
-                backgroundColor: '#f0f9ff',
-                padding: '4px 10px',
-                borderRadius: '3px',
-                marginBottom: '10px',
-                border: '1px solid #bae6fd',
-              }}>
-                Portal de Acesso
-              </div>
-              <h1 style={{
-                fontSize: '28px',
-                fontWeight: 600,
-                color: '#1e293b',
-                letterSpacing: '-0.02em',
-                margin: '0 0 6px 0',
-              }}>
-                Acessar Sistema
-              </h1>
-              <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>
-                Selecione o perfil operacional para acessar a plataforma.
-              </p>
+          
+          {/* Header do Card */}
+          <div style={{ marginBottom: '28px', textAlign: 'center' }}>
+            <div style={{
+              display: 'inline-block',
+              fontSize: '13px',
+              fontWeight: 600,
+              letterSpacing: '0.06em',
+              textTransform: 'uppercase',
+              color: '#0284c7',
+              backgroundColor: '#f0f9ff',
+              padding: '5px 14px',
+              borderRadius: '3px',
+              marginBottom: '14px',
+              border: '1px solid #bae6fd',
+            }}>
+              Portal de Acesso
             </div>
+            <h1 style={{
+              fontSize: '32px',
+              fontWeight: 600,
+              color: '#1e293b',
+              letterSpacing: '-0.02em',
+              margin: '0 0 8px 0',
+            }}>
+              Acessar Sistema
+            </h1>
+            <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>
+              Entre com suas credenciais para acessar a plataforma.
+            </p>
+          </div>
 
-            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-
-              {/* Credenciais */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                <div>
-                  <label style={{ display: 'block', fontSize: '16px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    E-mail do Usuário
-                  </label>
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                    className="input-clean"
-                    style={{ width: '100%' }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '16px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Senha de Acesso
-                  </label>
-                  <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
-                    <input
-                      type={showPassword ? 'text' : 'password'}
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      className="input-clean"
-                      style={{ width: '100%', paddingRight: '46px' }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      title={showPassword ? 'Ocultar senha' : 'Ver senha'}
-                      aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        background: 'none',
-                        border: 'none',
-                        padding: '6px',
-                        cursor: 'pointer',
-                        color: '#64748b',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        transition: 'color 0.15s ease',
-                      }}
-                      onMouseEnter={(e) => (e.currentTarget.style.color = '#0b3d61')}
-                      onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
-                    >
-                      {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ display: 'block', fontSize: '16px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                    Unidade Operacional / Planta
-                  </label>
-                  <select
-                    value={selectedPlant}
-                    onChange={(e) => setSelectedPlant(e.target.value)}
-                    className="input-clean"
-                    style={{ width: '100%', cursor: 'pointer' }}
+          {/* Seleção de Perfil Rápido */}
+          <div style={{ marginBottom: '24px' }}>
+            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
+              Perfil Operacional
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
+              {ROLES.map((role) => {
+                const isSelected = activeRole === role.id
+                return (
+                  <button
+                    key={role.id}
+                    type="button"
+                    onClick={() => handleRoleSelect(role.id)}
+                    style={{
+                      padding: '10px 6px',
+                      borderRadius: '3px',
+                      border: isSelected ? '1px solid #0284c7' : '1px solid #cbd5e1',
+                      backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
+                      color: isSelected ? '#0284c7' : '#475569',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      textAlign: 'center',
+                      transition: 'all 0.15s ease',
+                    }}
                   >
-                    <option value="Unidade Operacional Principal">Unidade Operacional Principal</option>
-                    <option value="Área de Processamento Industrial">Área de Processamento Industrial</option>
-                    <option value="Terminal Logístico / Setor Central">Terminal Logístico / Setor Central</option>
-                    <option value="Planta Industrial 02">Planta Industrial 02</option>
-                  </select>
-                </div>
-              </div>
+                    <div style={{ fontSize: '14px', marginBottom: '2px' }}>{role.label}</div>
+                    <div style={{ fontSize: '11px', opacity: 0.75, fontFamily: "'DM Mono', monospace" }}>{role.code}</div>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
 
-              {/* Toggle de Modo Offline */}
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '10px 14px',
-                backgroundColor: '#f8fafc',
-                border: '1px solid #e2e8f0',
-                borderRadius: '3px',
-              }}>
-                <div>
-                  <div style={{ fontSize: '16px', fontWeight: 600, color: '#1e293b' }}>
-                    Modo Offline
-                  </div>
-                  <div style={{ fontSize: '15px', color: '#64748b' }}>
-                    Armazena medições localmente sem internet
-                  </div>
-                </div>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
+
+            {/* Credenciais */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  E-mail do Usuário
+                </label>
                 <input
-                  type="checkbox"
-                  checked={offlineBufferEnabled}
-                  onChange={(e) => setOfflineBufferEnabled(e.target.checked)}
-                  style={{ width: '16px', height: '16px', cursor: 'pointer', accentColor: '#0284c7' }}
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="login-field"
+                  style={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#1e293b',
+                    borderRadius: '3px',
+                    width: '100%',
+                    fontSize: '15px',
+                    padding: '11px 14px',
+                  }}
                 />
               </div>
 
-              {/* Botão de Entrar */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary-action"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  fontSize: '18px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  backgroundColor: '#1e293b',
-                  border: 'none',
-                  borderRadius: '3px',
-                  color: '#ffffff',
-                  cursor: 'pointer',
-                }}
-              >
-                {isLoading ? (
-                  <span>Autenticando credenciais...</span>
-                ) : (
-                  <span>Entrar no Sistema →</span>
-                )}
-              </button>
-            </form>
+              <div>
+                <label style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
+                  Senha de Acesso
+                </label>
+                <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="login-field"
+                    style={{
+                      backgroundColor: '#ffffff',
+                      border: '1px solid #cbd5e1',
+                      color: '#1e293b',
+                      borderRadius: '3px',
+                      width: '100%',
+                      paddingRight: '46px',
+                      fontSize: '15px',
+                      paddingLeft: '14px',
+                      paddingTop: '11px',
+                      paddingBottom: '11px',
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    title={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                    aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
+                    style={{
+                      position: 'absolute',
+                      right: '12px',
+                      background: 'none',
+                      border: 'none',
+                      padding: '6px',
+                      cursor: 'pointer',
+                      color: '#64748b',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      transition: 'color 0.15s ease',
+                    }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = '#0b3d61')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
+                  >
+                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                  </button>
+                </div>
+              </div>
+            </div>
 
-            {/* Segurança */}
+            {/* Toggle de Modo Offline */}
             <div style={{
-              marginTop: '20px',
-              textAlign: 'center',
-              fontSize: '15px',
-              color: '#64748b',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '6px',
+              justifyContent: 'space-between',
+              padding: '12px 16px',
+              backgroundColor: '#f8fafc',
+              border: '1px solid #cbd5e1',
+              borderRadius: '3px',
             }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-              </svg>
-              Conexão criptografada TLS 1.3 · Acesso Seguro
+              <div>
+                <div style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
+                  Modo Offline
+                </div>
+                <div style={{ fontSize: '13px', color: '#64748b' }}>
+                  Armazena medições localmente sem internet
+                </div>
+              </div>
+              <input
+                type="checkbox"
+                checked={offlineBufferEnabled}
+                onChange={(e) => setOfflineBufferEnabled(e.target.checked)}
+                style={{ width: '17px', height: '17px', cursor: 'pointer', accentColor: '#0284c7' }}
+              />
             </div>
+
+            {/* Botão de Entrar */}
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="login-btn-submit"
+              style={{
+                width: '100%',
+                padding: '14px',
+                fontSize: '16px',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                backgroundColor: '#0284c7',
+                border: '1px solid #0284c7',
+                borderRadius: '3px',
+                color: '#ffffff',
+                cursor: 'pointer',
+                marginTop: '6px',
+                boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)',
+              }}
+            >
+              {isLoading ? (
+                <span>Autenticando credenciais...</span>
+              ) : (
+                <span>Entrar no Sistema →</span>
+              )}
+            </button>
+          </form>
+
+          {/* Segurança */}
+          <div style={{
+            marginTop: '28px',
+            textAlign: 'center',
+            fontSize: '14px',
+            color: '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '6px',
+          }}>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+            </svg>
+            Conexão criptografada TLS 1.3 · Acesso Seguro
           </div>
         </div>
       </div>

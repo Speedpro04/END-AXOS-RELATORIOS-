@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { X, Check, ShieldAlert, FileSpreadsheet, Eye, Gauge, Layers, Wrench, HardHat } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type NDTMethod, type ReportStatus } from '../types/inspection'
 
@@ -15,43 +15,109 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   onSave,
   initialReport,
 }) => {
-  const [method, setMethod] = useState<NDTMethod>(initialReport?.method || 'LP')
-  const [equipmentTag, setEquipmentTag] = useState(initialReport?.equipmentTag || '')
-  const [title, setTitle] = useState(initialReport?.title || '')
-  const [unitArea, setUnitArea] = useState(initialReport?.unitArea || 'Unidade U-2100 / Tubulações de Processo')
-  const [inspectorName, setInspectorName] = useState(initialReport?.inspectorName || 'Carlos Eduardo Silva')
-  const [inspectorSNQC, setInspectorSNQC] = useState(initialReport?.inspectorSNQC || 'SNQC 14892 (N2-LP/PM/EVS)')
-  const [acceptanceCriteria, setAcceptanceCriteria] = useState(
-    initialReport?.acceptanceCriteria || 'ASME Sec. VIII Div. 1 Ap. 8 / Petrobras N-1596'
-  )
-  const [status, setStatus] = useState<ReportStatus>(initialReport?.status || 'rascunho')
-  const [findingsCount, setFindingsCount] = useState<number>(initialReport?.findingsCount || 0)
-  const [summary, setSummary] = useState(
-    initialReport?.summary ||
-      'Inspeção executada conforme procedimento qualificado. Não foram detectadas descontinuidades inaceitáveis.'
-  )
+  const [method, setMethod] = useState<NDTMethod>('LP')
+  const [equipmentTag, setEquipmentTag] = useState('')
+  const [title, setTitle] = useState('')
+  const [unitArea, setUnitArea] = useState('')
+  const [inspectorName, setInspectorName] = useState('')
+  const [inspectorSNQC, setInspectorSNQC] = useState('')
+  const [acceptanceCriteria, setAcceptanceCriteria] = useState('')
+  const [status, setStatus] = useState<ReportStatus>('rascunho')
+  const [findingsCount, setFindingsCount] = useState<number | string>('')
+  const [summary, setSummary] = useState('')
 
   const [techLP, setTechLP] = useState({
-    penetrantBrand: 'Metal-Chek VP-30 (Lote 24K819)',
-    developerBrand: 'Metal-Chek D-70 (Lote 24J102)',
-    cleanerBrand: 'Metal-Chek E-59',
-    dwellTime: '20 min',
-    developerTime: '15 min',
-    lightIntensity: '1250 Lux (Luz Branca Visível)',
-    surfaceTemp: '28°C',
-    indications: 'Nenhuma indicação linear relevante detectada.',
+    penetrantBrand: '',
+    developerBrand: '',
+    cleanerBrand: '',
+    dwellTime: '',
+    developerTime: '',
+    lightIntensity: '',
+    surfaceTemp: '',
+    indications: '',
   })
 
   const [techME, setTechME] = useState({
-    deviceModel: 'Olympus 38DL Plus (Cal. Válida)',
-    transducerType: 'D790-SM (5 MHz)',
-    couplant: 'Glicerina industrial',
-    nominalThickness: '12.7 mm',
-    minFoundThickness: '11.8 mm',
-    calculatedCorrosion: '0.9 mm',
-    allowableMinThickness: '9.2 mm',
-    meshPoints: '48 pontos inspecionados nos quadrantes A, B, C e D',
+    deviceModel: '',
+    transducerType: '',
+    couplant: '',
+    nominalThickness: '',
+    minFoundThickness: '',
+    calculatedCorrosion: '',
+    allowableMinThickness: '',
+    meshPoints: '',
   })
+
+  // Sincroniza campos quando o modal abre: se for novo laudo, deixa TUDO EM BRANCO; se for edição, preenche com os dados existentes
+  useEffect(() => {
+    if (isOpen) {
+      if (initialReport) {
+        setMethod(initialReport.method || 'LP')
+        setEquipmentTag(initialReport.equipmentTag || '')
+        setTitle(initialReport.title || '')
+        setUnitArea(initialReport.unitArea || '')
+        setInspectorName(initialReport.inspectorName || '')
+        setInspectorSNQC(initialReport.inspectorSNQC || '')
+        setAcceptanceCriteria(initialReport.acceptanceCriteria || '')
+        setStatus(initialReport.status || 'rascunho')
+        setFindingsCount(initialReport.findingsCount ?? '')
+        setSummary(initialReport.summary || '')
+        const tech = (initialReport.technicalData as Record<string, string>) || {}
+        setTechLP({
+          penetrantBrand: tech.penetrantBrand || '',
+          developerBrand: tech.developerBrand || '',
+          cleanerBrand: tech.cleanerBrand || '',
+          dwellTime: tech.dwellTime || '',
+          developerTime: tech.developerTime || '',
+          lightIntensity: tech.lightIntensity || '',
+          surfaceTemp: tech.surfaceTemp || '',
+          indications: tech.indications || '',
+        })
+        setTechME({
+          deviceModel: tech.deviceModel || '',
+          transducerType: tech.transducerType || '',
+          couplant: tech.couplant || '',
+          nominalThickness: tech.nominalThickness || '',
+          minFoundThickness: tech.minFoundThickness || '',
+          calculatedCorrosion: tech.calculatedCorrosion || '',
+          allowableMinThickness: tech.allowableMinThickness || '',
+          meshPoints: tech.meshPoints || '',
+        })
+      } else {
+        // NOVO LAUDO: Tudo 100% em branco para preenchimento de campo
+        setMethod('LP')
+        setEquipmentTag('')
+        setTitle('')
+        setUnitArea('')
+        setInspectorName('')
+        setInspectorSNQC('')
+        setAcceptanceCriteria('')
+        setStatus('rascunho')
+        setFindingsCount('')
+        setSummary('')
+        setTechLP({
+          penetrantBrand: '',
+          developerBrand: '',
+          cleanerBrand: '',
+          dwellTime: '',
+          developerTime: '',
+          lightIntensity: '',
+          surfaceTemp: '',
+          indications: '',
+        })
+        setTechME({
+          deviceModel: '',
+          transducerType: '',
+          couplant: '',
+          nominalThickness: '',
+          minFoundThickness: '',
+          calculatedCorrosion: '',
+          allowableMinThickness: '',
+          meshPoints: '',
+        })
+      }
+    }
+  }, [isOpen, initialReport])
 
   if (!isOpen) return null
 
@@ -60,15 +126,15 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     const reportData: Partial<InspectionReport> = {
       method,
       title: title || `${METHOD_LABELS[method].label}: Inspeção em ${equipmentTag || 'Equipamento'}`,
-      equipmentTag: equipmentTag.toUpperCase(),
-      unitArea,
-      inspectorName,
-      inspectorSNQC,
+      equipmentTag: equipmentTag ? equipmentTag.toUpperCase() : 'TAG-PENDENTE',
+      unitArea: unitArea || 'Área Industrial',
+      inspectorName: inspectorName || 'Inspetor Responsável',
+      inspectorSNQC: inspectorSNQC || 'SNQC',
       normProcedure: METHOD_LABELS[method].code,
-      acceptanceCriteria,
+      acceptanceCriteria: acceptanceCriteria || 'Critério Normativo',
       status,
-      findingsCount: Number(findingsCount),
-      summary,
+      findingsCount: findingsCount === '' ? 0 : Number(findingsCount),
+      summary: summary || '',
       date: initialReport?.date || new Date().toISOString().split('T')[0],
       technicalData: method === 'LP' ? techLP : method === 'ME' ? techME : {},
     }
@@ -183,6 +249,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 <input
                   type="text"
                   required
+                  placeholder="Ex: Unidade U-2100 / Tubulações de Processo"
                   value={unitArea}
                   onChange={(e) => setUnitArea(e.target.value)}
                   className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors"
@@ -196,6 +263,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 </label>
                 <input
                   type="text"
+                  placeholder="Ex: Ensaio de Solda / Linha LIN-HP-401"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors"
@@ -210,6 +278,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 <input
                   type="text"
                   required
+                  placeholder="Nome completo do inspetor executor"
                   value={inspectorName}
                   onChange={(e) => setInspectorName(e.target.value)}
                   className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors"
@@ -224,6 +293,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 <input
                   type="text"
                   required
+                  placeholder="Ex: SNQC 14892 (N2-LP/PM/EVS)"
                   value={inspectorSNQC}
                   onChange={(e) => setInspectorSNQC(e.target.value)}
                   className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors"
@@ -238,6 +308,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 <textarea
                   rows={2}
                   required
+                  placeholder="Ex: ASME Sec. VIII Div. 1 Ap. 8 / Petrobras N-1596"
                   value={acceptanceCriteria}
                   onChange={(e) => setAcceptanceCriteria(e.target.value)}
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors leading-relaxed resize-y"
@@ -261,6 +332,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: Metal-Chek VP-30 (Lote)"
                     value={techLP.penetrantBrand}
                     onChange={(e) => setTechLP({ ...techLP, penetrantBrand: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -269,10 +341,11 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 </div>
                 <div>
                   <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
-                    Lote Revelador (Forma d)
+                    Lote Revelador (Forma D)
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: Metal-Chek D-70 (Lote)"
                     value={techLP.developerBrand}
                     onChange={(e) => setTechLP({ ...techLP, developerBrand: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -285,10 +358,11 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
-                    value={`${techLP.dwellTime} / ${techLP.developerTime}`}
+                    placeholder="Ex: 20 min / 15 min"
+                    value={techLP.dwellTime && techLP.developerTime ? `${techLP.dwellTime} / ${techLP.developerTime}` : (techLP.dwellTime || techLP.developerTime || '')}
                     onChange={(e) => {
                       const [d, r] = e.target.value.split('/')
-                      setTechLP({ ...techLP, dwellTime: d?.trim() || '20 min', developerTime: r?.trim() || '15 min' })
+                      setTechLP({ ...techLP, dwellTime: d?.trim() || '', developerTime: r?.trim() || '' })
                     }}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
@@ -300,6 +374,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: 1250 Lux (Luz Branca Visível)"
                     value={techLP.lightIntensity}
                     onChange={(e) => setTechLP({ ...techLP, lightIntensity: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -312,6 +387,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: Nenhuma indicação linear relevante detectada"
                     value={techLP.indications}
                     onChange={(e) => setTechLP({ ...techLP, indications: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -329,6 +405,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: Olympus 38DL Plus (Cal. Válida)"
                     value={techME.deviceModel}
                     onChange={(e) => setTechME({ ...techME, deviceModel: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -341,6 +418,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: 12.7 mm"
                     value={techME.nominalThickness}
                     onChange={(e) => setTechME({ ...techME, nominalThickness: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -353,6 +431,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: 11.8 mm"
                     value={techME.minFoundThickness}
                     onChange={(e) => setTechME({ ...techME, minFoundThickness: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] font-bold text-[#E11D48] dark:text-[#FF6B6B]"
@@ -365,6 +444,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   </label>
                   <input
                     type="text"
+                    placeholder="Ex: 48 pontos inspecionados nos quadrantes A, B, C e D"
                     value={techME.meshPoints}
                     onChange={(e) => setTechME({ ...techME, meshPoints: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
@@ -384,23 +464,23 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             )}
           </div>
 
-          {/* Veredito */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
-            <div className="sm:col-span-2">
+          {/* Veredito & Parecer Técnico - Alinhamento Perfeito das Bases */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-stretch">
+            <div className="sm:col-span-2 flex flex-col">
               <label className="block text-xs font-bold text-[#0F172A] dark:text-[#E6E8EA] uppercase tracking-wider mb-1">
                 4. Parecer Técnico Conclusivo
               </label>
               <textarea
-                rows={3}
                 required
                 value={summary}
                 onChange={(e) => setSummary(e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors leading-relaxed"
-                style={{ borderRadius: '3px' }}
+                placeholder="Descreva o parecer técnico conclusivo da inspeção de campo, referenciando procedimentos e critérios aplicados..."
+                className="w-full flex-1 px-3 py-2 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors leading-relaxed resize-none"
+                style={{ borderRadius: '3px', minHeight: '94px' }}
               />
             </div>
 
-            <div className="space-y-3">
+            <div className="flex flex-col justify-between gap-3">
               <div>
                 <label className="block text-xs font-bold text-[#0F172A] dark:text-[#E6E8EA] uppercase tracking-wider mb-1">
                   Veredito da Inspeção
@@ -425,8 +505,9 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 <input
                   type="number"
                   min={0}
+                  placeholder="0"
                   value={findingsCount}
-                  onChange={(e) => setFindingsCount(parseInt(e.target.value) || 0)}
+                  onChange={(e) => setFindingsCount(e.target.value === '' ? '' : parseInt(e.target.value) || 0)}
                   className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                   style={{ borderRadius: '3px' }}
                 />
