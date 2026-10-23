@@ -1,0 +1,491 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Archivo:wght@400;500;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+@import "tailwindcss";
+
+/* =====================================================================
+   AXOS RELATÓRIOS — Padrão Industrial & Rigor Técnico (Archivo)
+   Estética: Engenharia Industrial, Rigor Normativo e Alta Precisão
+   ===================================================================== */
+
+@theme {
+  --color-ice-base: #f1f5f9;
+  --color-ice-light: #f8fafc;
+  --color-pure-white: #ffffff;
+  --color-ice-border: #e2e8f0;
+  --color-ice-border-strong: #cbd5e1;
+
+  --color-ice-accent: #0284c7;
+  --color-ice-accent-hover: #0369a1;
+  --color-graphite: #1e293b;
+
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+  --font-mono: 'DM Mono', 'Cascadia Code', Consolas, monospace;
+}
+
+/* =====================================================================
+   TOKENS DE TEMA — Light (padrão) e Dark
+   ===================================================================== */
+
+:root {
+  /* Superfícies — tons mais suaves, arejados e confortáveis */
+  --bg-base:          #f8fafc;
+  --bg-surface:       #ffffff;
+  --bg-surface-alt:   #f1f5f9;
+  --bg-topbar:        #1e293b;
+
+  /* Bordas */
+  --border:           #e2e8f0;
+  --border-strong:    #cbd5e1;
+
+  /* Textos */
+  --text-primary:     #1e293b;
+  --text-secondary:   #475569;
+  --text-muted:       #64748b;
+  --text-faint:       #94a3b8;
+
+  /* Acento — tom azul celeste suave, amansado e sem saturação agressiva */
+  --accent:           #0284c7;
+  --accent-hover:     #0369a1;
+  --accent-subtle:    #f0f9ff;
+  --accent-subtle-border: #e0f2fe;
+
+  /* Status bar */
+  --topbar-bg:        #1e293b;
+  --topbar-brand:     #38bdf8;
+  --topbar-muted:     #94a3b8;
+  --topbar-time:      #cbd5e1;
+  --topbar-divider:   #334155;
+
+  /* Nav tag ativo */
+  --nav-active-bg:    #f0f9ff;
+  --nav-active-border:#bae6fd;
+  --nav-active-color: #0284c7;
+  --nav-tag-bg:       #f8fafc;
+  --nav-tag-border:   #e2e8f0;
+  --nav-tag-color:    #64748b;
+
+  /* Input */
+  --input-bg:         #ffffff;
+  --input-border:     #cbd5e1;
+  --input-text:       #1e293b;
+  --input-placeholder:#94a3b8;
+  --input-focus-ring: rgba(2, 132, 199, 0.10);
+
+  /* Botão secundário */
+  --btn-sec-bg:       #ffffff;
+  --btn-sec-border:   #e2e8f0;
+  --btn-sec-text:     #475569;
+  --btn-sec-hover-bg: #f8fafc;
+  --btn-sec-hover-border: #cbd5e1;
+  --btn-sec-hover-text:   #1e293b;
+
+  /* Botão primário */
+  --btn-pri-bg:       #334155;
+  --btn-pri-border:   #334155;
+  --btn-pri-text:     #ffffff;
+  --btn-pri-hover-bg: #1e293b;
+
+  /* Scrollbar */
+  --scrollbar-track:  #f8fafc;
+  --scrollbar-thumb:  #cbd5e1;
+  --scrollbar-hover:  #94a3b8;
+
+  /* Modal */
+  --modal-overlay:    rgba(15, 23, 42, 0.35);
+  --modal-bg:         #ffffff;
+  --modal-header-bg:  #f8fafc;
+}
+
+/* ── DARK MODE — Grafite Neutro Industrial ── */
+html.dark, :root[data-theme="dark"] {
+  /* Superfícies — Grafite neutro */
+  --bg-base:          #121315;  /* fundo da página */
+  --bg-surface:       #1C1E21;  /* cards e modal */
+  --bg-surface-alt:   #24272B;  /* campos, abas e blocos internos */
+  --bg-topbar:        #0B0C0D;  /* barra superior e cabeçalho */
+
+  /* Bordas */
+  --border:           #34383D;
+  --border-strong:    #484E55;
+
+  /* Textos com alto contraste */
+  --text-primary:     #E6E8EA;
+  --text-secondary:   #D1D5DB;
+  --text-muted:       #9AA0A6;  /* normas e legendas com contraste otimizado */
+  --text-faint:       #6B7178;
+
+  /* Acento e Destaques */
+  --accent:           #7CB7FF;  /* azul claro brilhante para alto destaque sobre grafite */
+  --accent-hover:     #A6CDFF;
+  --accent-subtle:    #1F242B;
+  --accent-subtle-border: #3B82F6;
+
+  /* Status semânticos */
+  --ok:               #3DDC97;
+  --danger:           #FF6B6B;
+  --warn:             #F5A524;
+
+  /* Status bar */
+  --topbar-bg:        #0B0C0D;
+  --topbar-brand:     #7CB7FF;
+  --topbar-muted:     #9AA0A6;
+  --topbar-time:      #E6E8EA;
+  --topbar-divider:   #34383D;
+
+  /* Nav tag ativo */
+  --nav-active-bg:    #24272B;
+  --nav-active-border:#7CB7FF;
+  --nav-active-color: #7CB7FF;
+  --nav-tag-bg:       #1C1E21;
+  --nav-tag-border:   #34383D;
+  --nav-tag-color:    #9AA0A6;
+
+  /* Input */
+  --input-bg:         #121315;
+  --input-border:     #34383D;
+  --input-text:       #E6E8EA;
+  --input-placeholder:#6B7178;
+  --input-focus-ring: rgba(124, 183, 255, 0.2);
+
+  /* Botão secundário */
+  --btn-sec-bg:       #1C1E21;
+  --btn-sec-border:   #34383D;
+  --btn-sec-text:     #E6E8EA;
+  --btn-sec-hover-bg: #24272B;
+  --btn-sec-hover-border: #484E55;
+  --btn-sec-hover-text:   #FFFFFF;
+
+  /* Botão primário */
+  --btn-pri-bg:       #24272B;
+  --btn-pri-border:   #34383D;
+  --btn-pri-text:     #E6E8EA;
+  --btn-pri-hover-bg: #34383D;
+
+  /* Scrollbar */
+  --scrollbar-track:  #121315;
+  --scrollbar-thumb:  #34383D;
+  --scrollbar-hover:  #484E55;
+
+  /* Modal */
+  --modal-overlay:    rgba(0, 0, 0, 0.75);
+  --modal-bg:         #1C1E21;
+  --modal-header-bg:  #24272B;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Archivo", sans-serif;
+  font-size: 17px; /* +3px no tamanho base */
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  scroll-behavior: smooth;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ── Fundo Padrão & Tipografia Nítida ── */
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Archivo", sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  letter-spacing: -0.011em;
+  position: relative;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Onde estiver bold (700/800), força semi-bold (600) com peso equilibrado */
+b, strong, .font-bold, h1, h2, h3, h4, th {
+  font-weight: 600 !important;
+}
+
+.login-hero-panel {
+  display: flex !important;
+  width: 50% !important;
+}
+
+@media (max-width: 960px) {
+  .login-hero-panel {
+    display: none !important;
+  }
+}
+
+/* ── Tipografia ── */
+.font-display {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+}
+
+.font-mono, .tabular-nums, code, input[type="number"], .font-tech {
+  font-family: 'DM Mono', monospace !important;
+  font-feature-settings: 'tnum' on, 'zero' on !important;
+  font-variant-numeric: tabular-nums !important;
+}
+
+/* ── PADRÃO DE BORDA DO SISTEMA: SEMPRE RAIO DE 3px ── */
+button, input, select, textarea,
+.surface-dark, .surface-card,
+.btn-industrial, .btn-primary-action,
+.badge-tech, .nav-tab,
+.input-dark, .input-clean,
+[class*="rounded"]:not(.rounded-full) {
+  border-radius: 3px !important;
+}
+
+.rounded-sm, .rounded-md, .rounded-lg, .rounded-xl, .rounded-2xl, .rounded-3xl {
+  border-radius: 3px !important;
+}
+
+/* ── Superfícies de Cards ── */
+.surface-dark, .surface-card {
+  background: var(--bg-surface) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: 3px !important;
+  box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04), 0 1px 2px -1px rgba(15, 23, 42, 0.02) !important;
+  color: var(--text-primary) !important;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.surface-dark:hover, .surface-card:hover {
+  border-color: var(--border-strong) !important;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.03) !important;
+}
+
+/* ── Animações ── */
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes slide-up-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes bar-grow {
+  from { width: 0%; }
+  to { width: var(--bar-width, 60%); }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2s ease-in-out infinite;
+}
+
+.animate-slide-up {
+  animation: slide-up-fade 0.22s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Staggered children */
+.stagger > *:nth-child(1) { animation-delay: 0ms; }
+.stagger > *:nth-child(2) { animation-delay: 35ms; }
+.stagger > *:nth-child(3) { animation-delay: 70ms; }
+.stagger > *:nth-child(4) { animation-delay: 105ms; }
+.stagger > *:nth-child(5) { animation-delay: 140ms; }
+.stagger > *:nth-child(6) { animation-delay: 175ms; }
+.stagger > *:nth-child(7) { animation-delay: 210ms; }
+
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+
+/* ── Focus ring ── */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ── Linha separadora ── */
+.divider-tech {
+  border: none;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── Badge técnica ── */
+.badge-tech {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 4px;
+  line-height: 1.5;
+}
+
+/* ── Progress bar ── */
+.progress-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--border);
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  border-radius: 2px;
+  animation: bar-grow 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: 0.1s;
+}
+
+/* ── Inputs ── */
+.input-dark, .input-clean {
+  background: var(--input-bg) !important;
+  border: 1px solid var(--input-border) !important;
+  color: var(--input-text) !important;
+  border-radius: 6px !important;
+  padding: 10px 14px;
+  font-size: 17px;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.2s ease;
+}
+
+.input-dark:focus, .input-clean:focus {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--input-focus-ring) !important;
+  outline: none !important;
+}
+
+.input-dark::placeholder, .input-clean::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+/* ── Botão Secundário ── */
+.btn-industrial {
+  background: var(--btn-sec-bg) !important;
+  border: 1px solid var(--btn-sec-border) !important;
+  color: var(--btn-sec-text) !important;
+  font-family: 'Archivo', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  padding: 8px 16px;
+  border-radius: 6px !important;
+  transition: all 0.15s;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.btn-industrial:hover {
+  background: var(--btn-sec-hover-bg) !important;
+  border-color: var(--btn-sec-hover-border) !important;
+  color: var(--btn-sec-hover-text) !important;
+}
+
+/* ── Botão Primário ── */
+.btn-primary-action {
+  background: var(--btn-pri-bg) !important;
+  border: 1px solid var(--btn-pri-border) !important;
+  color: var(--btn-pri-text) !important;
+  font-family: 'Archivo', system-ui, sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 600 !important;
+  padding: 8px 18px;
+  border-radius: 6px !important;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 1px 3px rgba(30, 41, 59, 0.15);
+}
+
+.btn-primary-action:hover {
+  background: var(--btn-pri-hover-bg) !important;
+  border-color: var(--btn-pri-hover-bg) !important;
+  box-shadow: 0 3px 6px rgba(15, 23, 42, 0.2) !important;
+  transform: translateY(-1px);
+}
+
+/* ── Nav tabs ── */
+.nav-tab {
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  transition: all 0.15s;
+  position: relative;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 7px 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-tab.active {
+  background: var(--nav-active-bg) !important;
+  border: 1px solid var(--nav-active-border) !important;
+  color: var(--nav-active-color) !important;
+  box-shadow: 0 1px 2px rgba(2, 132, 199, 0.05);
+}
+
+.nav-tab:not(.active) {
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.nav-tab:not(.active):hover {
+  color: var(--text-primary);
+  background: var(--bg-surface-alt);
+  border-color: var(--border);
+}
+
+/* =====================================================================
+   DARK MODE — Tailwind class overrides para InspectionTable
+   ===================================================================== */
+
+/* Tabela container */
+html.dark .bg-white { background: var(--bg-surface) !important; }
+html.dark .border-\[\#E2E8F0\] { border-color: var(--border) !important; }
+html.dark .border-\[\#CBD5E1\] { border-color: var(--border) !important; }
+
+/* Header da tabela */
+html.dark .bg-\[\#F8FAFC\] { background: var(--bg-surface-alt) !important; }
+html.dark .text-\[\#64748B\] { color: var(--text-muted) !important; }
+html.dark .text-\[\#0F172A\] { color: var(--text-primary) !important; }
+html.dark .text-\[\#334155\] { color: var(--text-secondary) !important; }
+html.dark .text-\[\#475569\] { color: var(--text-secondary) !important; }
+html.dark .text-\[\#94A3B8\] { color: var(--text-faint) !important; }
+
+/* Linhas da tabela */
+html.dark .divide-\[\#F1F5F9\] > :not([hidden]) ~ :not([hidden]) { border-color: var(--border) !important; }
+html.dark .hover\:bg-\[\#F8FAFC\]:hover { background: var(--bg-surface-alt) !important; }
+
+/* Inputs e selects na tabela */
+html.dark .bg-\[\#F8FAFC\] { background: var(--bg-surface-alt) !important; }
+html.dark input.border-\[\#CBD5E1\] { background: var(--input-bg) !important; color: var(--input-text) !important; }
+html.dark select { background: var(--bg-surface-alt) !important; color: var(--text-secondary) !important; }
+
+/* Botão novo laudo */
+html.dark .bg-\[\#0F2942\] { background: var(--btn-pri-bg) !important; }
+html.dark .hover\:bg-\[\#1E3A8A\]:hover { background: var(--btn-pri-hover-bg) !important; }
+
+/* Badge do método */
+html.dark .bg-\[\#0B0F17\] { background: var(--bg-surface-alt) !important; }
+
+/* Texto do placeholder */
+html.dark .placeholder\:text-\[\#94A3B8\]::placeholder { color: var(--input-placeholder) !important; }
+
+/* Botão ações tabela */
+html.dark .border-\[\#CBD5E1\] { border-color: var(--border) !important; }
+html.dark .text-\[\#334155\]:hover { color: var(--text-primary) !important; }
+html.dark .hover\:bg-\[\#F1F5F9\]:hover { background: var(--bg-surface-alt) !important; }
+
+/* Texto do font-mono no header */
+html.dark .text-slate-700 { color: var(--text-secondary) !important; }
+
+/* Sub-barra da tabela */
+html.dark .border-t.border-\[\#E2E8F0\] { border-color: var(--border) !important; }
+
+/* Modal e textos escuros */
+html.dark .text-slate-900 { color: var(--accent) !important; }
+html.dark .text-slate-700 { color: var(--text-secondary) !important; }
+html.dark .text-slate-800 { color: var(--text-primary) !important; }
