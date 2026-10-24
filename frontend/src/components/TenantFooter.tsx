@@ -19,17 +19,26 @@ export const TenantFooter: React.FC = () => {
         gap: '12px', flexWrap: 'wrap',
       }}>
         {/* Identidade AXOS */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div style={{
-            width: '6px', height: '6px', borderRadius: '50%',
-            background: '#10b981',
-          }} />
-          <span style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '15px', color: 'var(--text-muted)' }}>
-            Tecnologia{' '}
-            <strong style={{ color: 'var(--text-primary)', fontWeight: 600 }}>AXOS Relatórios</strong>
-            {' · '}
-            <span>Plataforma de Integridade Estrutural & NDT</span>
-          </span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <img
+            src="/logo-axos.png"
+            alt="AXOS Relatórios"
+            style={{
+              height: '34px',
+              width: 'auto',
+              objectFit: 'contain',
+              display: 'block',
+            }}
+          />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{
+              width: '6px', height: '6px', borderRadius: '50%',
+              background: '#10b981',
+            }} />
+            <span style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '14px', color: 'var(--text-muted)' }}>
+              <span>Plataforma de Integridade Estrutural & NDT</span>
+            </span>
+          </div>
         </div>
 
         {/* Status técnico */}

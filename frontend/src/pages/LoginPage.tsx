@@ -303,30 +303,27 @@ export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) 
             pointerEvents: 'none',
           }} />
 
-          {/* Logo (Alinhado no topo superior) */}
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              {/* Ícone SVG Axos */}
-              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
-                <rect width="36" height="36" rx="6" fill="#2FB8D6" fillOpacity="0.15" />
-                <path d="M8 26 L14 10 L18 20 L22 10 L28 26" stroke="#2FB8D6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                <path d="M25 16 L28 16" stroke="#2FB8D6" strokeWidth="2" strokeLinecap="round" />
-              </svg>
-              <div>
-                <div style={{
-                  fontFamily: "'Archivo', sans-serif",
-                  fontWeight: 800,
-                  fontSize: '17px',
-                  color: BRAND.text,
-                  letterSpacing: '0.01em',
-                }}>
-                  AXOS RELATÓRIOS
-                </div>
-                <div style={{ fontSize: '11px', color: BRAND.textSec, letterSpacing: '0.06em' }}>
-                  PLATAFORMA NDT
-                </div>
-              </div>
-            </div>
+          {/* Logo Oficial AXOS Relatórios (Centralizado no topo superior) */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            width: '100%',
+          }}>
+            <img
+              src="/logo-axos.png"
+              alt="AXOS Relatórios – Tecnologia em Inspeção"
+              style={{
+                width: '100%',
+                maxWidth: '300px',
+                height: 'auto',
+                display: 'block',
+                margin: '0 auto',
+                objectFit: 'contain',
+              }}
+            />
           </div>
 
           {/* A-Scan animado (centro do painel) */}
@@ -411,6 +408,21 @@ export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) 
             justifyContent: 'space-between',
           }}>
             <div>
+              {/* Logo oficial no mobile quando o painel de marca está oculto */}
+              <div className="login-mobile-logo" style={{ display: 'none', marginBottom: '20px', textAlign: 'center' }}>
+                <img
+                  src="/logo-axos.png"
+                  alt="AXOS Relatórios"
+                  style={{
+                    maxWidth: '220px',
+                    width: '100%',
+                    height: 'auto',
+                    margin: '0 auto',
+                    display: 'block',
+                  }}
+                />
+              </div>
+
               {/* Pílula "Portal de Acesso" */}
               <div style={{
                 display: 'inline-block',
@@ -675,6 +687,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) 
               min-height: auto !important;
             }
             .login-brand-panel { display: none !important; }
+            .login-mobile-logo { display: block !important; }
             .login-form-panel  {
               flex: 1 1 100% !important;
               padding: 32px 24px !important;
