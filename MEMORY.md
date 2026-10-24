@@ -29,8 +29,13 @@ O **AXOS Relatórios** é uma solução de software para o segmento de Integrida
   - Alinhamento superior: O topo do formulário ("Portal de Acesso" e título) está alinhado com a logo Axos.
   - Alinhamento inferior: O rodapé de links e segurança está alinhado com as três linhas de bullets técnicos do painel esquerdo.
   - Gráfico animado de ultrassom A-scan centralizado no painel esquerdo.
+  - Logo oficial AXOS Relatórios centralizada no painel de login e inserida no rodapé (`TenantFooter`).
 
-### 2.4. Deploy e Containers (EasyPanel)
+### 2.4. Cards de Métricas Operacionais (Alto Contraste)
+- Redesenho completo do `DashboardMetrics.tsx` eliminando o visual leitoso/apagado anterior (`rgba(255,255,255,0.45)`).
+- Cards em grafite escuro sólido (`#1C1F24` a `#15171A`), com faixa de destaque superior colorida (3px), ícones Lucide específicos por status, números em Archivo de alto contraste e tipografia mono nítida sem truncamentos.
+
+### 2.5. Deploy e Containers (EasyPanel)
 - `backend/Dockerfile`: Imagem multi-stage Python 3.11 compartilhada entre API (Uvicorn) e Worker (ARQ).
 - `frontend/Dockerfile` + `frontend/nginx.conf`: Servidor Nginx configurado com rotas SPA, gzip e headers de segurança.
 - `docker-compose.yml`: Orquestração local completa para testes de integração.
