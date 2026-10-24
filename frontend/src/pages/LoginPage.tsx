@@ -1,47 +1,133 @@
-import React, { useState } from 'react'
-import { Eye, EyeOff } from 'lucide-react'
+/**
+ * LoginPage – AXOS Relatórios
+ * Layout split: painel de marca (sempre grafite) + formulário (muda com tema)
+ * Fontes: Archivo (títulos) + IBM Plex Sans (texto)
+ * Tema: escuro por padrão; botão lua/sol sincronizado com ThemeContext
+ */
+
+import React, { useEffect, useState } from 'react'
+import { Eye, EyeOff, Moon, Sun } from 'lucide-react'
 import type { TenantProfile } from '../types/tenant'
+import { useTheme } from '../contexts/ThemeContext'
 
 interface LoginPageProps {
   tenant: TenantProfile
   onLoginSuccess: (userRole: string, plant: string) => void
 }
 
+/* ─── Paletas ────────────────────────────────────────── */
+const DARK = {
+  pageBg:     '#121315',
+  formBg:     '#1A1C1F',
+  fieldBg:    '#24272B',
+  border:     '#34383D',
+  text:       '#E6E8EA',
+  textSec:    '#9AA0A6',
+  cyan:       '#2FB8D6',
+  btnText:    '#06222B',
+  labelColor: '#9AA0A6',
+  pillBg:     '#1e3a40',
+  pillBorder: '#2FB8D6',
+  pillText:   '#2FB8D6',
+}
+
+const LIGHT = {
+  pageBg:     '#F1F3F4',
+  formBg:     '#FFFFFF',
+  fieldBg:    '#F1F3F4',
+  border:     '#D5DADD',
+  text:       '#14181B',
+  textSec:    '#5A646B',
+  cyan:       '#2FB8D6',
+  btnBg:      '#0B3A5B',
+  btnText:    '#FFFFFF',
+  labelColor: '#5A646B',
+  pillBg:     '#e8f4f8',
+  pillBorder: '#2FB8D6',
+  pillText:   '#0B3A5B',
+}
+
+/* ─── Painel Esquerdo (sempre grafite) ───────────────── */
+const BRAND = {
+  bg:       '#0D0F11',
+  stripe:   '#16191D',
+  text:     '#E6E8EA',
+  textSec:  '#9AA0A6',
+  cyan:     '#2FB8D6',
+}
+
+/* ─── Dados de perfis de acesso ─────────────────────── */
 const ROLES = [
-  {
-    id: 'inspetor' as const,
-    label: 'Inspetor N2',
-    code: 'INSP-N2',
-    email: 'carlos.silva@empresa.com.br',
-    desc: 'Inspetor Qualificado · Nível 2',
-    color: '#0284c7',
-  },
-  {
-    id: 'supervisor' as const,
-    label: 'Engenheiro PH',
-    code: 'ENG-PH',
-    email: 'paulo.mendes@empresa.com.br',
-    desc: 'Engenheiro Responsável · CREA',
-    color: '#0369a1',
-  },
-  {
-    id: 'gestor' as const,
-    label: 'Gestor de Planta',
-    code: 'GSTOR',
-    email: 'diretoria@empresa.com.br',
-    desc: 'Acesso Administrativo & Operacional',
-    color: '#0f766e',
-  },
+  { id: 'inspetor'    as const, label: 'Inspetor N2',    code: 'INSP-N2', email: 'carlos.silva@empresa.com.br'  },
+  { id: 'supervisor'  as const, label: 'Engenheiro PH',  code: 'ENG-PH',  email: 'paulo.mendes@empresa.com.br'  },
+  { id: 'gestor'      as const, label: 'Gestor de Planta', code: 'GSTOR', email: 'diretoria@empresa.com.br'      },
 ]
 
+/* ─── A-Scan SVG animado ─────────────────────────────── */
+function AScanLine({ color }: { color: string }) {
+  // Linha tipo A-scan de ultrassom
+  const path =
+    'M0,40 L60,40 L70,40 L75,10 L80,70 L85,40 L130,40 L140,40 ' +
+    'L145,25 L150,55 L155,40 L200,40 L215,40 L220,15 L225,65 ' +
+    'L230,40 L280,40 L285,38 L290,42 L340,40 L360,40'
+
+  return (
+    <svg
+      viewBox="0 0 360 80"
+      width="100%"
+      height="80"
+      aria-hidden="true"
+      style={{ display: 'block', overflow: 'visible' }}
+    >
+      <defs>
+        <style>{`
+          @media (prefers-reduced-motion: no-preference) {
+            .ascan-path {
+              stroke-dasharray: 700;
+              stroke-dashoffset: 700;
+              animation: drawLine 3s ease forwards, pulse 4s 3s ease-in-out infinite;
+            }
+            @keyframes drawLine {
+              to { stroke-dashoffset: 0; }
+            }
+            @keyframes pulse {
+              0%, 100% { opacity: 1; }
+              50%       { opacity: 0.55; }
+            }
+          }
+          @media (prefers-reduced-motion: reduce) {
+            .ascan-path { stroke-dasharray: none; stroke-dashoffset: 0; }
+          }
+        `}</style>
+      </defs>
+      <path
+        className="ascan-path"
+        d={path}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+/* ─── Componente principal ───────────────────────────── */
 export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) => {
-  const [email, setEmail] = useState(ROLES[0].email)
-  const [password, setPassword] = useState('••••••••••••')
+  const { theme, toggleTheme } = useTheme()
+  const C = theme === 'dark' ? DARK : LIGHT
+
+  const [email, setEmail]               = useState(ROLES[0].email)
+  const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [selectedPlant, setSelectedPlant] = useState(tenant.operationalUnit || 'Unidade Operacional Principal')
-  const [offlineBufferEnabled, setOfflineBufferEnabled] = useState(true)
-  const [activeRole, setActiveRole] = useState<'inspetor' | 'supervisor' | 'gestor'>('inspetor')
-  const [isLoading, setIsLoading] = useState(false)
+  const [selectedPlant, setSelectedPlant] = useState(
+    tenant.operationalUnit || 'Unidade Operacional Principal'
+  )
+  const [offlineEnabled, setOfflineEnabled] = useState(true)
+  const [activeRole, setActiveRole]     = useState<'inspetor' | 'supervisor' | 'gestor'>('inspetor')
+  const [isLoading, setIsLoading]       = useState(false)
+  const [focusedField, setFocusedField] = useState<string | null>(null)
 
   const handleRoleSelect = (role: 'inspetor' | 'supervisor' | 'gestor') => {
     setActiveRole(role)
@@ -58,263 +144,559 @@ export const LoginPage: React.FC<LoginPageProps> = ({ tenant, onLoginSuccess }) 
     }, 350)
   }
 
+  // Injetar fontes do Google
+  useEffect(() => {
+    const id = 'axos-login-fonts'
+    if (!document.getElementById(id)) {
+      const link = document.createElement('link')
+      link.id   = id
+      link.rel  = 'stylesheet'
+      link.href = 'https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap'
+      document.head.appendChild(link)
+    }
+  }, [])
+
+  /* ── Estilos compartilhados dos campos ── */
+  const fieldStyle = (name: string): React.CSSProperties => ({
+    width: '100%',
+    boxSizing: 'border-box',
+    backgroundColor: C.fieldBg,
+    border: `1.5px solid ${focusedField === name ? C.cyan : C.border}`,
+    borderRadius: '6px',
+    color: C.text,
+    fontSize: '15px',
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    padding: '11px 14px',
+    outline: 'none',
+    transition: 'border-color 0.15s ease, background-color 0.15s ease',
+  })
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    fontSize: '13px',
+    fontWeight: 600,
+    fontFamily: "'IBM Plex Sans', sans-serif",
+    color: C.labelColor,
+    marginBottom: '6px',
+    letterSpacing: '0.03em',
+  }
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      width: '100%',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f1f5f9', /* Cor gelo de fundo */
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-      color: '#1e293b',
-      padding: '32px 16px',
-    }}>
-      {/* ── CARD CENTRALIZADO DE LOGIN (Quadrado: 700px x 700px) ── */}
+    <>
+      {/* Injeção de CSS global para transição sem piscar */}
+      <style>{`
+        .login-root * { box-sizing: border-box; }
+        .login-root { transition: background-color 0.2s ease, color 0.2s ease; }
+        .login-form-panel { transition: background-color 0.2s ease; }
+        .login-field-select option { background: ${C.fieldBg}; color: ${C.text}; }
+        .login-toggle-btn { cursor: pointer; transition: opacity 0.15s ease; }
+        .login-toggle-btn:hover { opacity: 0.75; }
+        /* Toggle switch offline */
+        .offline-toggle {
+          position: relative; width: 44px; height: 24px;
+          flex-shrink: 0;
+        }
+        .offline-toggle input { opacity: 0; width: 0; height: 0; }
+        .offline-slider {
+          position: absolute; inset: 0;
+          background: ${offlineEnabled ? '#2FB8D6' : C.border};
+          border-radius: 24px;
+          transition: background 0.2s ease;
+          cursor: pointer;
+        }
+        .offline-slider::before {
+          content: '';
+          position: absolute;
+          left: ${offlineEnabled ? '22px' : '2px'};
+          top: 2px;
+          width: 20px; height: 20px;
+          background: white;
+          border-radius: 50%;
+          transition: left 0.2s ease;
+        }
+      `}</style>
+
       <div
-        className="login-card"
+        className="login-root"
         style={{
+          minHeight: '100vh',
           width: '100%',
-          maxWidth: '700px',
-          height: '700px',
-          minHeight: '700px',
-          aspectRatio: '1 / 1',
           display: 'flex',
-          flexDirection: 'column',
-          justifyContent: 'center',
           alignItems: 'center',
-          backgroundColor: '#ffffff',
-          borderRadius: '6px', /* Raio de 6px no card principal */
-          border: '1px solid #cbd5e1', /* Linha de borda de 1px cinza pra destacar */
-          boxShadow: '0 20px 25px -5px rgba(15, 23, 42, 0.05), 0 8px 10px -6px rgba(15, 23, 42, 0.02)',
-          padding: '40px 48px',
-          boxSizing: 'border-box',
+          justifyContent: 'center',
+          backgroundColor: C.pageBg,
+          fontFamily: "'IBM Plex Sans', sans-serif",
+          position: 'relative',
+          padding: '24px 16px',
         }}
       >
-        <div style={{
-          width: '100%',
-          maxWidth: '500px',
-          display: 'flex',
-          flexDirection: 'column',
-        }}>
-          
-          {/* Header do Card */}
-          <div style={{ marginBottom: '28px', textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-block',
-              fontSize: '13px',
-              fontWeight: 600,
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              color: '#0284c7',
-              backgroundColor: '#f0f9ff',
-              padding: '5px 14px',
-              borderRadius: '3px',
-              marginBottom: '14px',
-              border: '1px solid #bae6fd',
-            }}>
-              Portal de Acesso
-            </div>
-            <h1 style={{
-              fontSize: '32px',
-              fontWeight: 600,
-              color: '#1e293b',
-              letterSpacing: '-0.02em',
-              margin: '0 0 8px 0',
-            }}>
-              Acessar Sistema
-            </h1>
-            <p style={{ fontSize: '16px', color: '#64748b', margin: 0 }}>
-              Entre com suas credenciais para acessar a plataforma.
-            </p>
-          </div>
+        {/* ── BOTÃO DE ALTERNAR TEMA ── */}
+        <button
+          type="button"
+          aria-label="Alternar tema"
+          onClick={toggleTheme}
+          className="login-toggle-btn"
+          style={{
+            position: 'fixed',
+            top: '16px',
+            right: '16px',
+            zIndex: 100,
+            width: '44px',
+            height: '44px',
+            borderRadius: '8px',
+            border: `1px solid ${C.border}`,
+            backgroundColor: C.formBg,
+            color: C.textSec,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 0,
+          }}
+        >
+          {theme === 'dark'
+            ? <Sun  size={20} color="#E6E8EA" />
+            : <Moon size={20} color="#5A646B" />
+          }
+        </button>
 
-          {/* Seleção de Perfil Rápido */}
-          <div style={{ marginBottom: '24px' }}>
-            <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: '8px' }}>
-              Perfil Operacional
-            </label>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-              {ROLES.map((role) => {
-                const isSelected = activeRole === role.id
-                return (
-                  <button
-                    key={role.id}
-                    type="button"
-                    onClick={() => handleRoleSelect(role.id)}
-                    style={{
-                      padding: '10px 6px',
-                      borderRadius: '3px',
-                      border: isSelected ? '1px solid #0284c7' : '1px solid #cbd5e1',
-                      backgroundColor: isSelected ? '#f0f9ff' : '#ffffff',
-                      color: isSelected ? '#0284c7' : '#475569',
-                      fontWeight: 600,
-                      cursor: 'pointer',
-                      textAlign: 'center',
-                      transition: 'all 0.15s ease',
-                    }}
-                  >
-                    <div style={{ fontSize: '14px', marginBottom: '2px' }}>{role.label}</div>
-                    <div style={{ fontSize: '11px', opacity: 0.75, fontFamily: "'DM Mono', monospace" }}>{role.code}</div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
+        {/* ── CONTAINER DELIMITADO EM 1140px – DOIS PAINÉIS UNIDOS ── */}
+        <div
+          className="login-container"
+          style={{
+            width: '100%',
+            maxWidth: '1140px',
+            minHeight: 'min(740px, calc(100vh - 48px))',
+            display: 'flex',
+            margin: 'auto',
+            borderRadius: '16px',
+            overflow: 'hidden',
+            border: `1px solid ${theme === 'dark' ? '#24272B' : '#D5DADD'}`,
+            boxShadow: theme === 'dark'
+              ? '0 25px 70px rgba(0, 0, 0, 0.65)'
+              : '0 20px 60px rgba(0, 0, 0, 0.08)',
+            position: 'relative',
+          }}
+        >
+          {/* ════════════════════════════════════════════════
+              PAINEL ESQUERDO – Marca (sempre grafite)
+          ════════════════════════════════════════════════ */}
+          <div
+            className="login-brand-panel"
+            style={{
+              flex: '1 1 50%',
+              minWidth: 0,
+              backgroundColor: BRAND.bg,
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'space-between',
+              padding: '44px 48px',
+              position: 'relative',
+              overflow: 'hidden',
+              borderRight: `1px solid ${theme === 'dark' ? '#24272B' : '#E2E6E9'}`,
+            }}
+          >
+          {/* Faixa decorativa */}
+          <div style={{
+            position: 'absolute',
+            inset: 0,
+            background: `linear-gradient(135deg, ${BRAND.stripe} 0%, transparent 60%)`,
+            pointerEvents: 'none',
+          }} />
 
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '22px' }}>
-
-            {/* Credenciais */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {/* Logo (Alinhado no topo superior) */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              {/* Ícone SVG Axos */}
+              <svg width="36" height="36" viewBox="0 0 36 36" fill="none" aria-hidden="true">
+                <rect width="36" height="36" rx="6" fill="#2FB8D6" fillOpacity="0.15" />
+                <path d="M8 26 L14 10 L18 20 L22 10 L28 26" stroke="#2FB8D6" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M25 16 L28 16" stroke="#2FB8D6" strokeWidth="2" strokeLinecap="round" />
+              </svg>
               <div>
-                <label style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  E-mail do Usuário
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="login-field"
-                  style={{
-                    backgroundColor: '#ffffff',
-                    border: '1px solid #cbd5e1',
-                    color: '#1e293b',
-                    borderRadius: '3px',
-                    width: '100%',
-                    fontSize: '15px',
-                    padding: '11px 14px',
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: 'block', fontSize: '15px', fontWeight: 600, color: '#334155', marginBottom: '6px' }}>
-                  Senha de Acesso
-                </label>
-                <div style={{ position: 'relative', width: '100%', display: 'flex', alignItems: 'center' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                    className="login-field"
-                    style={{
-                      backgroundColor: '#ffffff',
-                      border: '1px solid #cbd5e1',
-                      color: '#1e293b',
-                      borderRadius: '3px',
-                      width: '100%',
-                      paddingRight: '46px',
-                      fontSize: '15px',
-                      paddingLeft: '14px',
-                      paddingTop: '11px',
-                      paddingBottom: '11px',
-                    }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    title={showPassword ? 'Ocultar senha' : 'Ver senha'}
-                    aria-label={showPassword ? 'Ocultar senha' : 'Ver senha'}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      background: 'none',
-                      border: 'none',
-                      padding: '6px',
-                      cursor: 'pointer',
-                      color: '#64748b',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      transition: 'color 0.15s ease',
-                    }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = '#0b3d61')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = '#64748b')}
-                  >
-                    {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
-                  </button>
+                <div style={{
+                  fontFamily: "'Archivo', sans-serif",
+                  fontWeight: 800,
+                  fontSize: '17px',
+                  color: BRAND.text,
+                  letterSpacing: '0.01em',
+                }}>
+                  AXOS RELATÓRIOS
+                </div>
+                <div style={{ fontSize: '11px', color: BRAND.textSec, letterSpacing: '0.06em' }}>
+                  PLATAFORMA NDT
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Toggle de Modo Offline */}
+          {/* A-Scan animado (centro do painel) */}
+          <div style={{
+            position: 'relative',
+            zIndex: 1,
+            margin: '0 -16px',
+            padding: '24px 0',
+          }}>
+            {/* Linha base */}
+            <div style={{
+              position: 'absolute',
+              left: '16px', right: '16px',
+              top: '50%',
+              height: '1px',
+              background: `${BRAND.cyan}22`,
+            }} />
+            <AScanLine color={BRAND.cyan} />
+          </div>
+
+          {/* Headline + bullets (Alinhado no texto inferior) */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h2 style={{
+              fontFamily: "'Archivo', sans-serif",
+              fontWeight: 800,
+              fontSize: 'clamp(24px, 2.6vw, 34px)',
+              color: BRAND.text,
+              lineHeight: 1.15,
+              margin: '0 0 20px 0',
+              letterSpacing: '-0.01em',
+            }}>
+              Laudo rápido.<br />
+              Registro que<br />
+              não se altera.
+            </h2>
+
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {[
+                'Revisado pela sua empresa antes de sair',
+                'Funciona sem internet no campo',
+                'PDF padronizado com a marca da sua empresa',
+              ].map((item) => (
+                <li key={item} style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  fontSize: '14px',
+                  color: BRAND.textSec,
+                  fontFamily: "'IBM Plex Sans', sans-serif",
+                }}>
+                  <span style={{ color: BRAND.cyan, marginTop: '2px', flexShrink: 0 }}>—</span>
+                  {item}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* ════════════════════════════════════════════════
+            PAINEL DIREITO – Formulário (Unido ao painel esquerdo)
+        ════════════════════════════════════════════════ */}
+        <div
+          className="login-form-panel"
+          style={{
+            flex: '1 1 50%',
+            minWidth: 0,
+            backgroundColor: C.formBg,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            padding: '44px 48px',
+            overflowY: 'auto',
+          }}
+        >
+          <div style={{
+            width: '100%',
+            maxWidth: '440px',
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            justifyContent: 'space-between',
+          }}>
+            <div>
+              {/* Pílula "Portal de Acesso" */}
+              <div style={{
+                display: 'inline-block',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                color: C.cyan,
+                backgroundColor: theme === 'dark' ? '#1e3a40' : '#e0f5f9',
+                border: `1px solid ${C.cyan}44`,
+                borderRadius: '4px',
+                padding: '4px 12px',
+                marginBottom: '12px',
+                fontFamily: "'IBM Plex Sans', sans-serif",
+              }}>
+                Portal de Acesso
+              </div>
+
+            {/* Título */}
+            <h1 style={{
+              fontFamily: "'Archivo', sans-serif",
+              fontWeight: 800,
+              fontSize: '28px',
+              color: C.text,
+              letterSpacing: '-0.02em',
+              margin: '0 0 6px 0',
+            }}>
+              Entrar na plataforma
+            </h1>
+            <p style={{
+              fontSize: '14px',
+              color: C.textSec,
+              margin: '0 0 28px 0',
+              fontFamily: "'IBM Plex Sans', sans-serif",
+            }}>
+              Use o e-mail da sua conta para continuar.
+            </p>
+
+            {/* Seleção de perfil */}
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ ...labelStyle, marginBottom: '8px' }}>Perfil operacional</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '6px' }}>
+                {ROLES.map((role) => {
+                  const sel = activeRole === role.id
+                  return (
+                    <button
+                      key={role.id}
+                      type="button"
+                      onClick={() => handleRoleSelect(role.id)}
+                      style={{
+                        padding: '8px 4px',
+                        borderRadius: '6px',
+                        border: `1.5px solid ${sel ? C.cyan : C.border}`,
+                        backgroundColor: sel
+                          ? (theme === 'dark' ? '#1e3a40' : '#e0f5f9')
+                          : C.fieldBg,
+                        color: sel ? C.cyan : C.textSec,
+                        fontWeight: 600,
+                        fontSize: '12px',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s ease',
+                        fontFamily: "'IBM Plex Sans', sans-serif",
+                      }}
+                    >
+                      <div style={{ fontSize: '12px' }}>{role.label}</div>
+                      <div style={{
+                        fontSize: '10px',
+                        opacity: 0.7,
+                        fontFamily: "'DM Mono', 'IBM Plex Mono', monospace",
+                        marginTop: '2px',
+                      }}>
+                        {role.code}
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+
+              {/* E-mail */}
+              <div>
+                <label htmlFor="login-email" style={labelStyle}>E-mail</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={()  => setFocusedField(null)}
+                  required
+                  placeholder="voce@empresa.com.br"
+                  style={fieldStyle('email')}
+                />
+              </div>
+
+              {/* Senha */}
+              <div>
+                <label htmlFor="login-senha" style={labelStyle}>Senha</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="login-senha"
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setFocusedField('senha')}
+                    onBlur={()  => setFocusedField(null)}
+                    required
+                    placeholder="Sua senha"
+                    style={{ ...fieldStyle('senha'), paddingRight: '48px' }}
+                  />
+                  <button
+                    type="button"
+                    aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute', right: '12px', top: '50%',
+                      transform: 'translateY(-50%)',
+                      background: 'none', border: 'none',
+                      cursor: 'pointer', padding: '4px',
+                      color: C.textSec, display: 'flex',
+                      alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Unidade Operacional */}
+              <div>
+                <label htmlFor="login-planta" style={labelStyle}>Unidade operacional</label>
+                <select
+                  id="login-planta"
+                  value={selectedPlant}
+                  onChange={(e) => setSelectedPlant(e.target.value)}
+                  onFocus={() => setFocusedField('planta')}
+                  onBlur={()  => setFocusedField(null)}
+                  className="login-field-select"
+                  style={{ ...fieldStyle('planta'), appearance: 'auto' }}
+                >
+                  {[
+                    tenant.operationalUnit || 'Unidade Operacional Principal',
+                    'Refinaria Norte',
+                    'Plataforma P-77',
+                    'Terminal de Gás Sul',
+                    'Petroquímica Leste',
+                  ].map((p) => <option key={p} value={p}>{p}</option>)}
+                </select>
+              </div>
+
+              {/* Toggle Modo Offline */}
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '12px 14px',
+                backgroundColor: C.fieldBg,
+                border: `1px solid ${C.border}`,
+                borderRadius: '6px',
+                gap: '12px',
+              }}>
+                <div>
+                  <div style={{ fontSize: '14px', fontWeight: 600, color: C.text }}>
+                    Modo offline
+                  </div>
+                  <div style={{ fontSize: '12px', color: C.textSec, marginTop: '2px' }}>
+                    Guarda as medições no aparelho quando não há sinal
+                  </div>
+                </div>
+                <label className="offline-toggle" aria-label="Ativar modo offline">
+                  <input
+                    type="checkbox"
+                    checked={offlineEnabled}
+                    onChange={(e) => setOfflineEnabled(e.target.checked)}
+                  />
+                  <span className="offline-slider" />
+                </label>
+              </div>
+
+              {/* Botão Entrar */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                style={{
+                  width: '100%',
+                  padding: '13px',
+                  fontSize: '16px',
+                  fontWeight: 700,
+                  fontFamily: "'Archivo', sans-serif",
+                  letterSpacing: '0.01em',
+                  backgroundColor: C.cyan,
+                  color: theme === 'dark' ? '#06222B' : '#FFFFFF',
+                  border: 'none',
+                  borderRadius: '6px',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.75 : 1,
+                  transition: 'opacity 0.15s ease, background-color 0.15s ease',
+                  marginTop: '4px',
+                }}
+              >
+                {isLoading ? 'Autenticando...' : 'Entrar'}
+              </button>
+
+            </form>
+          </div>
+
+          {/* Rodapé do formulário (Alinhado com o texto inferior do painel esquerdo) */}
+          <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
             <div style={{
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
-              padding: '12px 16px',
-              backgroundColor: '#f8fafc',
-              border: '1px solid #cbd5e1',
-              borderRadius: '3px',
+              marginBottom: '16px',
             }}>
-              <div>
-                <div style={{ fontSize: '15px', fontWeight: 600, color: '#1e293b' }}>
-                  Modo Offline
-                </div>
-                <div style={{ fontSize: '13px', color: '#64748b' }}>
-                  Armazena medições localmente sem internet
-                </div>
-              </div>
-              <input
-                type="checkbox"
-                checked={offlineBufferEnabled}
-                onChange={(e) => setOfflineBufferEnabled(e.target.checked)}
-                style={{ width: '17px', height: '17px', cursor: 'pointer', accentColor: '#0284c7' }}
-              />
+              <button type="button" style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '13px', color: C.cyan, textDecoration: 'underline',
+                padding: 0, fontFamily: "'IBM Plex Sans', sans-serif",
+              }}>
+                Esqueci minha senha
+              </button>
+              <button type="button" style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '13px', color: C.textSec, textDecoration: 'underline',
+                padding: 0, fontFamily: "'IBM Plex Sans', sans-serif",
+              }}>
+                Falar com o suporte
+              </button>
             </div>
 
-            {/* Botão de Entrar */}
-            <button
-              type="submit"
-              disabled={isLoading}
-              className="login-btn-submit"
-              style={{
-                width: '100%',
-                padding: '14px',
-                fontSize: '16px',
-                fontWeight: 600,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '8px',
-                backgroundColor: '#0284c7',
-                border: '1px solid #0284c7',
-                borderRadius: '3px',
-                color: '#ffffff',
-                cursor: 'pointer',
-                marginTop: '6px',
-                boxShadow: '0 2px 4px rgba(2, 132, 199, 0.2)',
-              }}
-            >
-              {isLoading ? (
-                <span>Autenticando credenciais...</span>
-              ) : (
-                <span>Entrar no Sistema →</span>
-              )}
-            </button>
-          </form>
-
-          {/* Segurança */}
-          <div style={{
-            marginTop: '28px',
-            textAlign: 'center',
-            fontSize: '14px',
-            color: '#64748b',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: '6px',
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748b" strokeWidth="2">
-              <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-              <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-            </svg>
-            Conexão criptografada TLS 1.3 · Acesso Seguro
+            {/* Segurança */}
+            <div style={{
+              textAlign: 'center',
+              fontSize: '12px',
+              color: C.textSec,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              fontFamily: "'IBM Plex Sans', sans-serif",
+            }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              Conexão segura. Seus laudos ficam protegidos.
+            </div>
           </div>
+
         </div>
       </div>
     </div>
+
+        {/* ── CSS responsivo: unificado e adaptável ── */}
+        <style>{`
+          @media (max-width: 900px) {
+            .login-container {
+              max-width: 520px !important;
+              min-height: auto !important;
+            }
+            .login-brand-panel { display: none !important; }
+            .login-form-panel  {
+              flex: 1 1 100% !important;
+              padding: 32px 24px !important;
+              border-left: none !important;
+            }
+          }
+          @media (max-width: 540px) {
+            .login-root {
+              padding: 0 !important;
+            }
+            .login-container {
+              border-radius: 0 !important;
+              border: none !important;
+              min-height: 100vh !important;
+              box-shadow: none !important;
+            }
+            .login-form-panel {
+              padding: 24px 16px !important;
+            }
+          }
+        `}</style>
+      </div>
+    </>
   )
 }

@@ -31,7 +31,7 @@
  * ║                 'rascunho'. Fora dele, a operação lança erro.     ║
  * ╚══════════════════════════════════════════════════════════════════╝
  */
-
+import { db } from './dbDexie';
 // ────────────────────────────────────────────────────
 // Tipos
 // ────────────────────────────────────────────────────
@@ -262,12 +262,8 @@ export async function salvarAnexo(input: SalvarAnexoInput): Promise<AnexoMeta> {
   }
 
   // Persiste no IndexedDB
-  const db = await abrirDB()
-  const record: AnexoRecord = { meta, blob: blobFinal }
-  await transacao(db, 'readwrite', (store) => store.put(record))
-  db.close()
-
-  return meta
+  await db.anexos.put({ meta, blob: blobFinal });
+  return meta;
 }
 
 /**
@@ -275,26 +271,8 @@ export async function salvarAnexo(input: SalvarAnexoInput): Promise<AnexoMeta> {
  * Retorna apenas os metadados (sem o blob).
  */
 export async function listarAnexos(laudoId: string): Promise<AnexoMeta[]> {
-  const db = await abrirDB()
-
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, 'readonly')
-    const store = tx.objectStore(STORE_NAME)
-    const index = store.index('por_laudo')
-    const req = index.getAll(laudoId)
-
-    req.onsuccess = () => {
-      const records: AnexoRecord[] = req.result || []
-      const metas = records.map((r) => r.meta)
-      db.close()
-      resolve(metas)
-    }
-
-    req.onerror = () => {
-      db.close()
-      reject(new Error(`Erro ao listar anexos do laudo ${laudoId}: ${req.error?.message}`))
-    }
-  })
+  const records = await db.anexos.where('meta.laudoId').equals(laudoId).toArray();
+  return records.map(r => r.meta);
 }
 
 /**
@@ -302,22 +280,14 @@ export async function listarAnexos(laudoId: string): Promise<AnexoMeta[]> {
  * Retorna um File reconstruído com nome e tipo corretos.
  */
 export async function lerAnexo(id: string): Promise<File> {
-  const db = await abrirDB()
-  const record = await transacao<AnexoRecord | undefined>(
-    db,
-    'readonly',
-    (store) => store.get(id) as IDBRequest<AnexoRecord | undefined>
-  )
-  db.close()
-
+  const record = await db.anexos.get(id);
   if (!record) {
-    throw new Error(`Anexo não encontrado: ${id}`)
+    throw new Error(`Anexo não encontrado: ${id}`);
   }
-
   return new File([record.blob], record.meta.nomeOriginal, {
     type: record.meta.mimeType,
     lastModified: new Date(record.meta.criadoEm).getTime(),
-  })
+  });
 }
 
 /**
@@ -327,31 +297,14 @@ export async function lerAnexo(id: string): Promise<File> {
  * Fora desse status, lança erro.
  */
 export async function removerAnexo(id: string): Promise<void> {
-  const db = await abrirDB()
-
-  // Busca o registro para verificar o laudo
-  const record = await transacao<AnexoRecord | undefined>(
-    db,
-    'readonly',
-    (store) => store.get(id) as IDBRequest<AnexoRecord | undefined>
-  )
-
+  const record = await db.anexos.get(id);
   if (!record) {
-    db.close()
-    throw new Error(`Anexo não encontrado: ${id}`)
+    throw new Error(`Anexo não encontrado: ${id}`);
   }
-
-  // Verifica imutabilidade
   if (!laudoEhRascunho(record.meta.laudoId)) {
-    db.close()
-    throw new Error(
-      `Não é possível remover anexo: o laudo "${record.meta.laudoId}" não está em rascunho.`
-    )
+    throw new Error(`Não é possível remover anexo: o laudo "${record.meta.laudoId}" não está em rascunho.`);
   }
-
-  // Remove
-  await transacao(db, 'readwrite', (store) => store.delete(id))
-  db.close()
+  await db.anexos.delete(id);
 }
 
 // ────────────────────────────────────────────────────

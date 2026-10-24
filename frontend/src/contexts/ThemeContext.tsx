@@ -15,9 +15,9 @@ const ThemeContext = createContext<ThemeContextValue>({
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem('axos_theme') as Theme | null
+    // Sempre começa escuro na primeira visita (ignora prefers-color-scheme)
     if (saved === 'dark' || saved === 'light') return saved
-    // Detecta preferência do sistema
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+    return 'dark'
   })
 
   useEffect(() => {

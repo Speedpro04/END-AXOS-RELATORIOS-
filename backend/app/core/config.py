@@ -21,5 +21,12 @@ class Settings(BaseSettings):
     # PDF
     QR_BASE_URL: str = "https://axos.app/verificar"
 
+    # Redis / Fila de Processamento
+    REDIS_URL: str = "redis://localhost:6379/0"   # Troque por Redis Cloud em produção
+    WORKER_CONCURRENCY: int = 10                  # Tarefas paralelas por worker
+    QUEUE_SYNC_LAUDO: str = "axos:sync:laudos"    # Nome da fila principal de laudos
+    QUEUE_PDF: str = "axos:pdf:generation"        # Fila separada p/ geração de PDF
+    QUEUE_EMAIL: str = "axos:notify:email"        # Fila de notificações
+
 
 settings = Settings()  # type: ignore[call-arg]
