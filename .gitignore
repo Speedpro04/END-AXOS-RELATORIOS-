@@ -11,6 +11,7 @@ ENV/
 dist/
 dist-ssr/
 build/
+dev-dist/
 *.local
 
 # Environment Variables
