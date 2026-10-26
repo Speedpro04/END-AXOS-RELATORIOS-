@@ -79,12 +79,13 @@ async def get_current_user(
     token = creds.credentials
 
     try:
-        # Decodifica JWT do Supabase Auth
+        # Decodifica JWT do Supabase Auth com validação de audiência
         payload = jwt.decode(
             token,
             settings.SUPABASE_JWT_SECRET,
             algorithms=["HS256"],
-            options={"verify_aud": False},
+            options={"verify_aud": True},
+            audience="authenticated",
         )
         user_id: str = payload.get("sub", "")
         if not user_id:

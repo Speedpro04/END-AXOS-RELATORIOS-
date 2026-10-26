@@ -65,16 +65,19 @@ def get_arq_redis_settings() -> RedisSettings:
 # Idempotência: evita processar o mesmo laudo duas vezes
 # ─────────────────────────────────────────────────────────
 
-def _idempotency_key(queue: str, payload: dict[str, Any]) -> str:
-    """Gera chave de idempotência baseada na fila e no payload.
+def _idempotency_key(queue: str, payload: dict[str, Any], tenant_id: str | None = None) -> str:
+    """Gera chave de idempotência baseada na fila, tenant e payload.
     Usa o 'id' do laudo se disponível; caso contrário usa SHA-256 do payload.
+    Inclui tenant_id para evitar colisão entre tenants diferentes.
     """
     laudo_id = payload.get("id") or payload.get("laudo_id")
     if laudo_id:
-        return f"idem:{queue}:{laudo_id}"
+        tenant_part = f":{tenant_id}" if tenant_id else ""
+        return f"idem:{queue}{tenant_part}:{laudo_id}"
     content = json.dumps(payload, sort_keys=True, default=str)
     digest = hashlib.sha256(content.encode()).hexdigest()[:16]
-    return f"idem:{queue}:{digest}"
+    tenant_part = f":{tenant_id}" if tenant_id else ""
+    return f"idem:{queue}{tenant_part}:{digest}"
 
 
 # ─────────────────────────────────────────────────────────
@@ -99,7 +102,9 @@ async def enqueue_sync_laudo(
     """
     from app.queues.workers.sync_worker import task_sync_laudo
 
-    idem_key = _idempotency_key(settings.QUEUE_SYNC_LAUDO, payload)
+    idem_key = _idempotency_key(
+        settings.QUEUE_SYNC_LAUDO, payload, tenant_id=payload.get("tenant_id")
+    )
 
     # Verifica se já está na fila (lock de 5 min – tempo máximo de processamento)
     locked = await arq.set(idem_key, "1", nx=True, ex=300)
@@ -130,7 +135,9 @@ async def enqueue_generate_pdf(
     from app.queues.workers.pdf_worker import task_generate_pdf
 
     payload = {"laudo_id": str(laudo_id), "tenant_id": str(tenant_id)}
-    idem_key = _idempotency_key(settings.QUEUE_PDF, payload)
+    idem_key = _idempotency_key(
+        settings.QUEUE_PDF, payload, tenant_id=str(tenant_id)
+    )
 
     locked = await arq.set(idem_key, "1", nx=True, ex=600)  # PDFs podem demorar até 10min
     if not locked:

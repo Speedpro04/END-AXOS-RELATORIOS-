@@ -197,12 +197,23 @@ async def get_sync_status(
     arq: ArqDep,
     current_user: CurrentUserDep,
 ) -> dict[str, Any]:
-    """Retorna o status atual de uma tarefa ARQ pelo job_id (requer autenticação)."""
+    """Retorna o status atual de uma tarefa ARQ pelo job_id (requer autenticação).
+    Verifica se o job pertence ao tenant do usuário."""
     try:
+        # Extrai tenant_id do job_id para verificar isolamento por tenant
+        # Formato: idem:axos:sync:laudos:{tenant_id}:{laudo_id}
+        job_parts = job_id.split(":")
+        job_tenant_id = job_parts[3] if len(job_parts) > 3 else None
+        if job_tenant_id and job_tenant_id != current_user.tenant_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: job não pertence ao seu tenant",
+            )
+
         job = Job(job_id=job_id, redis=arq, _queue_name=settings.QUEUE_SYNC_LAUDO)
         info = await job.info()
         if info is None:
-            raise HTTPException(status_code=404, detail=f"Job '{job_id}' não encontrado.")
+            raise HTTPException(status_code=404, detail="Job não encontrado.")
         return {
             "job_id": job_id,
             "status": info.status,
@@ -213,8 +224,8 @@ async def get_sync_status(
         }
     except HTTPException:
         raise
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+    except Exception:
+        raise HTTPException(status_code=503, detail="Erro interno ao consultar status do job")
 
 
 @router.get(
@@ -225,8 +236,16 @@ async def list_dlq(
     arq: ArqDep,
     current_user: CurrentUserDep,
 ) -> dict[str, Any]:
-    """Retorna os laudos com falha da DLQ filtrados estritamente pelo tenant_id do usuário."""
+    """Retorna os laudos com falha da DLQ filtrados estritamente pelo tenant_id do usuário.
+    Exigível apenas por supervisor ou admin."""
     import json
+
+    # Apenas supervisor ou admin podem acessar a DLQ
+    if not current_user.is_reviewer:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a supervisores e administradores",
+        )
 
     try:
         keys = await arq.keys("dlq:sync:laudos:*")
@@ -242,5 +261,7 @@ async def list_dlq(
                 except Exception:
                     continue
         return {"total": len(items), "tenant_id": current_user.tenant_id, "items": items}
-    except Exception as exc:
-        raise HTTPException(status_code=503, detail=str(exc))
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=503, detail="Erro interno ao consultar DLQ")
