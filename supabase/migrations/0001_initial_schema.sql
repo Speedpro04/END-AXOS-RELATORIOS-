@@ -21,7 +21,12 @@
 --  6. Auditoria append-only, escrita só por trigger.
 -- =====================================================================
 
-create extension if not exists pgcrypto with schema extensions;
+do $$
+begin
+  create extension if not exists pgcrypto with schema extensions;
+exception when others then
+  null;
+end $$;
 
 create schema if not exists private;
 revoke all on schema private from public;
@@ -36,7 +41,7 @@ create type public.report_status as enum
   ('draft', 'submitted', 'returned', 'approved', 'issued', 'superseded');
 
 create type public.ndt_method as enum
-  ('US', 'LP', 'PM', 'VS', 'ME', 'PINTURA', 'VASO_PRESSAO');
+  ('US', 'LP', 'PM', 'VS', 'PINTURA', 'VASO_PRESSAO');
 
 -- ---------------------------------------------------------------------
 -- 2. TABELAS
@@ -320,10 +325,7 @@ declare
   v_tpl         public.report_templates%rowtype;
   v_prev_status public.report_status;
 begin
-  if current_user <> 'authenticated' then
-    return new;   -- service_role e migrações são confiáveis
-  end if;
-
+  -- Regra inviolável: todo novo laudo nasce como draft e sem carimbos de servidor
   if new.status <> 'draft' then
     raise exception 'NEW_REPORT_MUST_BE_DRAFT';
   end if;
@@ -390,15 +392,7 @@ begin
 
   new.updated_at := now();
 
-  -- (3) papéis de servidor (service_role, migrações) não passam pelas regras de papel
-  if current_user <> 'authenticated' then
-    return new;
-  end if;
-
-  v_owner    := (old.inspector_id = v_uid);
-  v_reviewer := (select private.is_reviewer());
-
-  -- (4) campos controlados pelo servidor nunca vêm do cliente
+  -- (3) campos controlados pelo servidor nunca vêm do cliente/chamador
   new.submitted_at    := old.submitted_at;
   new.approved_at     := old.approved_at;
   new.approved_by     := old.approved_by;
@@ -416,7 +410,10 @@ begin
 
   v_admin_changed := new.administrative_data is distinct from old.administrative_data;
 
-  -- (5) quem pode editar o quê
+  v_owner    := (v_uid is not null and old.inspector_id = v_uid);
+  v_reviewer := (v_uid is not null and (select private.is_reviewer()));
+
+  -- (4) quem pode editar o quê
   if v_tech_changed and not (v_owner and old.status in ('draft', 'returned')) then
     raise exception 'TECHNICAL_FIELDS_LOCKED'
       using hint = 'Só o inspetor responsável altera dados técnicos, em rascunho ou devolvido.';
@@ -797,7 +794,7 @@ create policy templates_delete on public.report_templates for delete to authenti
 -- work_orders
 create policy work_orders_select on public.work_orders for select to authenticated
   using (tenant_id = (select private.my_tenant_id())
-         and ((select private.is_reviewer()) or assigned_to = (select auth.uid())));
+         and ((select private.is_reviewer()) or assigned_to = (select auth.uid()) or assigned_to is null));
 create policy work_orders_insert on public.work_orders for insert to authenticated
   with check (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
 create policy work_orders_update on public.work_orders for update to authenticated
@@ -815,7 +812,7 @@ create policy reports_insert on public.reports for insert to authenticated
     and (select private.can_inspect())
     and status = 'draft'
     and exists (select 1 from public.work_orders w
-                 where w.id = work_order_id and w.assigned_to = (select auth.uid()))
+                 where w.id = work_order_id and (w.assigned_to = (select auth.uid()) or w.assigned_to is null))
   );
 create policy reports_update on public.reports for update to authenticated
   using (tenant_id = (select private.my_tenant_id())
@@ -874,6 +871,8 @@ create policy audit_log_select on public.audit_log for select to authenticated
 -- ---------------------------------------------------------------------
 -- 7. PRIVILÉGIOS
 -- ---------------------------------------------------------------------
+grant usage on schema public to authenticated;
+grant select, insert, update, delete on all tables in schema public to authenticated;
 revoke all on all tables in schema public from anon;
 revoke truncate, references, trigger on all tables in schema public from authenticated;
 

@@ -4,6 +4,7 @@ import { TenantFooter } from './components/TenantFooter'
 import { InspectionModal } from './components/InspectionModal'
 import { DEFAULT_TENANT, type TenantProfile } from './types/tenant'
 import type { InspectionReport } from './types/inspection'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Páginas Dedicadas
 import { HubPage } from './pages/HubPage'
@@ -114,20 +115,30 @@ const INITIAL_REPORTS: InspectionReport[] = [
   },
 ]
 
-export function App() {
+function AppContent() {
+  const { user, profile, tenant: authTenant, selectedUnit, isLoading, signOut } = useAuth()
+
   const [tenant, setTenant] = useState<TenantProfile>(() => {
     const saved = localStorage.getItem('axos_tenant_profile')
     return saved ? JSON.parse(saved) : DEFAULT_TENANT
   })
 
+  // Sincroniza dados do tenant do Supabase com o perfil da empresa
+  useEffect(() => {
+    if (authTenant) {
+      setTenant((prev) => ({
+        ...prev,
+        name: authTenant.legal_name || prev.name,
+        tradeName: authTenant.trade_name || authTenant.legal_name || prev.tradeName,
+        cnpj: authTenant.cnpj || prev.cnpj,
+        operationalUnit: selectedUnit || prev.operationalUnit,
+      }))
+    }
+  }, [authTenant, selectedUnit])
+
   const [reports, setReports] = useState<InspectionReport[]>(() => {
     const saved = localStorage.getItem('axos_reports_list')
     return saved ? JSON.parse(saved) : INITIAL_REPORTS
-  })
-
-  // Autenticação corporativa
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return sessionStorage.getItem('axos_logged_in') === 'true'
   })
 
   // Navegação entre páginas de modelos
@@ -140,17 +151,8 @@ export function App() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingReport, setEditingReport] = useState<InspectionReport | null>(null)
 
-  const handleLoginSuccess = (_role: string, plant: string) => {
-    setIsAuthenticated(true)
-    sessionStorage.setItem('axos_logged_in', 'true')
-    if (plant) {
-      setTenant((prev) => ({ ...prev, operationalUnit: plant }))
-    }
-  }
-
-  const handleLogout = () => {
-    setIsAuthenticated(false)
-    sessionStorage.removeItem('axos_logged_in')
+  const handleLogout = async () => {
+    await signOut()
   }
 
   useEffect(() => {
@@ -231,8 +233,35 @@ export function App() {
     }
   }
 
-  if (!isAuthenticated) {
-    return <LoginPage tenant={tenant} onLoginSuccess={handleLoginSuccess} />
+  if (isLoading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#121315',
+        color: '#2FB8D6',
+        flexDirection: 'column',
+        gap: '16px',
+        fontFamily: "'IBM Plex Sans', sans-serif",
+      }}>
+        <div style={{
+          width: '36px',
+          height: '36px',
+          border: '3px solid rgba(47, 184, 214, 0.2)',
+          borderTopColor: '#2FB8D6',
+          borderRadius: '50%',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <span style={{ fontSize: '14px', letterSpacing: '0.04em' }}>Carregando sessão e perfil de acesso...</span>
+      </div>
+    )
+  }
+
+  if (!user || !profile) {
+    return <LoginPage />
   }
 
   return (
@@ -244,6 +273,8 @@ export function App() {
         isOnline={isOnline}
         offlineQueueCount={offlineQueueCount}
         onLogout={handleLogout}
+        userRole={profile.role}
+        userName={profile.full_name}
       />
 
       {/* BARRA DE NAVEGAÇÃO DE MODELOS TÉCNICOS COM ROLAGEM SUAVE E DEGRADÊ */}
@@ -433,6 +464,14 @@ export function App() {
       {/* FOOTER DISCRETO DA AXOS */}
       <TenantFooter />
     </div>
+  )
+}
+
+export function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
 

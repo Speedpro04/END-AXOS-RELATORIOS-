@@ -23,6 +23,7 @@ from fastapi import APIRouter, Body, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
 from app.core.config import settings
+from app.core.security import CurrentUserDep
 from app.queues.enqueue import enqueue_sync_laudo, get_arq_redis_settings
 
 logger = logging.getLogger(__name__)
@@ -104,10 +105,15 @@ class BatchSyncResponse(BaseModel):
 async def sync_laudo(
     body: SyncLaudoRequest,
     arq: ArqDep,
+    current_user: CurrentUserDep,
 ) -> SyncResponse:
-    """Enfileira um laudo individual para sincronização."""
+    """Enfileira um laudo individual para sincronização autenticada."""
     try:
-        job_id = await enqueue_sync_laudo(arq, body.model_dump())
+        payload = body.model_dump()
+        # Injeta tenant_id e user_id verificados do token/perfil, nunca aceitos do cliente
+        payload["tenant_id"] = current_user.tenant_id
+        payload["user_id"] = current_user.user_id
+        job_id = await enqueue_sync_laudo(arq, payload)
     except Exception as exc:
         logger.exception("Erro ao enfileirar laudo %s: %s", body.id, exc)
         raise HTTPException(
@@ -142,15 +148,19 @@ async def sync_laudo(
 async def sync_laudo_batch(
     body: SyncBatchRequest,
     arq: ArqDep,
+    current_user: CurrentUserDep,
 ) -> BatchSyncResponse:
-    """Enfileira um lote de laudos para sincronização."""
+    """Enfileira um lote de laudos para sincronização autenticada."""
     jobs: list[SyncResponse] = []
     enqueued = 0
     skipped = 0
 
     for laudo in body.laudos:
         try:
-            job_id = await enqueue_sync_laudo(arq, laudo.model_dump())
+            payload = laudo.model_dump()
+            payload["tenant_id"] = current_user.tenant_id
+            payload["user_id"] = current_user.user_id
+            job_id = await enqueue_sync_laudo(arq, payload)
             if job_id:
                 enqueued += 1
                 jobs.append(SyncResponse(
@@ -174,7 +184,7 @@ async def sync_laudo_batch(
                 laudo_id=laudo.id,
             ))
 
-    logger.info("Batch sync: %d enfileirados, %d ignorados.", enqueued, skipped)
+    logger.info("Batch sync [tenant=%s]: %d enfileirados, %d ignorados.", current_user.tenant_id, enqueued, skipped)
     return BatchSyncResponse(enqueued=enqueued, skipped=skipped, jobs=jobs)
 
 
@@ -182,8 +192,12 @@ async def sync_laudo_batch(
     "/status/{job_id}",
     summary="Consulta o status de uma tarefa de sincronização",
 )
-async def get_sync_status(job_id: str, arq: ArqDep) -> dict[str, Any]:
-    """Retorna o status atual de uma tarefa ARQ pelo job_id."""
+async def get_sync_status(
+    job_id: str,
+    arq: ArqDep,
+    current_user: CurrentUserDep,
+) -> dict[str, Any]:
+    """Retorna o status atual de uma tarefa ARQ pelo job_id (requer autenticação)."""
     try:
         job = Job(job_id=job_id, redis=arq, _queue_name=settings.QUEUE_SYNC_LAUDO)
         info = await job.info()
@@ -207,8 +221,11 @@ async def get_sync_status(job_id: str, arq: ArqDep) -> dict[str, Any]:
     "/dlq",
     summary="Lista laudos com falha definitiva (Dead Letter Queue)",
 )
-async def list_dlq(arq: ArqDep) -> dict[str, Any]:
-    """Retorna os laudos que falharam após todas as tentativas de sincronização."""
+async def list_dlq(
+    arq: ArqDep,
+    current_user: CurrentUserDep,
+) -> dict[str, Any]:
+    """Retorna os laudos com falha da DLQ filtrados estritamente pelo tenant_id do usuário."""
     import json
 
     try:
@@ -217,7 +234,13 @@ async def list_dlq(arq: ArqDep) -> dict[str, Any]:
         for key in keys:
             raw = await arq.get(key)
             if raw:
-                items.append(json.loads(raw))
-        return {"total": len(items), "items": items}
+                try:
+                    parsed = json.loads(raw)
+                    # Filtro estrito de isolamento por tenant: nunca vazar DLQ de outros tenants
+                    if parsed.get("tenant_id") == current_user.tenant_id:
+                        items.append(parsed)
+                except Exception:
+                    continue
+        return {"total": len(items), "tenant_id": current_user.tenant_id, "items": items}
     except Exception as exc:
         raise HTTPException(status_code=503, detail=str(exc))

@@ -8,6 +8,8 @@ interface TenantHeaderProps {
   isOnline: boolean
   offlineQueueCount: number
   onLogout?: () => void
+  userRole?: string
+  userName?: string
 }
 
 export const TenantHeader: React.FC<TenantHeaderProps> = ({
@@ -16,6 +18,8 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
   isOnline,
   offlineQueueCount,
   onLogout,
+  userRole,
+  userName,
 }) => {
   const { theme, toggleTheme } = useTheme()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -159,7 +163,30 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
           </div>
 
           {/* Direita: Ações */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+            {/* Usuário e papel autenticado (fonte: profiles.role) */}
+            {userName && (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '4px' }}>
+                <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
+                  {userName}
+                </span>
+                <span style={{
+                  fontSize: '10px',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  backgroundColor: userRole === 'admin' ? 'rgba(168, 85, 247, 0.15)' : userRole === 'supervisor' ? 'rgba(59, 130, 246, 0.15)' : 'rgba(47, 184, 214, 0.15)',
+                  color: userRole === 'admin' ? '#a855f7' : userRole === 'supervisor' ? '#3b82f6' : '#2FB8D6',
+                  fontWeight: 700,
+                  fontFamily: "'DM Mono', monospace",
+                  marginTop: '2px',
+                }}>
+                  {userRole === 'admin' ? 'Administrador' : userRole === 'supervisor' ? 'Supervisor' : 'Inspetor'}
+                </span>
+              </div>
+            )}
+
             {/* Botão de Toggle Dark/Light */}
             <button
               type="button"
