@@ -19,7 +19,7 @@ class Settings(BaseSettings):
     STRIPE_WEBHOOK_SECRET: str = ""
 
     # PDF
-    QR_BASE_URL: str = "https://axos.app/verificar"
+    QR_BASE_URL: str = "https://axosrelatorios.com/verificar"
 
     # Redis / Fila de Processamento
     REDIS_URL: str = "redis://localhost:6379/0"   # Troque por Redis Cloud em produção
