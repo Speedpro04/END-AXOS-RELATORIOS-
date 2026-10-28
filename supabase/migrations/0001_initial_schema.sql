@@ -68,6 +68,7 @@ create table public.tenants (
   plan                    text not null default 'trial'
                           check (plan in ('trial', 'starter', 'pro', 'enterprise')),
   require_second_reviewer boolean not null default true,  -- quem inspecionou não aprova o próprio laudo
+  allow_field_creation    boolean not null default true,  -- permite contratante/obra/OS criados em campo
   created_at              timestamptz not null default now()
 );
 
@@ -93,6 +94,9 @@ create table public.clients (
   contact_email text,
   contact_phone text,
   active        boolean not null default true,
+  created_by    uuid not null default auth.uid(),
+  created_in_field boolean not null default false,
+  needs_review   boolean not null default true,
   created_at    timestamptz not null default now(),
   updated_at    timestamptz not null default now(),
   unique (id, tenant_id)
@@ -101,6 +105,35 @@ create index on public.clients (tenant_id);
 comment on column public.clients.contact_name  is 'LGPD: dado pessoal';
 comment on column public.clients.contact_email is 'LGPD: dado pessoal';
 comment on column public.clients.contact_phone is 'LGPD: dado pessoal';
+comment on column public.clients.created_by      is 'Servidor: UUID do usuário que criou (cliente não envia)';
+comment on column public.clients.created_in_field is 'Servidor: true se criado em campo pelo inspetor';
+comment on column public.clients.needs_review     is 'Servidor: true se precisa de revisão do supervisor';
+
+-- Obras (sites) pertencem a um contratante (client) de um tenant
+create table public.sites (
+  id            uuid primary key default gen_random_uuid(),
+  tenant_id     uuid not null references public.tenants (id) on delete restrict,
+  client_id     uuid not null references public.clients (id) on delete restrict,
+  name          text not null,
+  address       text,
+  city          text,
+  uf            text check (length(uf) = 2),
+  contract_ref  text,           -- número ou referência do contrato nesta obra
+  situation     text not null default 'active'
+                          check (situation in ('active', 'concluded', 'cancelled')),
+  created_by    uuid not null default auth.uid(),
+  created_in_field boolean not null default false,
+  needs_review   boolean not null default true,
+  created_at    timestamptz not null default now(),
+  updated_at    timestamptz not null default now(),
+  unique (id, tenant_id),
+  foreign key (client_id, tenant_id) references public.clients (id, tenant_id)
+);
+create index on public.sites (tenant_id);
+create index on public.sites (client_id);
+comment on column public.sites.created_by      is 'Servidor: UUID do usuário que criou';
+comment on column public.sites.created_in_field is 'Servidor: true se criado em campo';
+comment on column public.sites.needs_review     is 'Servidor: true se precisa de revisão';
 
 create table public.qualifications (
   id          uuid primary key default gen_random_uuid(),
@@ -150,18 +183,24 @@ create table public.work_orders (
   client_id    uuid not null,
   code         text not null,
   site         text,
+  site_id      uuid,                                -- referência à tabela sites (obra)
   scheduled_for date,
   assigned_to  uuid,
+  method       public.end_method,                   -- método previsto (opcional)
   notes        text,
-  created_by   uuid default auth.uid(),
+  created_by   uuid not null default auth.uid(),
+  created_in_field boolean not null default false,
+  needs_review   boolean not null default true,
   created_at   timestamptz not null default now(),
   unique (id, tenant_id),
   unique (tenant_id, code),
   foreign key (client_id, tenant_id) references public.clients (id, tenant_id),
+  foreign key (site_id, tenant_id) references public.sites (id, tenant_id),
   foreign key (assigned_to, tenant_id) references public.profiles (id, tenant_id)
 );
 create index on public.work_orders (tenant_id, assigned_to);
 create index on public.work_orders (client_id);
+create index on public.work_orders (site_id);
 
 -- Cada linha é uma REVISÃO de um documento (document_id agrupa as revisões).
 create table public.reports (
@@ -791,6 +830,7 @@ create trigger clients_audit          after insert or update or delete on public
 create trigger qualifications_audit   after insert or update or delete on public.qualifications   for each row execute function private.audit_row();
 create trigger instruments_audit      after insert or update or delete on public.instruments      for each row execute function private.audit_row();
 create trigger work_orders_audit      after insert or update or delete on public.work_orders      for each row execute function private.audit_row();
+create trigger sites_audit            after insert or update or delete on public.sites              for each row execute function private.audit_row();
 create trigger report_templates_audit after insert or update or delete on public.report_templates for each row execute function private.audit_row();
 
 -- Auditoria do laudo (não guarda o conteúdo inteiro: eventos, colunas alteradas e hashes)
@@ -859,6 +899,7 @@ alter table public.qualifications     enable row level security;
 alter table public.instruments        enable row level security;
 alter table public.report_templates   enable row level security;
 alter table public.work_orders        enable row level security;
+alter table public.sites              enable row level security;
 alter table public.reports            enable row level security;
 alter table public.report_instruments enable row level security;
 alter table public.report_attachments enable row level security;
@@ -884,9 +925,27 @@ create policy profiles_update on public.profiles for update to authenticated
 create policy clients_select on public.clients for select to authenticated
   using (tenant_id = (select private.my_tenant_id()));
 create policy clients_insert on public.clients for insert to authenticated
-  with check (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
+  with check (
+    tenant_id = (select private.my_tenant_id())
+    and (
+      (select private.is_reviewer())
+      or (
+        (select private.can_inspect())
+        and (select (t.allow_field_creation) from public.tenants t where t.id = (select private.my_tenant_id()))
+      )
+    )
+  );
 create policy clients_update on public.clients for update to authenticated
-  using (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()))
+  using (
+    tenant_id = (select private.my_tenant_id())
+    and (
+      (select private.is_reviewer())
+      or (
+        created_by = (select auth.uid())
+        and needs_review = true
+      )
+    )
+  )
   with check (tenant_id = (select private.my_tenant_id()));
 
 -- qualifications
@@ -929,9 +988,55 @@ create policy work_orders_select on public.work_orders for select to authenticat
   using (tenant_id = (select private.my_tenant_id())
          and ((select private.is_reviewer()) or assigned_to = (select auth.uid()) or assigned_to is null));
 create policy work_orders_insert on public.work_orders for insert to authenticated
-  with check (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
+  with check (
+    tenant_id = (select private.my_tenant_id())
+    and (
+      (select private.is_reviewer())
+      or (
+        (select private.can_inspect())
+        and (select (t.allow_field_creation) from public.tenants t where t.id = (select private.my_tenant_id()))
+      )
+    )
+  );
 create policy work_orders_update on public.work_orders for update to authenticated
-  using (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()))
+  using (
+    tenant_id = (select private.my_tenant_id())
+    and (
+      (select private.is_reviewer())
+      or (
+        created_by = (select auth.uid())
+        and needs_review = true
+      )
+    )
+  )
+  with check (tenant_id = (select private.my_tenant_id()));
+
+-- sites (obras)
+create policy sites_select on public.sites for select to authenticated
+  using (tenant_id = (select private.my_tenant_id())
+         and ((select private.is_reviewer()) or situation = 'active'));
+create policy sites_insert on public.sites for insert to authenticated
+  with check (
+    tenant_id = (select private.my_tenant_id())
+    and (
+      (select private.is_reviewer())
+      or (
+        (select private.can_inspect())
+        and (select (t.allow_field_creation) from public.tenants t where t.id = (select private.my_tenant_id()))
+      )
+    )
+  );
+create policy sites_update on public.sites for update to authenticated
+  using (
+    tenant_id = (select private.my_tenant_id())
+    and (
+      (select private.is_reviewer())
+      or (
+        created_by = (select auth.uid())
+        and needs_review = true
+      )
+    )
+  )
   with check (tenant_id = (select private.my_tenant_id()));
 
 -- reports
