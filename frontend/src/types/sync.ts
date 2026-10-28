@@ -56,6 +56,7 @@ export interface OutboxItem {
   createdAt: string      // ISO 8601
   attempts: number
   lastError: string | null
+  backoffUntil: number | null   // timestamp ms até quando aguardar antes de retry
 }
 
 /**
