@@ -31,6 +31,11 @@ export interface DocumentHeaderProps {
     issuerPhone?: string | null
     issuerEmail?: string | null
     issuerLogoPath?: string | null
+    issuerClientName?: string | null
+    issuerSiteName?: string | null
+    issuerSiteAddress?: string | null
+    issuerContractRef?: string | null
+    issuerWorkOrderCode?: string | null
   } | null
   /** Título do modelo (ex.: "Ultrassom Industrial") */
   modelTitle?: string
@@ -40,6 +45,14 @@ export interface DocumentHeaderProps {
   folio?: string
   /** Se true, suprime avisos e botões (modo impressão) */
   print?: boolean
+  /** Bloco de serviço: contratante, obra, local, contrato e OS */
+  service?: {
+    clientName?: string | null
+    siteName?: string | null
+    siteAddress?: string | null
+    contractRef?: string | null
+    workOrderCode?: string | null
+  }
 }
 
 const fmtCnpj = (cnpj?: string | null): string => {
@@ -56,6 +69,7 @@ export const DocumentHeader: React.FC<DocumentHeaderProps> = ({
   reportCode,
   folio,
   print = false,
+  service,
 }) => {
   const useSnapshot = !!snapshot
   const data = useSnapshot
@@ -162,6 +176,81 @@ export const DocumentHeader: React.FC<DocumentHeaderProps> = ({
           )}
         </div>
       </div>
+
+      {/* Bloco de serviço: contratante, obra, local, contrato, OS */}
+      {!print && service && (
+        <div style={{ gridColumn: '1 / -1', marginTop: '10px', paddingTop: '10px', borderTop: '1px solid var(--border)' }}>
+          <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', alignItems: 'center' }}>
+            {service.clientName && (
+              <span style={{
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Contratante:</span>
+                {service.clientName}
+              </span>
+            )}
+            {service.siteName && (
+              <span style={{
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Obra:</span>
+                {service.siteName}
+              </span>
+            )}
+            {service.siteAddress && (
+              <span style={{
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                fontWeight: 600,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Local:</span>
+                {service.siteAddress}
+              </span>
+            )}
+            {service.contractRef && (
+              <span style={{
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                fontWeight: 600,
+                fontFamily: "'DM Mono', monospace",
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>Contrato:</span>
+                {service.contractRef}
+              </span>
+            )}
+            {service.workOrderCode && (
+              <span style={{
+                fontSize: '12px',
+                color: 'var(--text-primary)',
+                fontWeight: 600,
+                fontFamily: "'DM Mono', monospace",
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontWeight: 600, textTransform: 'uppercase' }}>OS:</span>
+                {service.workOrderCode}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Direita: modelo, código e folha */}
       <div

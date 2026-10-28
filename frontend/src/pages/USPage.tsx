@@ -243,6 +243,13 @@ export const USPage: React.FC<USPageProps> = ({
         modelTitle="Ultrassom Industrial (US) — Feixe Angular"
         reportCode={reportCodePreview}
         folio="1 de 1"
+        service={{
+          clientName: draft.contractor || null,
+          siteName: null,
+          siteAddress: null,
+          contractRef: null,
+          workOrderCode: draft.opOrOsNumber || null,
+        }}
       />
       <div className="flex items-center justify-between gap-3" style={{ padding: '10px 0', borderBottom: '1px solid var(--border)', marginBottom: '16px' }}>
         <div className="flex items-center gap-2">
