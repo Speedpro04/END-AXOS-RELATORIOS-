@@ -4,6 +4,7 @@ export interface DocumentHeaderProps {
   /** Dados da empresa emissora (rascunho). Quando omitido, mostra aviso. */
   tenant?: {
     tradeName?: string | null
+    name?: string | null
     legalName?: string | null
     cnpj?: string | null
     addressStreet?: string | null
@@ -14,7 +15,9 @@ export interface DocumentHeaderProps {
     addressUf?: string | null
     addressCep?: string | null
     phone?: string | null
+    contactPhone?: string | null
     email?: string | null
+    contactEmail?: string | null
     logoUrl?: string | null
     logoPath?: string | null
     reportPrefix?: string | null

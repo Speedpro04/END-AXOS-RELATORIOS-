@@ -2,6 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { ArrowLeft, Printer, Save } from 'lucide-react'
 import { buildReportCode } from '../utils/buildReportCode'
 import { Croqui } from '../components/laudo/Croqui'
+import { DocumentFooter } from '../components/laudo/DocumentFooter'
+import { DocumentHeader } from '../components/laudo/DocumentHeader'
 import { EvidenceBlock } from '../components/laudo/EvidenceBlock'
 import { SignatureCard } from '../components/laudo/SignatureCard'
 import { ValidityBadge } from '../components/laudo/ValidityBadge'
@@ -11,7 +13,23 @@ import type { UsTechnicalData, UsVerdict } from '../types/us'
 interface USPageProps {
   onBack: () => void
   tenantName: string
-  tenant?: { reportPrefix?: string }
+  tenant?: {
+    tradeName?: string | null
+    name?: string | null
+    cnpj?: string | null
+    addressStreet?: string | null
+    addressNumber?: string | null
+    addressComplement?: string | null
+    addressNeighborhood?: string | null
+    addressCity?: string | null
+    addressUf?: string | null
+    addressCep?: string | null
+    phone?: string | null
+    email?: string | null
+    logoUrl?: string | null
+    logoPath?: string | null
+    reportPrefix?: string | null
+  }
 }
 
 const REPORT_METHOD = 'US'
@@ -204,29 +222,35 @@ export const USPage: React.FC<USPageProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="bg-white border border-[#E2E8F0] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs" style={{ borderRadius: '3px' }}>
-        <div className="flex items-center gap-3">
+      <DocumentHeader
+        tenant={{
+          tradeName: tenantName,
+          name: tenant?.name ?? null,
+          cnpj: tenant?.cnpj ?? null,
+          addressStreet: tenant?.addressStreet ?? null,
+          addressNumber: tenant?.addressNumber ?? null,
+          addressComplement: tenant?.addressComplement ?? null,
+          addressNeighborhood: tenant?.addressNeighborhood ?? null,
+          addressCity: tenant?.addressCity ?? null,
+          addressUf: tenant?.addressUf ?? null,
+          addressCep: tenant?.addressCep ?? null,
+          phone: tenant?.phone ?? null,
+          email: tenant?.email ?? null,
+          logoUrl: tenant?.logoUrl ?? null,
+          logoPath: tenant?.logoPath ?? null,
+          reportPrefix: tenant?.reportPrefix ?? null,
+        }}
+        modelTitle="Ultrassom Industrial (US) — Feixe Angular"
+        reportCode={reportCodePreview}
+        folio="1 de 1"
+      />
+      <div className="flex items-center justify-between gap-3" style={{ padding: '10px 0', borderBottom: '1px solid var(--border)', marginBottom: '16px' }}>
+        <div className="flex items-center gap-2">
           <button type="button" onClick={onBack} className="p-1.5 text-[#64748B] hover:text-[#0F172A] hover:bg-[#F1F5F9] border border-[#CBD5E1] transition-colors cursor-pointer" style={{ borderRadius: '3px' }}>
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-1.5 py-0.5 text-[9px] font-bold bg-[#0B0F17] text-white tracking-wider uppercase" style={{ borderRadius: '3px' }}>
-                MODELO US-05
-              </span>
-              <h2 className="text-base font-bold text-[#0F172A] tracking-tight uppercase">
-                Ultrassom Industrial (US) — Feixe Angular
-              </h2>
-            </div>
-            <p className="text-[11px] text-[#64748B] mt-0.5">
-              Ensaio volumétrico de integridade de soldas de alta espessura e componentes forjados.
-            </p>
-          </div>
         </div>
         <div className="flex items-center gap-2">
-          <span className="px-2 py-1 text-[10px] font-bold border border-[#CBD5E1] rounded" style={{ background: '#F8FAFC' }}>
-            {reportCodePreview}
-          </span>
           <button type="button" onClick={() => alert('Salvo offline!')} className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-[#F8FAFC] text-[#334155] text-xs font-semibold border border-[#CBD5E1] transition-colors cursor-pointer" style={{ borderRadius: '3px' }}>
             <Save className="w-3.5 h-3.5 text-[#64748B]" />
             <span>Salvar Rascunho</span>
@@ -581,13 +605,11 @@ export const USPage: React.FC<USPageProps> = ({
         <ValidityBadge qualificationValidity={draft.signature.qualificationValidity} onBlockEmission={!canEmit} />
       </div>
 
-      {/* Rodapé fixo */}
-      <footer className="sticky bottom-0 z-10 bg-[#0B0F17] border-t border-[#1E293B] p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3" style={{ color: '#fff' }}>
-        <span className="text-xs font-mono">{missing.length === 0 ? 'Pronto para emitir' : `Pendências (${missing.length}): ${missing.slice(0, 3).join(', ')}${missing.length > 3 ? '…' : ''}`}</span>
-        <button type="button" onClick={() => alert(`Gerando PDF para ${tenantName}...`)} disabled={!canEmit} className="px-4 py-1.5 bg-[#2FB8D6] hover:bg-[#1a8fa3] text-white text-xs font-bold rounded" style={{ opacity: canEmit ? 1 : 0.5 }}>
-          Imprimir ou Salvar em PDF
-        </button>
-      </footer>
+      <DocumentFooter
+        page={1}
+        totalPages={1}
+        hashFragment={reportCodePreview.replace(/[^A-Z0-9]/gi, '')}
+      />
     </div>
   )
 }
