@@ -144,7 +144,6 @@ export const HubPage: React.FC<HubPageProps> = ({
       boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
       backdropFilter: 'blur(8px)',
     }}>
-
       {/* ── SEÇÃO 1: Catálogo de Modelos ── */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
@@ -165,9 +164,6 @@ export const HubPage: React.FC<HubPageProps> = ({
           </h3>
         </div>
 
-        <SyncStatusIndicator />
-
-        {/* Barra de busca */}
         <div style={{ position: 'relative', width: '100%', maxWidth: '520px' }}>
           <input
             type="text"
@@ -199,7 +195,7 @@ export const HubPage: React.FC<HubPageProps> = ({
             left: '10px',
             top: '50%',
             transform: 'translateY(-50%)',
-            color: 'var(--text-muted)',
+            color: '#4B5563',
             fontSize: '14px',
           }}>🔍</span>
         </div>
@@ -242,187 +238,112 @@ export const HubPage: React.FC<HubPageProps> = ({
           </div>
         )}
 
-        {isSearchActive ? (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {searchResults.length === 0 ? (
-              <p style={{
-                fontSize: '14px',
-                color: 'var(--text-muted)',
-                margin: 0,
-              }}>Nenhum método encontrado</p>
-            ) : (
-              <>
-                {searchResults.map((item) => {
-                  const group = METHOD_GROUPS.find((g) => g.id === item.groupId)
-                  return (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => handleMethodClick(item)}
-                      style={{
-                        width: '100%',
-                        padding: '10px 12px',
-                        borderRadius: '6px',
-                        border: '1px solid var(--border)',
-                        background: 'var(--bg-surface)',
-                        color: 'var(--text-primary)',
-                        fontSize: '13px',
-                        cursor: 'pointer',
-                        textAlign: 'left',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '2px',
-                      }}
-                    >
-                      <div style={{ fontWeight: 600, fontSize: '14px' }}>{item.name}</div>
-                      <div style={{
-                        fontSize: '11px',
-                        color: 'var(--text-muted)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                      }}>
-                        <span>{item.code}</span>
-                        <span>›</span>
-                        <span>{group?.name || ''}</span>
-                      </div>
-                    </button>
-                  )
-                })}
-              </>
-            )}
-          </div>
-        ) : (
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-            gap: '14px',
-          }}>
-            {groupsWithCounts.map((group) => {
-              const totalEmitidos = group.methods.reduce((sum, m) => sum + (m.count ?? 0), 0)
-              const isExpanded = expandedGroupId === group.id
+        {/* Catálogo de modelos */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))',
+          gap: '24px',
+        }}>
+          {groupsWithCounts.map((group) => {
+            const totalEmitidos = group.methods.reduce((sum, m) => sum + (m.count ?? 0), 0)
+            const isExpanded = expandedGroupId === group.id
 
-              return (
-                <div
-                  key={group.id}
-                  style={{
-                    background: 'var(--bg-surface)',
+            return (
+              <div
+                key={group.id}
+                style={{
+                  background: 'var(--bg-surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: '6px',
+                  borderLeft: `4px solid ${group.accentColor}`,
+                  padding: '14px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '10px',
+                  cursor: 'pointer',
+                  transition: 'all 0.18s ease-in-out',
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border-strong)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--border)'
+                }}
+                onClick={() => setExpandedGroupId(isExpanded ? null : group.id)}
+              >
+                <div style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}>
+                  <h4 style={{
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
+                    fontSize: '15px',
+                    fontWeight: 600,
+                    color: 'var(--text-primary)',
+                    margin: 0,
+                  }}>
+                    {group.name}
+                  </h4>
+                  <span style={{
+                    fontFamily: "'DM Mono', monospace",
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    padding: '2px 8px',
+                    background: 'var(--bg-surface-alt)',
                     border: '1px solid var(--border)',
-                    borderRadius: '6px',
-                    borderLeft: `4px solid ${group.accentColor}`,
-                    padding: '14px',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '10px',
-                    cursor: 'pointer',
-                    transition: 'all 0.18s ease-in-out',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border-strong)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.borderColor = 'var(--border)'
-                  }}
-                  onClick={() => setExpandedGroupId(isExpanded ? null : group.id)}
-                >
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    borderRadius: '3px',
+                    color: 'var(--text-secondary)',
                   }}>
-                    <h4 style={{
-                      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-                      fontSize: '15px',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                      margin: 0,
-                    }}>
-                      {group.name}
-                    </h4>
-                    <span style={{
-                      fontFamily: "'DM Mono', monospace",
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      padding: '2px 8px',
-                      background: 'var(--bg-surface-alt)',
-                      border: '1px solid var(--border)',
-                      borderRadius: '3px',
-                      color: 'var(--text-secondary)',
-                    }}>
-                      {totalEmitidos} emitidos
-                    </span>
-                  </div>
+                    {totalEmitidos} emitidos
+                  </span>
+                </div>
 
-                  <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    gap: '6px',
-                    marginTop: '4px',
-                  }}>
-                    {group.methods.map((m) => {
-                      const methodReports = reports.filter((r) => r.method === m.code)
-                      const lastReport = methodReports.length > 0
-                        ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
-                        : null
-                      return (
-                        <MethodButton
-                          key={m.id}
-                          item={m}
-                          onClick={handleMethodClick}
-                          lastStatus={(lastReport?.status || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'}
-                          lastError={(lastReport as any)?.lastError}
-                        />
-                      )
-                    })}
-                    {group.methods.some((m) => !m.available) && (
-                      <div style={{
-                        fontSize: '11px',
-                        color: '#9ca3af',
-                        fontStyle: 'italic',
-                        paddingLeft: '2px',
-                      }}>Em breve</div>
-                    )}
-                  </div>
-
-                  {isExpanded && (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '6px',
+                  marginTop: '4px',
+                }}>
+                  {group.methods.map((m) => {
+                    const methodReports = reports.filter((r) => r.method === m.code)
+                    const lastReport = methodReports.length > 0
+                      ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
+                      : null
+                    return (
+                      <MethodButton
+                        key={m.id}
+                        item={m}
+                        onClick={handleMethodClick}
+                        lastStatus={(lastReport?.status || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro' | 'aprovado'}
+                        lastError={(lastReport as any)?.lastError}
+                      />
+                    )
+                  })}
+                  {group.methods.some((m) => !m.available) && (
                     <div style={{
-                      marginTop: '8px',
-                      paddingTop: '8px',
-                      borderTop: '1px solid var(--border)',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '6px',
+                      fontSize: '11px',
+                      color: '#9ca3af',
+                      fontStyle: 'italic',
+                      paddingLeft: '2px',
+                    }}>Em breve</div>
+                  )}
+                  {group.methods.length > 1 && (
+                    <div style={{
+                      fontSize: '11px',
+                      color: '#6b7280',
+                      fontStyle: 'italic',
+                      paddingLeft: '2px',
+                      marginTop: '4px',
                     }}>
-                      {group.methods.map((m) => {
-                        const methodReports = reports.filter((r) => r.method === m.code)
-                        const lastReport = methodReports.length > 0
-                          ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
-                          : null
-                        return (
-                          <MethodButton
-                            key={m.id + '-expanded'}
-                            item={m}
-                            onClick={handleMethodClick}
-                            lastStatus={(lastReport?.status || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'}
-                            lastError={(lastReport as any)?.lastError}
-                          />
-                        )
-                      })}
-                      {group.methods.some((m) => !m.available) && (
-                        <div style={{
-                          fontSize: '11px',
-                          color: '#9ca3af',
-                          fontStyle: 'italic',
-                          paddingLeft: '2px',
-                        }}>Em breve</div>
-                      )}
+                      +{group.methods.length - 1} método(s) na busca
                     </div>
                   )}
                 </div>
-              )
-            })}
-          </div>
-        )}
+              </div>
+            )
+          })}
+        </div>
       </section>
 
       {/* ── SEÇÃO 2: KPIs ── */}
