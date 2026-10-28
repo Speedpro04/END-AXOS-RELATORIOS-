@@ -51,6 +51,20 @@ create table public.tenants (
   legal_name              text not null,
   trade_name              text,
   cnpj                    text unique,
+  address_street          text,
+  address_number          text,
+  address_complement      text,
+  address_neighborhood    text,
+  address_city            text,
+  address_uf              text check (length(address_uf) = 2),
+  address_cep             text,
+  phone                   text,
+  email                   text,
+  responsible_name        text,
+  responsible_register    text,
+  logo_path               text,
+  logo_sha256             text,
+  report_prefix           text not null default 'END' check (length(report_prefix) between 2 and 6),
   plan                    text not null default 'trial'
                           check (plan in ('trial', 'starter', 'pro', 'enterprise')),
   require_second_reviewer boolean not null default true,  -- quem inspecionou não aprova o próprio laudo
@@ -900,6 +914,35 @@ insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_typ
 values ('report-files', 'report-files', false, 15728640,
         array['image/jpeg', 'image/png', 'image/webp', 'application/pdf'])
 on conflict (id) do nothing;
+
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('tenant-assets', 'tenant-assets', false, 1048576,
+        array['image/jpeg', 'image/png'])
+on conflict (id) do nothing;
+
+-- tenant-assets: caminho {tenant_id}/logo/{sha256}.{ext}
+-- leitura: membros do tenant
+-- escrita: só admin do próprio tenant
+-- nunca sobrescrever: cada logo nova é um arquivo novo, com o hash no nome
+create policy tenant_assets_select on storage.objects for select to authenticated
+  using (
+    bucket_id = 'tenant-assets'
+    and (storage.foldername(name))[1] = ((select private.my_tenant_id())::text)
+  );
+
+create policy tenant_assets_insert on storage.objects for insert to authenticated
+  with check (
+    bucket_id = 'tenant-assets'
+    and (storage.foldername(name))[1] = ((select private.my_tenant_id())::text)
+    and (select private.my_role()) = 'admin'
+  );
+
+create policy tenant_assets_delete on storage.objects for delete to authenticated
+  using (
+    bucket_id = 'tenant-assets'
+    and (storage.foldername(name))[1] = ((select private.my_tenant_id())::text)
+    and (select private.my_role()) = 'admin'
+  );
 
 create policy report_files_select on storage.objects for select to authenticated
   using (
