@@ -2,6 +2,8 @@ import React, { useCallback, useMemo, useState } from 'react'
 import { DashboardMetrics } from '../components/DashboardMetrics'
 import { InspectionTable } from '../components/InspectionTable'
 import type { InspectionReport } from '../types/inspection'
+import { SyncStatusIndicator } from '../components/laudo/SyncStatusIndicator'
+import { ReportStatusChip } from '../components/laudo/ReportStatusChip'
 import {
   METHOD_GROUPS,
   METHODS_CATALOG,
@@ -28,31 +30,34 @@ function normalize(text: string): string {
     .trim()
 }
 
-function MethodButton({ item, onClick }: { item: MethodCatalogItem; onClick: (item: MethodCatalogItem) => void }) {
+function MethodButton({ item, onClick, lastStatus, lastError }: { item: MethodCatalogItem; onClick: (item: MethodCatalogItem) => void; lastStatus?: string; lastError?: string }) {
   return (
-    <button
-      type="button"
-      onClick={() => onClick(item)}
-      disabled={!item.available}
-      style={{
-        width: '100%',
-        padding: '8px 10px',
-        borderRadius: '4px',
-        border: `1px solid ${item.available ? 'var(--border)' : '#e5e7eb'}`,
-        background: item.available ? 'var(--bg-surface)' : '#f3f4f6',
-        color: item.available ? 'var(--text-primary)' : '#9ca3af',
-        fontSize: '13px',
-        cursor: item.available ? 'pointer' : 'not-allowed',
-        textAlign: 'left',
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        opacity: item.available ? 1 : 0.5,
-      }}
-    >
-      <span style={{ fontWeight: 600 }}>{item.name}</span>
-      <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.code}</span>
-    </button>
+    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+      <button
+        type="button"
+        onClick={() => onClick(item)}
+        disabled={!item.available}
+        style={{
+          width: '100%',
+          padding: '8px 10px',
+          borderRadius: '4px',
+          border: `1px solid ${item.available ? 'var(--border)' : '#e5e7eb'}`,
+          background: item.available ? 'var(--bg-surface)' : '#f3f4f6',
+          color: item.available ? 'var(--text-primary)' : '#9ca3af',
+          fontSize: '13px',
+          cursor: item.available ? 'pointer' : 'not-allowed',
+          textAlign: 'left',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          opacity: item.available ? 1 : 0.5,
+        }}
+      >
+        <span style={{ fontWeight: 600 }}>{item.name}</span>
+        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.code}</span>
+      </button>
+      <ReportStatusChip localStatus={(lastStatus || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'} serverStatus={lastStatus as string | undefined} lastError={lastError as string | undefined} />
+    </div>
   )
 }
 
@@ -101,10 +106,18 @@ export const HubPage: React.FC<HubPageProps> = ({
   const groupsWithCounts = useMemo<MethodGroup[]>(() => {
     return METHOD_GROUPS.map((group) => ({
       ...group,
-      methods: group.methods.map((m) => ({
-        ...m,
-        count: reports.filter((r) => r.method === m.code).length,
-      })),
+      methods: group.methods.map((m) => {
+        const methodReports = reports.filter((r) => r.method === m.code)
+        const lastReport = methodReports.length > 0
+          ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
+          : null
+        return {
+          ...m,
+          count: methodReports.length,
+          lastStatus: lastReport?.status as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro' | undefined,
+          lastError: (lastReport as any)?.lastError,
+        }
+      }),
     }))
   }, [reports])
 
@@ -151,6 +164,8 @@ export const HubPage: React.FC<HubPageProps> = ({
             Catálogo de Modelos Técnicos
           </h3>
         </div>
+
+        <SyncStatusIndicator />
 
         {/* Barra de busca */}
         <div style={{ position: 'relative', width: '100%', maxWidth: '520px' }}>
@@ -344,9 +359,21 @@ export const HubPage: React.FC<HubPageProps> = ({
                     gap: '6px',
                     marginTop: '4px',
                   }}>
-                    {group.methods.map((m) => (
-                      <MethodButton key={m.id} item={m} onClick={handleMethodClick} />
-                    ))}
+                    {group.methods.map((m) => {
+                      const methodReports = reports.filter((r) => r.method === m.code)
+                      const lastReport = methodReports.length > 0
+                        ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
+                        : null
+                      return (
+                        <MethodButton
+                          key={m.id}
+                          item={m}
+                          onClick={handleMethodClick}
+                          lastStatus={(lastReport?.status || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'}
+                          lastError={(lastReport as any)?.lastError}
+                        />
+                      )
+                    })}
                     {group.methods.some((m) => !m.available) && (
                       <div style={{
                         fontSize: '11px',
@@ -366,9 +393,21 @@ export const HubPage: React.FC<HubPageProps> = ({
                       flexDirection: 'column',
                       gap: '6px',
                     }}>
-                      {group.methods.map((m) => (
-                        <MethodButton key={m.id + '-expanded'} item={m} onClick={handleMethodClick} />
-                      ))}
+                      {group.methods.map((m) => {
+                        const methodReports = reports.filter((r) => r.method === m.code)
+                        const lastReport = methodReports.length > 0
+                          ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
+                          : null
+                        return (
+                          <MethodButton
+                            key={m.id + '-expanded'}
+                            item={m}
+                            onClick={handleMethodClick}
+                            lastStatus={(lastReport?.status || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'}
+                            lastError={(lastReport as any)?.lastError}
+                          />
+                        )
+                      })}
                       {group.methods.some((m) => !m.available) && (
                         <div style={{
                           fontSize: '11px',
