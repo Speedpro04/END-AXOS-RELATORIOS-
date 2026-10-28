@@ -28,25 +28,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /\/rest\/v1\/ordem_servico/,
-            handler: 'NetworkFirst',
-            options: {
-              cacheName: 'axos-os-cache',
-              expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
-              networkTimeoutSeconds: 5,
-            },
-          },
-          {
-            urlPattern: /\/rest\/v1\/template/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'axos-templates-cache',
-              expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 * 24 * 30 },
-            },
-          },
-        ],
+        runtimeCaching: [],
       },
       devOptions: { enabled: true },
     }),
