@@ -9,8 +9,21 @@ export interface TenantProfile {
   contactEmail: string
   contactPhone: string
   logoUrl?: string
+  logoPath?: string
+  logoSha256?: string
   logoScale?: number
   primaryColor?: string
+  // Endereço
+  addressStreet?: string
+  addressNumber?: string
+  addressComplement?: string
+  addressNeighborhood?: string
+  addressCity?: string
+  addressUf?: string
+  addressCep?: string
+  // Responsável técnico
+  responsibleName?: string
+  responsibleRegister?: string
 }
 
 export const DEFAULT_TENANT: TenantProfile = {
@@ -24,5 +37,7 @@ export const DEFAULT_TENANT: TenantProfile = {
   contactEmail: 'operacoes@qualitec-end.com.br',
   contactPhone: '(11) 3490-8800',
   logoUrl: '',
+  logoPath: '',
+  logoSha256: '',
   logoScale: 100,
 }
