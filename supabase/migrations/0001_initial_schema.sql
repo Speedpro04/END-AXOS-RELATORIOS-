@@ -193,6 +193,7 @@ create table public.reports (
   issued_by           uuid references public.profiles (id),
   data_hash           text,
   client_snapshot     jsonb,   -- cópia de cliente/emitente/inspetor/qualificação/instrumentos no momento da emissão
+  header_snapshot     jsonb,   -- dados da empresa emissora congelados pelo servidor na emissão (cliente não define)
 
   created_at          timestamptz not null default now(),
   updated_at          timestamptz not null default now(),
@@ -210,6 +211,51 @@ create index on public.reports (work_order_id);
 create unique index reports_one_open_revision
   on public.reports (document_id)
   where status in ('draft', 'submitted', 'returned', 'approved');
+
+-- ---------------------------------------------------------------------
+-- Contadores atômicos de número de laudo por tenant / método / ano
+-- Número definitivo: {PREFIXO}-{MÉTODO}-{ANO}-{SEQ com 3 dígitos}
+-- Chamada pelo servidor no momento da emissão (aprovado → issued).
+-- ---------------------------------------------------------------------
+create table public.report_number_counters (
+  tenant_id uuid not null references public.tenants (id) on delete restrict,
+  method    text not null,
+  year      int not null check (year between 2000 and 2100),
+  seq       int not null default 1,
+  primary key (tenant_id, method, year),
+  unique (tenant_id, method, year)
+);
+create index on public.report_number_counters (tenant_id);
+
+create or replace function public.next_report_number(
+  p_tenant uuid,
+  p_method text,
+  p_year int
+)
+returns text language plpgsql set search_path = '' as $$
+declare
+  v_prefix text;
+  v_seq    int;
+  v_number text;
+begin
+  -- Prefixo configurável por tenant (padrão END)
+  select coalesce(t.report_prefix, 'END') into v_prefix
+    from public.tenants t where t.id = p_tenant;
+
+  if v_prefix is null then
+    v_prefix := 'END';
+  end if;
+
+  -- Upsert atômico: incrementa sequência ou cria se não existir
+  insert into public.report_number_counters (tenant_id, method, year, seq)
+  values (p_tenant, p_method, p_year, 1)
+  on conflict (tenant_id, method, year)
+  do update set seq = report_number_counters.seq + 1
+  returning seq into v_seq;
+
+  v_number := v_prefix || '-' || upper(p_method) || '-' || p_year || '-' || lpad(v_seq::text, 3, '0');
+  return v_number;
+end $$;
 
 create table public.report_instruments (
   report_id     uuid not null,
@@ -312,6 +358,7 @@ returns text language sql stable security definer set search_path = '' as $$
           'croqui',           r.croqui,
           'administrative',   r.administrative_data,
           'client_snapshot',  r.client_snapshot,
+          'header_snapshot',  r.header_snapshot,
           'attachments', (
             select coalesce(jsonb_agg(a.sha256 order by a.sha256), '[]'::jsonb)
               from public.report_attachments a where a.report_id = r.id)
@@ -347,6 +394,7 @@ begin
   new.submitted_at := null;  new.approved_at := null;  new.approved_by := null;
   new.issued_at := null;     new.issued_by := null;
   new.data_hash := null;     new.client_snapshot := null;
+  new.header_snapshot := null;
 
   select * into v_tpl from public.report_templates t
    where t.id = new.template_id and t.published;
@@ -386,7 +434,7 @@ begin
      or new.document_id   is distinct from old.document_id
      or new.revision      is distinct from old.revision
      or new.inspector_id  is distinct from old.inspector_id
-     or new.created_at    is distinct from old.created_at then
+     or new.created_at    is distinct from old.created_at\n      or new.header_snapshot is distinct from old.header_snapshot then
     raise exception 'FIELD_IMMUTABLE';
   end if;
 
@@ -414,6 +462,7 @@ begin
   new.issued_by       := old.issued_by;
   new.data_hash       := old.data_hash;
   new.client_snapshot := old.client_snapshot;
+  new.header_snapshot := old.header_snapshot;
 
   v_tech_changed :=
     (new.equipment_tag, new.inspection_date, new.inspection_site,
@@ -534,6 +583,25 @@ begin
             join public.instruments i on i.id = ri.instrument_id
            where ri.report_id = new.id),
         'captured_at', now()
+      );
+      new.header_snapshot := jsonb_build_object(
+        'legal_name', (select legal_name from public.tenants where id = new.tenant_id),
+        'trade_name', (select trade_name from public.tenants where id = new.tenant_id),
+        'cnpj', (select cnpj from public.tenants where id = new.tenant_id),
+        'address_street', (select address_street from public.tenants where id = new.tenant_id),
+        'address_number', (select address_number from public.tenants where id = new.tenant_id),
+        'address_complement', (select address_complement from public.tenants where id = new.tenant_id),
+        'address_neighborhood', (select address_neighborhood from public.tenants where id = new.tenant_id),
+        'address_city', (select address_city from public.tenants where id = new.tenant_id),
+        'address_uf', (select address_uf from public.tenants where id = new.tenant_id),
+        'address_cep', (select address_cep from public.tenants where id = new.tenant_id),
+        'phone', (select phone from public.tenants where id = new.tenant_id),
+        'email', (select email from public.tenants where id = new.tenant_id),
+        'responsible_name', (select responsible_name from public.tenants where id = new.tenant_id),
+        'responsible_register', (select responsible_register from public.tenants where id = new.tenant_id),
+        'logo_path', (select logo_path from public.tenants where id = new.tenant_id),
+        'logo_sha256', (select logo_sha256 from public.tenants where id = new.tenant_id),
+        'report_prefix', (select report_prefix from public.tenants where id = new.tenant_id)
       );
       new.issued_at := now();
       new.issued_by := v_uid;
