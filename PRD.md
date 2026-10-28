@@ -151,3 +151,23 @@ Funcionalidades:
 - Métodos `available:false` aparecem desabilitados com "Em breve".
 
 Catálogo em `frontend/src/data/methodsCatalog.ts`. Função `getEnabledMethods(tenant)` retorna os métodos disponíveis, com ponto de extensão para habilitação por tenant.
+
+---
+
+## 9. Página de Ultrassom (US) — Feixe Angular
+
+Página dedicada ao ensaio de Ultrassom com feixe angular, baseada no protótipo de mercado `axos-us-feixe-angular.html`.
+
+Blocos da página:
+1. **Peça e ensaio:** contratante, nº do desenho, descrição, material, nº da OP/OS, condição da superfície, temperatura, procedimento (nº e revisão), norma de referência, nível de aceitação, data do ensaio, técnica (feixe angular / feixe normal; PAUT e TOFD desabilitados "em breve"), bloco de referência, acoplante.
+2. **Transdutores:** tabela de 1 a 5 linhas com identificação, ângulo real (°), frequência (MHz), dimensão, GP (dB), PT (dB), GC (dB).
+3. **Registro de calibração detalhado:** seção recolhida (opcional) com aparelho, blocos, velocidade/distância, ganhos, curva DAC (pontos de profundidade/amplitude/ganho), verificações de calibração.
+4. **Croqui da junta:** gabarito de junta em V com pointer events, ferramentas "Marcar Indicação", "Lápis", "Desfazer traço", "Limpar traços". Marcador no croqui ligado à tabela de descontinuidades (mesmo número).
+5. **Descontinuidades:** tabela com Nº, Local, Comp., Prof., amplitude (%) e dB, Transdutor (seleção entre linhas da tabela), Obs. Colunas avançadas opcionais: classificação (planar/volumétrica), avaliação (aceita/rejeitada), ação (nenhuma/reparo/reensaio). Contadores de total e rejeitadas.
+6. **Evidências:** anexos com legenda (tela do aparelho, fotos, relatório de calibração).
+7. **Conclusão:** observações e limitações de acesso, veredito com 4 opções (Aprovado, Reprovado, NEC, Aprovado condicional). Alerta vermelho se houver indicação rejeitada e veredito Aprovado. Bloco de liberação condicional (responsável, cargo, data, motivo obrigatório).
+8. **Assinatura:** executante, nível (N1/N2/N3), nº do certificado, órgão certificador (campo livre), validade da qualificação com selo calculado (vencido bloqueia emissão), data de emissão, vistos opcionais (responsável, contratante), espaço para hash e QR.
+
+Tipos: `frontend/src/types/us.ts` (`UsTechnicalData`). Configuração de obrigatórios: `frontend/src/config/usFieldConfig.ts`. Componentes compartilhados em `frontend/src/components/laudo/` (`Croqui`, `ValidityBadge`, `VerdictBlock`, `EvidenceBlock`, `SignatureCard`).
+
+O veredito é do inspetor e não é o status de workflow. O status de workflow (draft, submitted, approved, issued, returned) é do servidor.

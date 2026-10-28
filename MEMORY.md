@@ -146,6 +146,19 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commit: `62678e8` (feat(hub): catálogo de métodos em 6 grupos com busca e cascata).
 - Pendências: divergências de norma entre card do Hub e modal (ex.: norma do PM) a serem validadas pelo dono do produto.
 
+**Tarefa US · Página de Ultrassom (feixe angular) (27/10/2026)**
+- `frontend/src/types/us.ts`: novo tipo `UsTechnicalData` com todos os campos da peça e ensaio, transdutores (1 a 5), calibração (opcional), croqui, descontinuidades, evidências, conclusão (veredito A/R/NEC/AC), assinatura (executante, nível, certificado, órgão certificador, validade).
+- `frontend/src/config/usFieldConfig.ts`: configuração de campos obrigatórios para US (`US_FIELD_CONFIG` + `isFieldConfig`).
+- `frontend/src/components/laudo/Croqui.tsx`: canvas com pointer events, ferramentas "Marcar Indicação" e "Lápis", coordenadas normalizadas.
+- `frontend/src/components/laudo/ValidityBadge.tsx`: selo de validade da qualificação (conforme/vencido), bloqueia emissão quando vencido.
+- `frontend/src/components/laudo/VerdictBlock.tsx`: veredito com 4 opções (Aprovado, Reprovado, NEC, Aprovado condicional), bloco de liberação condicional (responsável, cargo, data, motivo obrigatório), alerta vermelho se indicação rejeitada + veredito Aprovado.
+- `frontend/src/components/laudo/EvidenceBlock.tsx`: anexos com legenda, adicionar/remover/editar legenda.
+- `frontend/src/components/laudo/SignatureCard.tsx`: assinatura do executante com nível (N1/N2/N3), certificado, órgão certificador, validade, data de emissão, vistos opcionais.
+- `frontend/src/pages/USPage.tsx`: reescrita completa baseada no protótipo `axos-us-feixe-angular.html`. Blocos: peça e ensaio, transdutores, croqui, descontinuidades (com colunas avançadas opcionais), evidências, conclusão, assinatura, rodapé fixo com código do laudo e pendências. Rascunho salvo em `localStorage` (`axos_us_draft`). Código do laudo via `buildReportCode` (prefixo do tenant, método US, ano corrente, seq).
+- Verificação padrão: `grep -rniE "\bndt" frontend/src` → zero; busca por `abendi` em `frontend/src` → zero; `npm run build` passa.
+- Commit: `9177ccc` (feat(us): página de ultrassom feixe angular com croqui, transdutores, descontinuidades, veredito e assinatura).
+- Pendências: protótipo HTML (`docs/prototipos/axos-us-feixe-angular.html`) não foi encontrado no repositório — a implementação segue a especificação da TAREFAS.md; revisar contra o protótipo quando disponível. PAUT e TOFD estão desabilitados ("Em breve") no seletor de técnica. Refatorar LPPage para usar componentes compartilhados de laudo.
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)
