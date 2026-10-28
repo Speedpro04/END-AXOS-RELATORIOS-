@@ -179,6 +179,18 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commits: `6011bd0` (db report_pdfs), `77a29c1` (db header_snapshot/contadores), `5b498a8` (pdf_worker), `dd89576` (fix terminologia sync_worker).
 - Pendências: testes SQL de report_pdfs/next_report_number não executados (banco não aplicado em ambiente de teste). Documentar onde `next_report_number` deve ser chamada no fluxo de sync (a tarefa F trata do backend de sync). Substituir cabeçalho/rodapé nas demais páginas de método.
 
+**Tarefa G · Contratantes, obras e ordens de serviço (27/10/2026)**
+- `supabase/migrations/0001_initial_schema.sql`: tabela `tenants` ganha `allow_field_creation` (boolean, padrão true). Nova tabela `public.sites` (obras) com tenant_id, client_id, name, address, city, uf, contract_ref, situation (active/concluded/cancelled), created_by, created_in_field, needs_review. Tabelas `clients` e `work_orders` ganham created_by, created_in_field, needs_review; `work_orders` ganha site_id (FK para sites) e method (end_method opcional). RLS para sites: select todos do tenant, insert para revisor ou inspetor se allow_field_creation, update para revisor ou criador se needs_review. Triggers de auditoria para sites.
+- `frontend/src/types/os.ts`: novo tipo Client, Site, WorkOrder e tipos de item de sincronização (SyncClientItem, SyncSiteItem, SyncWorkOrderItem, SyncItemResponse, SyncBatchResponse).
+- `frontend/src/pages/Cadastros.tsx`: nova tela com abas Contratantes, Obras e Ordens de serviço. Lista, busca, filtro "Pendentes de revisão", marca "Criada em campo", botão Novo (desabilitado se allow_field_creation=false e papel inspetor).
+- `frontend/src/components/laudo/DocumentHeader.tsx`: prop `service` opcional com clientName, siteName, siteAddress, contractRef, workOrderCode; renderiza bloco de serviço abaixo da empresa emissora (só em tela, não impressão).
+- `frontend/src/pages/USPage.tsx`: passa prop `service` ao DocumentHeader com contractor e opOrOsNumber do rascunho.
+- `supabase/migrations/0001_initial_schema.sql`: `header_snapshot` estendido com client_name, site_name, site_address, contract_ref, work_order_code (buscados via JOIN em work_orders/clients/sites na transição approved → issued).
+- `docs/obras-os.md`: novo documento com regras de sincronização (ordem de envio clients→sites→work_orders→reports, UUID do cliente, idempotência por client_revision, campos controlados pelo servidor, códigos de erro: CLIENT_NOT_FOUND, SITE_NOT_FOUND, WORK_ORDER_NOT_FOUND, DUPLICATE_NUMBER, FIELD_CREATION_DISABLED, DEPENDENCY_FAILED, FORBIDDEN, VALIDATION_ERROR, UNKNOWN).
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa; `pytest backend/tests` → 5 passam, 1 falha pré-existente (mock ARQ/Redis).
+- Commits: `d839ddf` (db sites/allow_field_creation), `e2dbf5b` (docs/obras-os.md), `a1fe006` (types os.ts), `4f543d1` (página Cadastros), `26d2251` (DocumentHeader service), `6e3c7f2` (header_snapshot serviço).
+- Pendências: testes SQL para sites/RLS não executados (banco não aplicado em ambiente de teste). Telas de cadastro usam dados mockados — integração real com Supabase na Tarefa F.
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)

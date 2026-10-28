@@ -226,3 +226,40 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 **Tabelas/Storage:**
 - `report_pdfs`: id, tenant_id, report_id, storage_path, sha256, generated_at. Só inserção (trigger bloqueia update/delete). RLS de leitura por tenant.
 - `report_number_counters`: tenant_id, method, year, seq (único por tenant+method+year).
+
+---
+
+## 12. Contratantes, Obras e Ordens de Serviço
+
+**Modelo de dados:**
+- `clients` (contratantes): id, tenant_id, legal_name, cnpj, address, contact_name, contact_email, contact_phone, active, created_by, created_in_field, needs_review.
+- `sites` (obras): id, tenant_id, client_id, name, address, city, uf, contract_ref, situation (active/concluded/cancelled), created_by, created_in_field, needs_review.
+- `work_orders` (ordens de serviço): id, tenant_id, client_id, code, site_id, scheduled_for, assigned_to, method (end_method opcional), notes, created_by, created_in_field, needs_review.
+
+**Campos controlados pelo servidor:**
+- `tenant_id`, `created_by`, `created_in_field`, `needs_review` são definidos pelo servidor a partir do token JWT e do papel do usuário. O cliente nunca envia esses valores.
+- `created_in_field` = true quando o criador tem papel de inspetor.
+- `needs_review` = true sempre para criação em campo; supervisor/admin marca como revisado (false).
+
+**Regras de negócio (RLS):**
+- Admin e supervisor: ler, criar e editar tudo do próprio tenant.
+- Inspetor: ler contratantes e obras ativas do tenant e as OS atribuídas a ele ou criadas por ele. Pode criar contratante, obra e OS somente se `allow_field_creation` estiver ligado (needs_review e created_in_field nascem verdadeiros). Pode editar apenas o que criou enquanto needs_review for verdadeiro. Não apaga nada.
+- Nenhuma leitura ou escrita entre tenants.
+
+**Telas (Cadastros):**
+- Abas: Contratantes, Obras, Ordens de serviço.
+- Lista, busca, criar e editar, validação.
+- Filtro "Pendentes de revisão" com contador para supervisor e admin.
+- Marca "Criada em campo" para itens criados pelo inspetor.
+
+**Cabeçalho do laudo:**
+- `DocumentHeader` exibe bloco de serviço: contratante, obra, local, número do contrato, número da OS (lidos da OS do laudo, somente leitura).
+- `header_snapshot` inclui esses campos, preenchido pelo servidor na emissão e incluído no hash. Depois de emitido, alterar contratante/obra/OS não muda o laudo.
+
+**Sincronização (documentado em docs/obras-os.md):**
+- Ordem de envio: contratantes, obras, OS, laudos.
+- UUID do cliente como identidade. Reenvio idempotente.
+- Códigos de erro: CLIENT_NOT_FOUND, SITE_NOT_FOUND, WORK_ORDER_NOT_FOUND, DUPLICATE_NUMBER, FIELD_CREATION_DISABLED, DEPENDENCY_FAILED, FORBIDDEN, VALIDATION_ERROR, UNKNOWN.
+
+**Vocabulário:** Contratante > Obra > OS > Laudos. Nunca usar "cliente" sem deixar claro qual dos dois (empresa emissora = tenant; contratante = cliente da inspeção).
+
