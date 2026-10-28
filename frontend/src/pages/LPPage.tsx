@@ -507,7 +507,7 @@ export const LPPage: React.FC<LPPageProps> = ({ onBack, tenantName = 'Empresa Co
 
             <div className="text-xs space-y-1 text-slate-300">
               <p><strong className="text-white">Inspetor:</strong> Carlos Eduardo Silva</p>
-              <p><strong className="text-white">Qualificação:</strong> SNQC-ABENDI Nº 14892 (N2-LP)</p>
+              <p><strong className="text-white">Qualificação:</strong> SNQC Nº 14892 (N2-LP)</p>
               <p><strong className="text-white">Data Execução:</strong> 21/10/2026 às 14:30</p>
             </div>
 
@@ -684,7 +684,7 @@ export const LPPage: React.FC<LPPageProps> = ({ onBack, tenantName = 'Empresa Co
                   <div>
                     <div className="border-b border-slate-400 w-3/4 mx-auto mb-1"></div>
                     <p className="font-bold text-slate-800">Carlos Eduardo Silva</p>
-                    <p className="text-slate-600 font-mono">Inspetor Qualificado SNQC-ABENDI Nº 14892 (N2-LP)</p>
+                    <p className="text-slate-600 font-mono">Inspetor Qualificado SNQC Nº 14892 (N2-LP)</p>
                   </div>
                   <div>
                     <div className="border-b border-slate-400 w-3/4 mx-auto mb-1"></div>
