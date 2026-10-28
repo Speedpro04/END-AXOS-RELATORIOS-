@@ -178,6 +178,70 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setError(null)
     setIsLoading(true)
     try {
+      // Login direto para demonstração (só existe em desenvolvimento)
+      if (import.meta.env.DEV) {
+        const demoEmail = import.meta.env.VITE_DEMO_EMAIL || ''
+        const demoPassword = import.meta.env.VITE_DEMO_PASSWORD || ''
+
+        if (demoEmail && demoPassword && email.trim().toLowerCase() === demoEmail.toLowerCase() && password === demoPassword) {
+          const mockSession: Session = {
+            user: {
+              id: 'axos-demo-user-001',
+              email: demoEmail,
+              aud: 'authenticated',
+              role: 'authenticated',
+              email_confirmed_at: new Date().toISOString(),
+              phone: '',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              app_metadata: {},
+              user_metadata: {},
+              identities: [],
+              confirmation_token: '',
+              confirmation_sent_at: '',
+              recovery_token: '',
+              recovery_sent_at: '',
+              instance_id: '',
+              is_anonymous: false,
+            } as User,
+            access_token: 'mock-access-token',
+            refresh_token: 'mock-refresh-token',
+            expires_in: 3600,
+            expires_at: Math.floor(Date.now() / 1000) + 3600,
+            token_type: 'bearer',
+            provider_token: '',
+            provider_refresh_token: '',
+          } as unknown as Session
+
+          setSession(mockSession)
+          setUser(mockSession.user)
+
+          setProfile({
+            id: 'axos-demo-user-001',
+            tenant_id: 'axos-demo-tenant-001',
+            role: 'admin',
+            can_inspect: true,
+            full_name: 'Carlos Eduardo Silva',
+            active: true,
+          } as UserProfile)
+
+          setTenant({
+            id: 'axos-demo-tenant-001',
+            legal_name: 'AXOS Relatórios Ltda',
+            trade_name: 'AXOS Relatórios',
+            cnpj: '00.000.000/0001-00',
+            plan: 'enterprise',
+            require_second_reviewer: false,
+          } as TenantInfo)
+
+          setOperationalUnits(['Unidade Operacional Principal', 'Refinaria Norte', 'Plataforma P-77', 'Terminal de Gás Sul', 'Petroquímica Leste'])
+          setSelectedUnit('Unidade Operacional Principal')
+
+          setIsLoading(false)
+          return { success: true }
+        }
+      }
+
       const { data, error: signInError } = await supabase.auth.signInWithPassword({
         email: email.trim(),
         password,
