@@ -6,6 +6,8 @@ import { DEFAULT_TENANT, type TenantProfile } from './types/tenant'
 import type { InspectionReport } from './types/inspection'
 import { buildReportCode } from './utils/buildReportCode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { db } from './services/dbDexie'
+import type { LocalReport } from './types/sync'
 
 // Páginas Dedicadas
 import { HubPage } from './pages/HubPage'
@@ -18,103 +20,17 @@ import { USPage } from './pages/USPage'
 import { PinturaPage } from './pages/PinturaPage'
 import { LoginPage } from './pages/LoginPage'
 
-const INITIAL_REPORTS: InspectionReport[] = [
-  {
-    id: '1',
-    code: 'END-LP-2026-001',
-    method: 'LP',
-    title: 'Líquido Penetrante no Spool SP-2101 / Junta J-01',
-    equipmentTag: 'SP-2101-J01',
-    unitArea: 'Unidade U-2100 (Processamento Primário)',
-    inspectorName: 'Carlos Eduardo Silva',
-    inspectorSNQC: 'SNQC 14892 (N2-LP)',
-    normProcedure: 'Petrobras N-1596 / ASME Sec. VIII',
-    acceptanceCriteria: 'ASME Sec. VIII Div. 1 Apêndice 8',
-    date: '2026-10-21',
-    status: 'aprovado',
-    findingsCount: 0,
-    summary: 'Ensaio por Líquido Penetrante realizado 100% no cordão de solda e ZTA. Aprovado sem descontinuidades.',
-    technicalData: { penetrant: 'VP-30', developer: 'D-70' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '2',
-    code: 'END-ME-2026-042',
-    method: 'ME',
-    title: 'Medição de Espessura no Costado do Vaso V-2104',
-    equipmentTag: 'V-2104',
-    unitArea: 'Área de Estocagem de GLP',
-    inspectorName: 'Carlos Eduardo Silva',
-    inspectorSNQC: 'SNQC 14892 (N2-US-ME)',
-    normProcedure: 'Petrobras N-1594 / ASME V Art. 5',
-    acceptanceCriteria: 'Espessura Mínima Admissível = 9.20 mm',
-    date: '2026-10-20',
-    status: 'aprovado',
-    findingsCount: 0,
-    summary: 'Malha de 64 pontos. Espessura nominal 12.7 mm, mínima registrada 11.4 mm. Equipamento em conformidade.',
-    technicalData: { transducer: 'D790-SM 5MHz', minThickness: '11.4mm' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '3',
-    code: 'END-EVS-2026-019',
-    method: 'EVS',
-    title: 'Exame Visual de Solda em Tubulação de Alta Pressão',
-    equipmentTag: 'LIN-HP-401',
-    unitArea: 'Parque de Bombas B-301',
-    inspectorName: 'Roberto Nogueira',
-    inspectorSNQC: 'SNQC 11204 (N2-VS)',
-    normProcedure: 'AWS D1.1 / ASME B31.3',
-    acceptanceCriteria: 'ASME B31.3 Tabela 341.3.2',
-    date: '2026-10-21',
-    status: 'reprovado',
-    findingsCount: 2,
-    summary: 'Constatada mordedura contínua com profundidade > 1.2 mm e porosidade agrupada. Reparo por goivagem exigido.',
-    technicalData: { defect: 'Mordedura e Porosidade' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '4',
-    code: 'NR13-VASO-2026-08',
-    method: 'NR13_VASO',
-    title: 'Inspeção Periódica de Vaso de Pressão (NR-13)',
-    equipmentTag: 'TQ-501-A',
-    unitArea: 'Unidade de Hidrotratamento (HDT)',
-    inspectorName: 'Eng. Paulo Mendes',
-    inspectorSNQC: 'CREA-SP 50619283 (PH)',
-    normProcedure: 'NR-13 / ASME Sec. VIII Div. 1',
-    acceptanceCriteria: 'NR-13 Portaria MTE 1.847',
-    date: '2026-10-19',
-    status: 'enviado',
-    findingsCount: 0,
-    summary: 'Exame interno e externo com teste de estanqueidade. Aguardando emissão da ART e assinatura digital do PH.',
-    technicalData: { pmta: '18.5 kgf/cm²', categoria: 'Classe II' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: '5',
-    code: 'END-PM-2026-012',
-    method: 'PM',
-    title: 'Partícula Magnética em Munhão de Suporte',
-    equipmentTag: 'MN-8802',
-    unitArea: 'Caldeira de Recuperação',
-    inspectorName: 'Carlos Eduardo Silva',
-    inspectorSNQC: 'SNQC 14892 (N2-PM)',
-    normProcedure: 'Petrobras N-1598',
-    acceptanceCriteria: 'ASME Sec. VIII Div. 1 Apêndice 6',
-    date: '2026-10-21',
-    status: 'rascunho',
-    findingsCount: 0,
-    summary: 'Inspeção via úmida fluorescente em andamento na área industrial.',
-    technicalData: { yoke: 'Eletromagnético AC/DC' },
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]
+// Relatório inicial padrão (apenas se não houver nada no Dexie)
+const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 'updatedAt'> = {
+  verdict: null,
+  localStatus: 'rascunho',
+  serverStatus: null,
+  clientRevision: 0,
+  serverRevision: null,
+  reportNumber: null,
+  lastSyncAt: null,
+  lastError: null,
+}
 
 function AppContent() {
   const { user, profile, tenant: authTenant, selectedUnit, isLoading, signOut } = useAuth()
@@ -137,10 +53,63 @@ function AppContent() {
     }
   }, [authTenant, selectedUnit])
 
-  const [reports, setReports] = useState<InspectionReport[]>(() => {
-    const saved = localStorage.getItem('axos_reports_list')
-    return saved ? JSON.parse(saved) : INITIAL_REPORTS
-  })
+  const [reports, setReports] = useState<InspectionReport[]>([])
+  const [reportsLoaded, setReportsLoaded] = useState(false)
+
+  useEffect(() => {
+    const loadReports = async () => {
+      try {
+        const all = await db.reports.toArray()
+        if (all.length === 0) {
+          // Se não há nada no Dexie, inicializa com os relatórios padrão
+          const defaultReports: LocalReport[] = [
+            {
+              id: '1',
+              tenantId: tenant.id,
+              method: 'LP',
+              data: {
+                id: '1',
+                code: 'END-LP-2026-001',
+                method: 'LP',
+                title: 'Líquido Penetrante no Spool SP-2101 / Junta J-01',
+                equipmentTag: 'SP-2101-J01',
+                unitArea: 'Unidade U-2100 (Processamento Primário)',
+                inspectorName: 'Carlos Eduardo Silva',
+                inspectorSNQC: 'SNQC 14892 (N2-LP)',
+                normProcedure: 'Petrobras N-1596 / ASME Sec. VIII',
+                acceptanceCriteria: 'ASME Sec. VIII Div. 1 Apêndice 8',
+                date: '2026-10-21',
+                status: 'aprovado',
+                findingsCount: 0,
+                summary: 'Ensaio por Líquido Penetrante realizado 100% no cordão de solda e ZTA. Aprovado sem descontinuidades.',
+                technicalData: { penetrant: 'VP-30', developer: 'D-70' },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              verdict: 'A',
+              localStatus: 'sincronizado',
+              serverStatus: 'aprovado',
+              clientRevision: 0,
+              serverRevision: 0,
+              reportNumber: 'END-LP-2026-001',
+              updatedAt: new Date().toISOString(),
+              lastSyncAt: new Date().toISOString(),
+              lastError: null,
+            },
+          ]
+          await db.reports.bulkPut(defaultReports)
+          setReports(defaultReports.map(r => r.data as InspectionReport))
+        } else {
+          setReports(all.map(r => r.data as InspectionReport))
+        }
+      } catch (err) {
+        console.error('[Dexie] Falha ao carregar reports:', err)
+      } finally {
+        setReportsLoaded(true)
+      }
+    }
+    loadReports()
+  }, [])
 
   // Navegação entre páginas de modelos
   // 'HUB' | 'LP' | 'ME' | 'EVS' | 'NR13' | 'PM' | 'US' | 'PINTURA'
@@ -172,7 +141,7 @@ function AppContent() {
     localStorage.setItem('axos_tenant_profile', JSON.stringify(updated))
   }
 
-  const handleSaveReport = (reportData: Partial<InspectionReport>) => {
+  const handleSaveReport = async (reportData: Partial<InspectionReport>) => {
     if (editingReport) {
       const updated = reports.map((r) =>
         r.id === editingReport.id
@@ -180,11 +149,28 @@ function AppContent() {
           : r
       )
       setReports(updated)
-      localStorage.setItem('axos_reports_list', JSON.stringify(updated))
+      // Salva no Dexie
+      const localReport: LocalReport = {
+        id: editingReport.id,
+        tenantId: tenant.id,
+        method: updated.find(r => r.id === editingReport.id)!.method,
+        workOrderId: null,
+        data: updated.find(r => r.id === editingReport.id)!,
+        verdict: null,
+        localStatus: 'rascunho',
+        serverStatus: null,
+        clientRevision: 0,
+        serverRevision: null,
+        reportNumber: null,
+        updatedAt: new Date().toISOString(),
+        lastSyncAt: null,
+        lastError: null,
+      }
+      await db.reports.put(localReport)
     } else {
       const newReport: InspectionReport = {
-        id: Date.now().toString(),
-        code: buildReportCode(tenant.reportPrefix, reportData.method || 'LP', new Date().getFullYear(), reports.length + 1),
+        id: crypto.randomUUID(),
+        code: 'RASCUNHO', // número definitivo atribuído pelo servidor na emissão
         method: reportData.method || 'LP',
         title: reportData.title || 'Laudo Técnico END',
         equipmentTag: reportData.equipmentTag || 'TAG-PENDENTE',
@@ -194,24 +180,39 @@ function AppContent() {
         normProcedure: reportData.normProcedure || 'Norma',
         acceptanceCriteria: reportData.acceptanceCriteria || 'Critério',
         date: reportData.date || new Date().toISOString().split('T')[0],
-        status: reportData.status || 'rascunho',
+        status: 'rascunho',
         findingsCount: reportData.findingsCount || 0,
         summary: reportData.summary || '',
         technicalData: reportData.technicalData || {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       }
-      const updated = [newReport, ...reports]
-      setReports(updated)
-      localStorage.setItem('axos_reports_list', JSON.stringify(updated))
+      const localReport: LocalReport = {
+        id: newReport.id,
+        tenantId: tenant.id,
+        method: newReport.method,
+        workOrderId: null,
+        data: newReport,
+        verdict: null,
+        localStatus: 'rascunho',
+        serverStatus: null,
+        clientRevision: 0,
+        serverRevision: null,
+        reportNumber: null,
+        updatedAt: new Date().toISOString(),
+        lastSyncAt: null,
+        lastError: null,
+      }
+      await db.reports.put(localReport)
+      setReports([newReport, ...reports])
     }
     setEditingReport(null)
   }
 
-  const handleDeleteReport = (id: string) => {
+  const handleDeleteReport = async (id: string) => {
     const updated = reports.filter((r) => r.id !== id)
     setReports(updated)
-    localStorage.setItem('axos_reports_list', JSON.stringify(updated))
+    await db.reports.delete(id)
   }
 
   // Lista de Abas de Modelos Técnicos

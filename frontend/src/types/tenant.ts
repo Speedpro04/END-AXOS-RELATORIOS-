@@ -1,4 +1,5 @@
 export interface TenantProfile {
+  id: string
   name: string
   tradeName: string
   cnpj: string
@@ -27,6 +28,7 @@ export interface TenantProfile {
 }
 
 export const DEFAULT_TENANT: TenantProfile = {
+  id: 'tenant-uuid-5678',
   name: 'QUALITEC INSPEÇÕES E ENGENHARIA DE INTEGRIDADE LTDA',
   tradeName: 'QUALITEC END & INSPEÇÕES',
   cnpj: '24.819.340/0001-82',
