@@ -159,6 +159,17 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commit: `9177ccc` (feat(us): página de ultrassom feixe angular com croqui, transdutores, descontinuidades, veredito e assinatura).
 - Pendências: protótipo HTML (`docs/prototipos/axos-us-feixe-angular.html`) não foi encontrado no repositório — a implementação segue a especificação da TAREFAS.md; revisar contra o protótipo quando disponível. PAUT e TOFD estão desabilitados ("Em breve") no seletor de técnica. Refatorar LPPage para usar componentes compartilhados de laudo.
 
+**Tarefa C · Configuração da empresa emissora (header) alimentando todos os formulários (27/10/2026)**
+- `supabase/migrations/0001_initial_schema.sql`: tabela `tenants` ganha colunas address_street/number/complement/neighborhood/city/uf/cep, phone, email, responsible_name, responsible_register, logo_path, logo_sha256, report_prefix (2-6 chars, padrão 'END'). Bucket privado `tenant-assets` criado com políticas de Storage (leitura membros do tenant, escrita só admin, caminho {tenant_id}/logo/{sha256}.{ext}, somente PNG/JPG, max 1 MB, nunca sobrescrever).
+- `frontend/src/types/tenant.ts`: TenantProfile ganha logoPath, logoSha256, addressStreet/Number/Complement/Neighborhood/City/Uf/Cep, responsibleName, responsibleRegister.
+- `frontend/src/components/laudo/DocumentHeader.tsx`: novo componente — logo empresa emissora (máx 64px), razão social/nome fantasia, CNPJ formatado, endereço, telefone, e-mail; direita com título do modelo, código do laudo, folha. Aviso "Complete em Configurações" quando faltar dado (só tela, não impressão). Suporta prop `snapshot` para dados congelados na emissão.
+- `frontend/src/components/laudo/DocumentFooter.tsx`: novo componente — "Gerado por Axos Relatórios", página x de y, trecho do hash, espaço QR. Suporta prop `print` (tema claro, sem avisos).
+- `frontend/src/components/TenantHeader.tsx`: modal de configurações com novos campos (endereço completo, responsável técnico, prefixo), upload de logo com redimensionamento cliente (máx 400x160), SHA-256, validação PNG/JPG (máx 1 MB), máscaras CNPJ/CEP/telefone, validação dígito CNPJ, UF 2 letras, prefixo 2-6 alfanuméricos. Somente admin edita (conforme RLS do banco); botão Salvar desabilitado até alteração válida.
+- `frontend/src/pages/USPage.tsx`: usa DocumentHeader e DocumentFooter no lugar do bloco de cabeçalho/rodapé fixo.
+- Verificação padrão: `grep -rniE "\bndt" frontend/src` → zero; busca por `abendi` em `frontend/src` → zero; `npm run build` passa.
+- Commits: `f6e0a71` (db), `f143b22` (types), `ee3c27a` (componentes), `98cee78` (TenantHeader), `50e2012` (USPage).
+- Pendências: testes SQL (não-admin não atualiza tenants; outro tenant não lê/escreve bucket; tipo/tamanho inválido de logo recusados) não executados (banco não aplicado em ambiente de teste). Substituir cabeçalho/rodapé nas demais páginas de método (LPPage, MEPage, EVSPage, PMPage, NR13Page, PinturaPage).
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)

@@ -171,3 +171,31 @@ Blocos da página:
 Tipos: `frontend/src/types/us.ts` (`UsTechnicalData`). Configuração de obrigatórios: `frontend/src/config/usFieldConfig.ts`. Componentes compartilhados em `frontend/src/components/laudo/` (`Croqui`, `ValidityBadge`, `VerdictBlock`, `EvidenceBlock`, `SignatureCard`).
 
 O veredito é do inspetor e não é o status de workflow. O status de workflow (draft, submitted, approved, issued, returned) é do servidor.
+
+---
+
+## 10. Configuração da Empresa Emissora
+
+Dados da empresa emissora (tenant) armazenados em `tenants` do Supabase:
+
+- Razão social, nome fantasia, CNPJ (14 dígitos, validado)
+- Endereço: logradouro, número, complemento, bairro, cidade, UF, CEP
+- Telefone, e-mail
+- Responsável técnico: nome e registro profissional
+- Prefixo do relatório: 2 a 6 caracteres (A-Z, 0-9), padrão `END`
+- Logo: caminho (`logo_path`) e SHA-256 (`logo_sha256`)
+
+Storage:
+- Bucket privado `tenant-assets`, caminho `{tenant_id}/logo/{sha256}.{ext}`
+- Somente PNG e JPG (não SVG), limite 1 MB
+- Escrita só do admin do tenant; leitura dos membros do tenant
+- Nunca sobrescrever: cada logo nova é um arquivo novo, com o hash no nome
+
+RLS:
+- Todos do tenant leem `tenants`; só o papel admin do próprio tenant atualiza
+
+Componentes:
+- `DocumentHeader` (`frontend/src/components/laudo/DocumentHeader.tsx`): logo empresa emissora (máx 64px), razão social/nome fantasia, CNPJ, endereço, contato; direita com título do modelo, código do laudo, folha. Aviso "Complete em Configurações" quando faltar dado (só tela). Suporta prop `snapshot`.
+- `DocumentFooter` (`frontend/src/components/laudo/DocumentFooter.tsx`): "Gerado por Axos Relatórios", página x de y, trecho do hash, espaço QR. Modo impressão: tema claro, sem avisos.
+
+Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contratante = cliente da inspeção. Obra = local/projeto do contratante. OS = ordem de serviço. Hierarquia: Contratante > Obra > OS > Laudos.
