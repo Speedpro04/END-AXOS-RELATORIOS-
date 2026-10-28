@@ -1,25 +1,41 @@
 import React from 'react'
 
-export type LaudoLocalStatus = 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'
-
-interface ReportStatusChipProps {
-  localStatus: LaudoLocalStatus
+export interface ReportStatusChipProps {
+  localStatus?: string
   serverStatus?: string | null
   lastError?: string | null
 }
 
-const STATUS_CONFIG: Record<LaudoLocalStatus, { label: string; color: string; bg: string; border: string }> = {
-  rascunho: { label: 'Rascunho', color: '#6b7280', bg: '#f3f4f6', border: '#e5e7eb' },
-  pronto: { label: 'Pronto para envio', color: '#0f766e', bg: '#ccfbf1', border: '#14b8a6' },
-  enviando: { label: 'Enviando...', color: '#1d4ed8', bg: '#dbeafe', border: '#3b82f6' },
-  sincronizado: { label: 'Sincronizado', color: '#166534', bg: '#dcfce7', border: '#86efac' },
-  erro: { label: 'Erro', color: '#991b1b', bg: '#fecaca', border: '#fca5a5' },
-}
-
 export function ReportStatusChip(props: ReportStatusChipProps) {
-  const { localStatus, serverStatus, lastError } = props
-  const config = STATUS_CONFIG[localStatus]
-  const showError = localStatus === 'erro' && lastError
+  const { localStatus = 'rascunho', serverStatus, lastError } = props
+
+  const colors: Record<string, string> = {
+    rascunho: '#f3f4f6',
+    pronto: '#dcfce7',
+    enviando: '#dbeafe',
+    sincronizado: '#dcfce7',
+    erro: '#fecaca',
+  }
+
+  const colorsText: Record<string, string> = {
+    rascunho: '#6b7280',
+    pronto: '#166534',
+    enviando: '#1d4ed8',
+    sincronizado: '#166534',
+    erro: '#991b1b',
+  }
+
+  const borderColors: Record<string, string> = {
+    rascunho: '#e5e7eb',
+    pronto: '#86efac',
+    enviando: '#3b82f6',
+    sincronizado: '#86efac',
+    erro: '#fca5a5',
+  }
+
+  const cfg = colors[localStatus] || colors.rascunho
+  const cfgText = colorsText[localStatus] || colorsText.rascunho
+  const cfgBorder = borderColors[localStatus] || borderColors.rascunho
 
   return (
     <div style={{
@@ -28,46 +44,23 @@ export function ReportStatusChip(props: ReportStatusChipProps) {
       gap: '6px',
       padding: '4px 10px',
       borderRadius: '4px',
-      background: config.bg,
-      color: config.color,
+      background: cfg,
+      color: cfgText,
       fontSize: '11px',
       fontWeight: 600,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
-      border: `1px solid ${config.border}`,
+      border: `1px solid ${cfgBorder}`,
       whiteSpace: 'nowrap',
     }}>
-      <span
-        style={{
-          display: 'inline-block',
-          width: '7px',
-          height: '7px',
-          borderRadius: '50%',
-          background: localStatus === 'erro' ? '#991b1b' : config.color,
-          animation: localStatus === 'enviando' ? 'pulse 2s infinite' : 'none',
-        }}
-      />
-      {config.label}
+      {localStatus.charAt(0).toUpperCase() + localStatus.slice(1)}
       {localStatus === 'sincronizado' && serverStatus && (
-        <span
-          style={{
-            fontSize: '10px',
-            opacity: 0.8,
-            marginLeft: '4px',
-          }}
-        >
+        <span style={{ fontSize: '10px', opacity: 0.8, marginLeft: '4px' }}>
           ({serverStatus})
         </span>
       )}
-      {showError && (
-        <span
-          style={{
-            fontSize: '10px',
-            fontWeight: 600,
-            marginLeft: '6px',
-            whiteSpace: 'nowrap',
-          }}
-        >
+      {lastError && localStatus === 'erro' && (
+        <span style={{ fontSize: '10px', fontWeight: 600, marginLeft: '6px', whiteSpace: 'nowrap' }}>
           ⚠ {lastError}
         </span>
       )}
