@@ -532,7 +532,7 @@ export const LoginPage: React.FC = () => {
                         onBlur={()  => setFocusedField(null)}
                         required
                         autoComplete="email"
-                        placeholder="axosrelatorios@gmail.com"
+                        placeholder="seu@email.com"
                         style={fieldStyle('email')}
                       />
                     </div>
