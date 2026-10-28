@@ -691,7 +691,12 @@ begin
         'responsible_register', (select responsible_register from public.tenants where id = new.tenant_id),
         'logo_path', (select logo_path from public.tenants where id = new.tenant_id),
         'logo_sha256', (select logo_sha256 from public.tenants where id = new.tenant_id),
-        'report_prefix', (select report_prefix from public.tenants where id = new.tenant_id)
+        'report_prefix', (select report_prefix from public.tenants where id = new.tenant_id),
+        'client_name', (select c.legal_name from public.work_orders w join public.clients c on c.id = w.client_id where w.id = new.work_order_id),
+        'site_name', (select s.name from public.work_orders w left join public.sites s on s.id = w.site_id where w.id = new.work_order_id),
+        'site_address', (select s.address from public.work_orders w left join public.sites s on s.id = w.site_id where w.id = new.work_order_id),
+        'contract_ref', (select s.contract_ref from public.work_orders w left join public.sites s on s.id = w.site_id where w.id = new.work_order_id),
+        'work_order_code', (select w.code from public.work_orders w where w.id = new.work_order_id)
       );
       new.issued_at := now();
       new.issued_by := v_uid;
