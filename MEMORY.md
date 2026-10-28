@@ -139,6 +139,13 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commit: `54d6417` (feat(terminologia): remover ABENDI de textos e tipos).
 - Pendências: enum SQL `public.ndt_method` → `public.end_method` não verificado/alterado (banco); tipo `ENDMethod` (maiúsculo) usado em vez de `EndMethod` (camelCase) conforme literal do TAREFAS.md — funcionais equivalentes, sem "NDT" no identificador.
 
+**Tarefa B · Hub com 6 grupos em cascata e busca (27/10/2026)**
+- `frontend/src/data/methodsCatalog.ts`: novo catálogo com 6 grupos (Superfície, Ultrassom, Radiográfico, Visual & Solda, Pintura & Revestimento, Vasos de Pressão NR-13) e 8 itens de método (incluindo Radiografia Industrial com available:false). Função `getEnabledMethods(tenant)` retorna todos os available, com ponto de extensão para habilitação por tenant.
+- `frontend/src/pages/HubPage.tsx`: refatorado para usar o catálogo. Barra de busca larga com atalho "/" (foco) e Esc (limpa). Linha "Usados recentemente" (até 3 chips, `localStorage axos_recent_methods` com try/catch). Grade de 6 quadros de grupo com borda lateral colorida e contador de emitidos. Cascata: clicar no grupo abre/fecha lista de métodos abaixo da grade; só um grupo aberto por vez. Busca normalizada (NFD, sem acento, minúsculas) casando em name, code, aliases e norm; resultados mostram caminho "Grupo › Método". Sem resultado: "Nenhum método encontrado". Removido código duplicado e link "Abrir →" dos cards.
+- Verificação padrão: `grep -rniE "\bndt" frontend/src` → zero; busca por `abendi` em `frontend/src` → zero; `npm run build` passa.
+- Commit: `62678e8` (feat(hub): catálogo de métodos em 6 grupos com busca e cascata).
+- Pendências: divergências de norma entre card do Hub e modal (ex.: norma do PM) a serem validadas pelo dono do produto.
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)

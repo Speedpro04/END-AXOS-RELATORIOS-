@@ -130,3 +130,24 @@ O produto é brasileiro. O termo correto é **END** (Ensaios Não Destrutivos). 
 O login é feito exclusivamente via `supabase.auth.signInWithPassword` (Supabase Auth).
 
 Em ambiente de desenvolvimento, um bloco de login direto pode estar ativo apenas quando `import.meta.env.DEV` for verdadeiro, lendo `VITE_DEMO_EMAIL` e `VITE_DEMO_PASSWORD` do ambiente (arquivo `.env.local`, não versionado). Em build de produção (`!DEV`) esse bloco não existe. Não há sessão simulada, token falso (`mock-access-token`) nem credencial hardcoded em nenhum ambiente. Qualquer referência a `mock-access-token`, `axos-demo` ou e-mail/senha de exemplo deve ser removida sem perguntar.
+
+---
+
+## 8. Hub — Catálogo de Métodos (6 grupos, busca e cascata)
+
+O Hub exibe os modelos técnicos organizados em 6 grupos:
+1. Superfície: LP (Líquido Penetrante), PM (Partícula Magnética)
+2. Ultrassom: US (Ultrassom Industrial), ME (Medição de Espessura)
+3. Radiográfico: Radiografia Industrial (disponível em breve)
+4. Visual & Solda: EVS (Inspeção Visual de Solda)
+5. Pintura & Revestimento: PINT (Pintura & Aderência)
+6. Vasos de Pressão (NR-13): NR-13
+
+Funcionalidades:
+- Barra de busca larga com atalho "/" (foco) e Esc (limpa). Busca normalizada (sem acento, minúsculas) casando em nome, sigla, normas e aliases.
+- Linha "Usados recentemente" (até 3 chips), persistidos em `localStorage` (`axos_recent_methods`).
+- Grade de 6 quadros de grupo, cada um com borda lateral colorida, nome do grupo e contador de laudos emitidos.
+- Cascata: clicar no grupo expõe a lista de métodos do grupo abaixo da grade; só um grupo aberto por vez.
+- Métodos `available:false` aparecem desabilitados com "Em breve".
+
+Catálogo em `frontend/src/data/methodsCatalog.ts`. Função `getEnabledMethods(tenant)` retorna os métodos disponíveis, com ponto de extensão para habilitação por tenant.
