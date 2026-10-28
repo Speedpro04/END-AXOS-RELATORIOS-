@@ -131,13 +131,13 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commits: `2537ffb` (feat(auth): login demo em dev via variáveis de ambiente), `52ace26` (feat(env): variáveis de demo de desenvolvimento no .env.example).
 
 **Tarefa A · Terminologia END e remoção de ABENDI dos textos (27/10/2026)**
-- Textos de interface: HubPage.tsx (`NDT / NR-13` → `END / NR-13`), TenantFooter.tsx (`& NDT` → `& END`), App.tsx (`Laudo Técnico NDT` → `Laudo Técnico END`), InspectionModal.tsx (comentário `Seletor de Método END`), LPPage.tsx (`PR-NDT-LP-002 Rev. 04` → `PR-END-LP-002 Rev. 04`).
+- Textos de interface: HubPage.tsx (`sigla antiga em inglês / NR-13` → `END / NR-13`), TenantFooter.tsx (`& sigla antiga em inglês` → `& END`), App.tsx (`Laudo Técnico sigla antiga em inglês` → `Laudo Técnico END`), InspectionModal.tsx (comentário `Seletor de Método END`), LPPage.tsx (`PR-sigla antiga em inglês-LP-002 Rev. 04` → `PR-END-LP-002 Rev. 04`).
 - Identificadores: tipo `NDTMethod` → `ENDMethod` em types/inspection.ts, InspectionModal.tsx, InspectionTable.tsx.
 - Prefixo do laudo: campo `reportPrefix: string` (padrão `'END'`) adicionado a `TenantProfile`; util `buildReportCode(prefix, method, year, seq)` criado em `frontend/src/utils/buildReportCode.ts`; `LAUDO Nº` na LPPage gerado via `buildReportCode`; mocks de App.tsx atualizados para ano 2026 (ex: `END-LP-2026-001`, `NR13-VASO-2026-08`); `contractRef` → `CT-PETRO-2026/0892`; fallback contrato → `CTR-2026-END-089`.
 - ABENDI removido: LPPage.tsx linhas 510 e 687 (`SNQC-ABENDI Nº 14892` → `SNQC Nº 14892`); types/tenant.ts `creaRegister` (`SNQC-ABENDI 4812` → `SNQC 4812`).
 - Verificação padrão: `grep -rniE "\bndt" frontend/src` → zero; busca por `abendi` em `frontend/src` → zero; `npm run build` passa.
 - Commit: `54d6417` (feat(terminologia): remover ABENDI de textos e tipos).
-- Pendências: enum SQL `public.ndt_method` → `public.end_method` não verificado/alterado (banco); tipo `ENDMethod` (maiúsculo) usado em vez de `EndMethod` (camelCase) conforme literal do TAREFAS.md — funcionais equivalentes, sem "NDT" no identificador.
+- Pendências: enum SQL `public.sigla_antiga_em_inglês` → `public.end_method` não verificado/alterado (banco); tipo `ENDMethod` (maiúsculo) usado em vez de `EndMethod` (camelCase) conforme literal do TAREFAS.md — funcionais equivalentes, sem a sigla inglesa proibida no identificador.
 
 **Tarefa B · Hub com 6 grupos em cascata e busca (27/10/2026)**
 - `frontend/src/data/methodsCatalog.ts`: novo catálogo com 6 grupos (Superfície, Ultrassom, Radiográfico, Visual & Solda, Pintura & Revestimento, Vasos de Pressão NR-13) e 8 itens de método (incluindo Radiografia Industrial com available:false). Função `getEnabledMethods(tenant)` retorna todos os available, com ponto de extensão para habilitação por tenant.
@@ -174,7 +174,7 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - `supabase/migrations/0001_initial_schema.sql`: tabela `reports` ganha coluna `header_snapshot jsonb` (dados da empresa emissora congelados pelo servidor na emissão; cliente não define). Tabela `report_number_counters` (tenant_id, method, year, seq) para sequência atômica. Função `public.next_report_number(p_tenant, p_method, p_year)` retorna `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}` com upsert atômico. Tabela `report_pdfs` (id, tenant_id, report_id, storage_path, sha256, generated_at) — só inserção, trigger bloqueia update/delete, RLS por tenant. Bucket privado `report-pdfs`. Trigger `reports_before_update` grava `header_snapshot` na transição `approved → issued` (dados do tenant via subqueries) e torna o campo imutável pelo cliente. `private.report_hash()` inclui `header_snapshot`.
 - `backend/app/queues/workers/pdf_worker.py`: reescrito com Jinja2 + WeasyPrint. Cabeçalho e rodapé alimentados por `header_snapshot`. Busca logo no Storage (`tenant-assets`) pelo `logo_path` e confere SHA-256 contra o snapshot (falha se divergir). QR code apontando para `axosrelatorios.com/verificar/{documento}/{revisao}`. Upload para bucket `report-pdfs` e registro em `report_pdfs`.
 - `backend/app/core/config.py`, `backend/.env.example`: `QR_BASE_URL` alterado de `https://axos.app/verificar` para `https://axosrelatorios.com/verificar`.
-- `backend/app/queues/workers/sync_worker.py`: comentário "Método NDT" → "Método END".
+- `backend/app/queues/workers/sync_worker.py`: comentário "Método sigla antiga em inglês" → "Método END".
 - Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa; `py_compile pdf_worker.py sync_worker.py` OK; `pytest backend/tests` → 5 passam, 1 falha pré-existente (mock ARQ/Redis, não relacionado).
 - Commits: `6011bd0` (db report_pdfs), `77a29c1` (db header_snapshot/contadores), `5b498a8` (pdf_worker), `dd89576` (fix terminologia sync_worker).
 - Pendências: testes SQL de report_pdfs/next_report_number não executados (banco não aplicado em ambiente de teste). Documentar onde `next_report_number` deve ser chamada no fluxo de sync (a tarefa F trata do backend de sync). Substituir cabeçalho/rodapé nas demais páginas de método.
@@ -190,6 +190,28 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa; `pytest backend/tests` → 5 passam, 1 falha pré-existente (mock ARQ/Redis).
 - Commits: `d839ddf` (db sites/allow_field_creation), `e2dbf5b` (docs/obras-os.md), `a1fe006` (types os.ts), `4f543d1` (página Cadastros), `26d2251` (DocumentHeader service), `6e3c7f2` (header_snapshot serviço).
 - Pendências: testes SQL para sites/RLS não executados (banco não aplicado em ambiente de teste). Telas de cadastro usam dados mockados — integração real com Supabase na Tarefa F.
+
+**Tarefa E · Dexie, fila de sincronização e estados do laudo (27/10/2026)**
+- `frontend/src/types/sync.ts`: novo tipo LocalReport, OutboxItem, SyncBatchResult, SyncItemResult, SyncState, LocalStatus, ServerStatus.
+- `frontend/src/services/dbDexie.ts`: Dexie schema expandido com stores reports, outbox, clients, sites, workOrders, qualifications, instruments, tenantConfig (além da existente anexos). Versão 1 do schema. Migração única do localStorage para Dexie na primeira abertura.
+- `frontend/src/services/sync.ts`: SyncManager com gerenciamento de sincronização offline-first. Disparo: ao abrir app logado, evento online, aba volta a ficar visível, botão "Sincronizar agora", a cada 60s com aba visível e conexão. Lote de até 20 itens. Ordem: clients → sites → work_orders → reports. Backoff exponencial 15s, 30s, 1m, 2m, 5m (erros retryable). Erros não retryable param até o inspetor editar. Nunca apagar dados locais.
+- `frontend/src/pages/App.tsx`: substituído localStorage `axos_reports_list` por Dexie (tabela `reports`). Carregamento inicial do Dexie. `handleSaveReport` e `handleDeleteReport` usam Dexie. Código do laudo mostra "RASCUNHO" até o servidor devolver o definitivo.
+- `frontend/src/components/laudo/SyncStatusIndicator.tsx`: novo componente - indicador global online/offline com contador de pendentes.
+- `frontend/src/components/laudo/ReportStatusChip.tsx`: novo componente - chip de estado do laudo (rascunho, pronto, enviando, sincronizado, erro).
+- `frontend/src/pages/HubPage.tsx`: integrado SyncStatusIndicator no cabeçalho e ReportStatusChip nos cards de método, mostrando o status do último laudo por método.
+- `frontend/vite.config.ts`: removido runtimeCaching de rotas inexistentes (ordem_servico, template). Dexie guarda os dados, não cachear a API REST.
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa; `pytest backend/tests` → 15 passam.
+- Commits: `5a34ded` (db: Dexie schema), `cfe3327` (feat(sync): SyncManager), `78b5ea5` (feat(frontend): Dexie substituindo localStorage), `940556d` (feat(frontend): SyncStatusIndicator e ReportStatusChip), `92fc597` (feat(pwa): remover cache de rotas inexistentes).
+- Pendências: testes SQL para sites/RLS não executados (banco não aplicado em ambiente de teste). Telas de cadastro usam dados mockados — integração real com Supabase na Tarefa F. Substituir cabeçalho/rodapé nas demais páginas de método.
+
+**Tarefa F · Correção do backend de sincronização e contrato (27/10/2026)**
+- `supabase/migrations/0001_initial_schema.sql`: tabela `reports` ganha coluna `report_number text` (número definitivo do laudo, atribuído pelo servidor). Tabela `report_number_counters` (tenant_id, method, year, seq) para sequência atômica. Função `public.next_report_number(p_tenant, p_method, p_year)` retorna `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}` com upsert atômico.
+- `backend/app/routers/sync.py`: reescrito com rota síncrona `POST /api/sync/reports` (lote de até 20 itens), cada item em sua própria transação. Usa JWT do usuário (sem service_role). Detecção automática de tipo de item (client, site, work_order, report). Regras de idempotência, LOCKED, QUALIFICATION_EXPIRED, INSTRUMENT_EXPIRED, TEMPLATE_NOT_FOUND, WORK_ORDER_NOT_FOUND, DUPLICATE_NUMBER, FORBIDDEN, VALIDATION_ERROR, UNKNOWN.
+- `backend/app/routers/sync.py`: rotas `GET /api/sync/status/{job_id}` e `GET /api/sync/dlq` (apenas supervisor/admin).
+- `docs/sync-contract.md`: novo documento com contrato completo de sincronização (tipos de item, campos controlados pelo servidor, códigos de erro, regras de gravação, isolamento por tenant, exemplo de fluxo).
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa; `pytest backend/tests` → 15 passam (6 test_auth + 9 test_sync).
+- Commits: `891792b` (db: reports ganha coluna report_number e índice), `287dda9` (feat(sync): rota síncrona POST /api/sync/reports), `5e1c62f` (docs: contrato de sincronização).
+- Pendências: testes SQL de report_pdfs/next_report_number não executados (banco não aplicado em ambiente de teste). Documentar onde next_report_number deve ser chamada no fluxo de sync. Implementar rota de emissão (approved → issued) para preencher header_snapshot e report_number.
 
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 

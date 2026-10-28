@@ -263,3 +263,131 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 
 **Vocabulário:** Contratante > Obra > OS > Laudos. Nunca usar "cliente" sem deixar claro qual dos dois (empresa emissora = tenant; contratante = cliente da inspeção).
 
+---
+
+## 13. Backend de Sincronização e Contrato (Tarefa F)
+
+**Arquitetura:**
+- Gravação síncrona na requisição `POST /api/sync/reports`, com JWT do usuário repassado ao Supabase (RLS e triggers enxergam o usuário real). Sem `service_role` para gravar laudos.
+- Lote de até 20 itens por requisição, cada item em sua própria transação (um erro não bloqueia os outros).
+- Itens processados nesta ordem: clients, sites, work_orders, reports.
+
+**Contrato de sincronização (docs/sync-contract.md):**
+- Tipos de item: clients, sites, work_orders, reports.
+- Cada item tem `client_id` (UUID gerado pelo cliente) e `client_revision` (inteiro crescente para idempotência).
+- Campos controlados pelo servidor (ignorados/sobrescritos se enviados pelo cliente): `tenant_id`, `inspector_id`, `created_by`, `created_in_field`, `needs_review`, `id`, `created_at`, `updated_at`, `report_number`, `data_hash`, `header_snapshot`, status além de `draft`/`submitted`.
+
+**Regras de gravação:**
+- Idempotente por `client_id`: se `client_revision` <= revisão gravada, responder `ok` sem alterar.
+- Criar laudo: status `draft`; `tenant_id` e `inspector_id` do token; `work_order_id` validado pelo tenant; `template_id` resolvido pelo servidor (template ativo do tenant para o método); `TEMPLATE_NOT_FOUND` se não houver.
+- Atualizar: só quando `draft` ou `returned` e pertence ao inspetor. Caso contrário → `LOCKED`.
+- `submit=true`: transição `draft → submitted` pelo caminho normal (gatilhos do banco rodam).
+- Veredito do inspetor (A, R, NEC, AC) NÃO é status de workflow. `approved` e `issued` só o servidor define.
+
+**Códigos de erro de laudo:**
+- `QUALIFICATION_EXPIRED`, `INSTRUMENT_EXPIRED`, `MISSING_REQUIRED`, `LOCKED`, `WORK_ORDER_NOT_FOUND`, `TEMPLATE_NOT_FOUND`, `FORBIDDEN`, `VALIDATION_ERROR`, `UNKNOWN`.
+- Códigos de obras/OS: `CLIENT_NOT_FOUND`, `SITE_NOT_FOUND`, `DUPLICATE_NUMBER`, `FIELD_CREATION_DISABLED`, `DEPENDENCY_FAILED`.
+
+**Schema SQL:**
+- Tabela `reports` ganha coluna `report_number text` (número definitivo do laudo, atribuído pelo servidor).
+- Tabela `report_number_counters` (tenant_id, method, year, seq) para sequência atômica.
+- Função `public.next_report_number(p_tenant, p_method, p_year)` retorna `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}`.
+
+**Commits da tarefa:**
+- `891792b` (db: reports ganha coluna report_number e índice)
+- `287dda9` (feat(sync): rota síncrona POST /api/sync/reports com transações por item)
+- `5e1c62f` (docs: contrato de sincronização)
+
+---
+
+## 14. Dexie, Fila de Sincronização e Estados do Laudo (Tarefa E)
+
+**Banco local (Dexie):**
+- Tabela `reports`: id (UUID), tenantId, method, workOrderId, data, verdict, localStatus, serverStatus, clientRevision, serverRevision, reportNumber, updatedAt, lastSyncAt, lastError.
+- Tabelas `clients`, `sites`, `workOrders`, `qualifications`, `instruments`, `tenantConfig` para cache offline.
+- Anexos existentes ficam ligados ao laudo por `id`.
+- Migração única dos laudos do `localStorage` para o Dexie.
+
+**Gerenciador de sincronização (`services/sync.ts`):**
+- Disparo: ao abrir o app logado, evento online, aba volta a ficar visível, botão "Sincronizar agora", a cada 60s com aba visível e conexão.
+- `navigator.onLine` como dica, não como verdade: erro de rede conta como offline.
+- Lote de até 20 itens por requisição para `POST /api/sync/reports`.
+- Uma execução por vez (trava).
+- Ordem: clients, sites, work_orders, reports.
+- Erros retryable (rede, 5xx): backoff 15s, 30s, 1min, 2min, até 5min.
+- Erros não retryable (qualificação vencido, dado obrigatório faltando, bloqueado, duplicidade): param até o inspetor editar.
+- Nunca apagar dados locais por ter sincronizado.
+
+**Estados do laudo:**
+- `localStatus`: rascunho, pronto, enviando, sincronizado, erro.
+- `serverStatus`: rascunho, enviado, aprovado, emitido, returned, superseded.
+- Número exibido como "RASCUNHO" até o servidor devolver o definitivo.
+
+**Interface:**
+- Indicador global no cabeçalho: online/offline, número de pendentes e botão "Sincronizar agora".
+- Chip de estado em cada laudo.
+- Filtro "Pendentes".
+- Faixa de erro com mensagem e ação para corrigir.
+- "Finalizar laudo": valida campos obrigatórios e confere qualificação e instrumentos no cache.
+- "Novo laudo": escolher OS do cache (Minhas OS). Se não houver, criar OS: escolher obra do cache ou criar obra rápida (nome e contratante), e contratante do cache ou novo só com o nome. Tudo gravado localmente com UUID e marcado como pendente. Quando `allow_field_creation` estiver desligado, esconder a criação e mostrar "Peça ao supervisor para cadastrar a obra e a OS".
+- PDF oficial: botão habilitado só quando o servidor marcar emitido. Antes disso, "Disponível após sincronizar". Sem via de campo.
+
+**Atualização de cache:**
+- Atualizar cache (OS, obras, contratantes, qualificações, instrumentos, configuração da empresa) após o login e após cada sincronização bem-sucedida.
+
+**PWA:**
+- `vite.config.ts`: remover cache de rotas inexistentes (ordem_servico, template). Dexie guarda os dados, não cachear a API REST.
+- Dados de exemplo só atrás da flag de desenvolvimento.
+
+**Commits da tarefa:**
+- `5a34ded` (feat(db): Dexie schema com stores reports, outbox, clients, sites, workOrders, tenantConfig + migração do localStorage)
+- `cfe3327` (feat(sync): SyncManager com outbox, backoff exponencial e sincronização offline-first)
+- `78b5ea5` (feat(frontend): Dexie substituindo localStorage para laudos)
+- `940556d` (feat(frontend): SyncStatusIndicator, ReportStatusChip e status de laudo no Hub)
+- `92fc597` (feat(pwa): remover cache de rotas inexistentes do Service Worker)
+
+**Pendências:**
+- Testes SQL para sites/RLS não executados (banco não aplicado em ambiente de teste).
+- Telas de cadastro usam dados mockados — integração real com Supabase na Tarefa F.
+- Substituir cabeçalho/rodapé nas demais páginas de método.
+
+---
+
+**Arquitetura:**
+- Gravação síncrona na requisição `POST /api/sync/reports`, com JWT do usuário repassado ao Supabase (RLS e triggers enxergam o usuário real). Sem `service_role` para gravar laudos.
+- Lote de até 20 itens por requisição, cada item em sua própria transação (um erro não bloqueia os outros).
+- Itens processados nesta ordem: clients, sites, work_orders, reports.
+
+**Contrato de sincronização (docs/sync-contract.md):**
+- Tipos de item: clients, sites, work_orders, reports.
+- Cada item tem `client_id` (UUID gerado pelo cliente) e `client_revision` (inteiro crescente para idempotência).
+- Campos controlados pelo servidor (ignorados/sobrescritos se enviados pelo cliente): `tenant_id`, `inspector_id`, `created_by`, `created_in_field`, `needs_review`, `id`, `created_at`, `updated_at`, `report_number`, `data_hash`, `header_snapshot`, status além de `draft`/`submitted`.
+
+**Regras de gravação:**
+- Idempotente por `client_id`: se `client_revision` <= revisão gravada, responder `ok` sem alterar.
+- Criar laudo: status `draft`; `tenant_id` e `inspector_id` do token; `work_order_id` validado pelo tenant; `template_id` resolvido pelo servidor (template ativo do tenant para o método); `TEMPLATE_NOT_FOUND` se não houver.
+- Atualizar: só quando `draft` ou `returned` e pertence ao inspetor. Caso contrário → `LOCKED`.
+- `submit=true`: transição `draft → submitted` pelo caminho normal (gatilhos do banco rodam).
+- Veredito do inspetor (A, R, NEC, AC) NÃO é status de workflow. `approved` e `issued` só o servidor define.
+
+**Códigos de erro de laudo:**
+- `QUALIFICATION_EXPIRED`, `INSTRUMENT_EXPIRED`, `MISSING_REQUIRED`, `LOCKED`, `WORK_ORDER_NOT_FOUND`, `TEMPLATE_NOT_FOUND`, `FORBIDDEN`, `VALIDATION_ERROR`, `UNKNOWN`.
+- Códigos de obras/OS: `CLIENT_NOT_FOUND`, `SITE_NOT_FOUND`, `DUPLICATE_NUMBER`, `FIELD_CREATION_DISABLED`, `DEPENDENCY_FAILED`.
+
+**Segurança:**
+- `/api/sync/dlq` e `/api/sync/status/{job_id}` exigem papel supervisor ou admin.
+- JWT valida audiência (verificar_aud habilitado).
+- CORS com origens da configuração.
+- Pool ARQ criado uma vez por processo (lifespan).
+- Erros ao cliente com mensagem genérica; detalhes só no log.
+
+**Schema SQL:**
+- Tabela `reports` ganha coluna `report_number text` (número definitivo do laudo, atribuído pelo servidor).
+- Tabela `report_number_counters` (tenant_id, method, year, seq) para sequência atômica.
+- Função `public.next_report_number(p_tenant, p_method, p_year)` retorna `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}`.
+
+**Commits da tarefa:**
+- `891792b` (db: reports ganha coluna report_number e índice)
+- `287dda9` (feat(sync): rota síncrona POST /api/sync/reports com transações por item)
+- `5e1c62f` (docs: contrato de sincronização)
+
