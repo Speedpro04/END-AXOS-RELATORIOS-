@@ -121,6 +121,15 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commit: `2d5742d` (T-01: Remover login de demonstração e placeholder de credencial).
 - Nota: o commit histórico `f1eef30` já continha essas credenciais; responsável foi avisado (senha não impressa).
 
+**Tarefa 0 · Segurança rápida: login demo só em desenvolvimento e arquivos gerados fora do git (27/10/2026)**
+- `frontend/src/contexts/AuthContext.tsx`: o bloco de login demo foi re-adicionado envolvido em `import.meta.env.DEV`, lendo `VITE_DEMO_EMAIL` e `VITE_DEMO_PASSWORD` do ambiente. Em produção (`!DEV`) o bloco não existe.
+- `frontend/.env.local`: criado localmente com os valores atuais (não versionado; coberto por `*.local` no `.gitignore`).
+- `frontend/.env.example`: adicionadas `VITE_DEMO_EMAIL` e `VITE_DEMO_PASSWORD` vazias, com comentário "somente desenvolvimento, nunca em produção".
+- `.gitignore`: já cobria `*.local`, `dist/`, `dev-dist/` e `node_modules/`; nenhuma alteração necessária.
+- Verificação: `npm run build` passa; busca por `axosrelatorios@gmail.com`, `mock-access-token` e `axos-demo` no bundle `dist/` → zero ocorrências.
+- Senha antiga NÃO foi impressa no terminal nem no resumo. O histórico do git ainda contém a senha antiga (commit `f1eef30`); responsável deve trocá-la.
+- Commits: `2537ffb` (feat(auth): login demo em dev via variáveis de ambiente), `52ace26` (feat(env): variáveis de demo de desenvolvimento no .env.example).
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)

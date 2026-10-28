@@ -127,4 +127,6 @@ O produto é brasileiro. O termo correto é **END** (Ensaios Não Destrutivos). 
 
 ## 7. Autenticação
 
-O login é feito exclusivamente via `supabase.auth.signInWithPassword` (Supabase Auth). Não existe login de demonstração, sessão simulada, token falso (`mock-access-token`) nem credencial hardcoded em nenhum ambiente. Qualquer referência a `mock-access-token`, `axos-demo` ou e-mail/senha de exemplo deve ser removida sem perguntar.
+O login é feito exclusivamente via `supabase.auth.signInWithPassword` (Supabase Auth).
+
+Em ambiente de desenvolvimento, um bloco de login direto pode estar ativo apenas quando `import.meta.env.DEV` for verdadeiro, lendo `VITE_DEMO_EMAIL` e `VITE_DEMO_PASSWORD` do ambiente (arquivo `.env.local`, não versionado). Em build de produção (`!DEV`) esse bloco não existe. Não há sessão simulada, token falso (`mock-access-token`) nem credencial hardcoded em nenhum ambiente. Qualquer referência a `mock-access-token`, `axos-demo` ou e-mail/senha de exemplo deve ser removida sem perguntar.
