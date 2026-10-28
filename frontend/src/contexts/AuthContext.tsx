@@ -2,6 +2,9 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+
 export type AppRole = 'admin' | 'supervisor' | 'inspector'
 
 export interface UserProfile {
@@ -134,8 +137,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const initAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession()
+        // Verifica se o Supabase está configurado
+        if (!supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('seu-projeto')) {
+          if (isMounted) {
+            setError('Supabase não configurado: defina VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY no .env')
+            setIsLoading(false)
+          }
+          return
+        }
+
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession()
         if (!isMounted) return
+
+        if (error) throw error
 
         setSession(initialSession)
         setUser(initialSession?.user ?? null)
@@ -146,9 +160,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } catch (err: unknown) {
         if (isMounted) {
           setError(err instanceof Error ? err.message : 'Erro ao inicializar autenticação')
+          setIsLoading(false)
         }
       } finally {
-        if (isMounted) setIsLoading(false)
+        if (isMounted && !session) setIsLoading(false)
       }
     }
 
