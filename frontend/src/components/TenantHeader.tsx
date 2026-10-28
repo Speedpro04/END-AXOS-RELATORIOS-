@@ -34,19 +34,148 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
   const timeStr = currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
   const dateStr = currentTime.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
+  const resizeImage = (file: File, maxWidth: number, maxHeight: number): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader()
-      reader.onloadend = () => {
-        setFormData((prev) => ({ ...prev, logoUrl: reader.result as string }))
-      }
       reader.readAsDataURL(file)
+      reader.onload = (event) => {
+        const img = new Image()
+        img.src = event.target?.result as string
+        img.onload = () => {
+          const canvas = document.createElement('canvas')
+          let width = img.width
+          let height = img.height
+          if (width > maxWidth) {
+            height = Math.round((height * maxWidth) / width)
+            width = maxWidth
+          }
+          if (height > maxHeight) {
+            width = Math.round((width * maxHeight) / height)
+            height = maxHeight
+          }
+          canvas.width = width
+          canvas.height = height
+          const ctx = canvas.getContext('2d')
+          if (!ctx) {
+            reject(new Error('Não foi possível processar a imagem'))
+            return
+          }
+          ctx.drawImage(img, 0, 0, width, height)
+          resolve(canvas.toDataURL('image/png'))
+        }
+        img.onerror = () => reject(new Error('Imagem inválida'))
+      }
+      reader.onerror = () => reject(new Error('Erro ao ler o arquivo'))
+    })
+  }
+
+  const sha256FromDataUrl = async (dataUrl: string): Promise<string> => {
+    const base64 = dataUrl.split(',')[1]
+    const binary = atob(base64)
+    const bytes = new Uint8Array(binary.length)
+    for (let i = 0; i < binary.length; i++) {
+      bytes[i] = binary.charCodeAt(i)
     }
+    const hash = await crypto.subtle.digest('SHA-256', bytes)
+    const hex = Array.from(new Uint8Array(hash))
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('')
+    return hex
+  }
+
+  const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validação de tipo e tamanho
+    if (!file.type.startsWith('image/')) {
+      alert('Selecione um arquivo de imagem.')
+      return
+    }
+    if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+      alert('Apenas PNG ou JPG são permitidos.')
+      return
+    }
+    if (file.size > 1024 * 1024) {
+      alert('A logo deve ter no máximo 1 MB.')
+      return
+    }
+
+    try {
+      const resized = await resizeImage(file, 400, 160)
+      const sha256 = await sha256FromDataUrl(resized)
+      setFormData((prev) => ({
+        ...prev,
+        logoUrl: resized,
+        logoPath: sha256,
+        logoSha256: sha256,
+      }))
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Erro ao processar a logo')
+    }
+  }
+
+  const maskCnpj = (value: string): string => {
+    const v = value.replace(/\D/g, '')
+    if (v.length <= 2) return v
+    if (v.length <= 5) return `${v.slice(0, 2)}.${v.slice(2)}`
+    if (v.length <= 8) return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5)}`
+    if (v.length <= 12) return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8)}`
+    return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8, 12)}-${v.slice(12, 14)}`
+  }
+
+  const maskCep = (value: string): string => {
+    const v = value.replace(/\D/g, '')
+    if (v.length <= 5) return v
+    return `${v.slice(0, 5)}-${v.slice(5, 8)}`
+  }
+
+  const maskPhone = (value: string): string => {
+    const v = value.replace(/\D/g, '')
+    if (v.length <= 2) return `(${v}`
+    if (v.length <= 7) return `(${v.slice(0, 2)}) ${v.slice(2)}`
+    return `(${v.slice(0, 2)}) ${v.slice(2, 7)}-${v.slice(7, 11)}`
+  }
+
+  const validateCnpj = (cnpj: string): boolean => {
+    const digits = cnpj.replace(/\D/g, '')
+    if (digits.length !== 14) return false
+    if (/^(\d)\1{13}$/.test(digits)) return false
+    const calc = (numbers: string, pos: number): number => {
+      let sum = 0
+      for (let i = pos, j = 0; i >= 2; i--, j++) sum += parseInt(numbers.charAt(j), 10) * i
+      const rest = sum % 11
+      return rest < 2 ? 0 : 11 - rest
+    }
+    const first = calc(digits, 12)
+    const second = calc(digits, 13)
+    return parseInt(digits.charAt(12), 10) === first && parseInt(digits.charAt(13), 10) === second
   }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
+
+    // Validação de CNPJ
+    if (formData.cnpj) {
+      const digits = formData.cnpj.replace(/\D/g, '')
+      if (digits.length !== 14 || !validateCnpj(digits)) {
+        alert('CNPJ inválido.')
+        return
+      }
+    }
+
+    // UF com 2 letras quando preenchido
+    if (formData.addressUf && !/^[A-Z]{2}$/.test(formData.addressUf)) {
+      alert('UF deve ter 2 letras maiúsculas.')
+      return
+    }
+
+    // Prefixo: 2 a 6 caracteres alfanuméricos
+    if (formData.reportPrefix && !/^[A-Z0-9]{2,6}$/.test(formData.reportPrefix)) {
+      alert('Prefixo do relatório deve ter 2 a 6 caracteres (A-Z, 0-9).')
+      return
+    }
+
     onUpdateTenant(formData)
     setIsModalOpen(false)
   }
@@ -515,6 +644,16 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                   { label: 'Unidade Operacional', key: 'operationalUnit', fullWidth: false, mono: false },
                   { label: 'Telefone de Contato', key: 'contactPhone', fullWidth: false, mono: true },
                   { label: 'E-mail Comercial', key: 'contactEmail', fullWidth: false, mono: false },
+                  { label: 'Logradouro', key: 'addressStreet', fullWidth: false, mono: false },
+                  { label: 'Número', key: 'addressNumber', fullWidth: false, mono: false },
+                  { label: 'Complemento', key: 'addressComplement', fullWidth: false, mono: false },
+                  { label: 'Bairro', key: 'addressNeighborhood', fullWidth: false, mono: false },
+                  { label: 'Cidade', key: 'addressCity', fullWidth: false, mono: false },
+                  { label: 'UF', key: 'addressUf', fullWidth: false, mono: true },
+                  { label: 'CEP', key: 'addressCep', fullWidth: false, mono: true },
+                  { label: 'Responsável Técnico (nome)', key: 'responsibleName', fullWidth: false, mono: false },
+                  { label: 'Responsável Técnico (registro)', key: 'responsibleRegister', fullWidth: false, mono: false },
+                  { label: 'Prefixo do Relatório', key: 'reportPrefix', fullWidth: false, mono: true },
                 ].map((field) => (
                   <div key={field.key} style={{ gridColumn: field.fullWidth ? 'span 2' : undefined }}>
                     <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '4px' }}>
@@ -524,7 +663,15 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                       type={field.key === 'contactEmail' ? 'email' : 'text'}
                       required={['tradeName', 'cnpj', 'name'].includes(field.key)}
                       value={(formData as unknown as Record<string, string>)[field.key] || ''}
-                      onChange={(e) => setFormData({ ...formData, [field.key]: e.target.value })}
+                      onChange={(e) => {
+                        let val = e.target.value
+                        if (field.key === 'cnpj') val = maskCnpj(val)
+                        else if (field.key === 'addressCep') val = maskCep(val)
+                        else if (field.key === 'contactPhone') val = maskPhone(val)
+                        else if (field.key === 'addressUf') val = val.toUpperCase()
+                        else if (field.key === 'reportPrefix') val = val.toUpperCase().replace(/[^A-Z0-9]/g, '')
+                        setFormData({ ...formData, [field.key]: val })
+                      }}
                       className="input-clean"
                       style={{
                         width: '100%',
