@@ -199,3 +199,30 @@ Componentes:
 - `DocumentFooter` (`frontend/src/components/laudo/DocumentFooter.tsx`): "Gerado por Axos Relatórios", página x de y, trecho do hash, espaço QR. Modo impressão: tema claro, sem avisos.
 
 Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contratante = cliente da inspeção. Obra = local/projeto do contratante. OS = ordem de serviço. Hierarquia: Contratante > Obra > OS > Laudos.
+
+---
+
+## 11. Emissão do Laudo — Snapshot, Número do Servidor e PDF
+
+**Snapshot do cabeçalho (servidor):**
+- Em `reports`, a coluna `header_snapshot` (JSONB) armazena os dados da empresa emissora congelados no momento da emissão (transição `approved → issued`): razão social, nome fantasia, CNPJ, endereço completo, telefone, e-mail, responsável técnico, prefixo, logo_path, logo_sha256.
+- Preenchido SEMPRE pelo servidor (trigger SQL); o cliente não envia nem altera (campo imutável).
+- O snapshot entra no cálculo do `data_hash` (SHA-256), tornando o laudo emitido imutável.
+
+**Número do laudo pelo servidor:**
+- O rascunho local mostra "RASCUNHO". O número definitivo `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos))}` é atribuído pelo servidor na emissão.
+- Sequência atômica por tenant/método/ano via função SQL `public.next_report_number(p_tenant, p_method, p_year)` com upsert em `report_number_counters`.
+- Prefixo configurável por tenant (`report_prefix`, padrão `END`).
+- Não alterar o `sync_worker` nesta tarefa; a chamada à função deve ser documentada na tarefa F (backend de sincronização).
+
+**PDF (cabeçalho e rodapé):**
+- `pdf_worker.py` reescrito com Jinja2 + WeasyPrint.
+- Cabeçalho e rodapé alimentados pelo `header_snapshot` (nunca pela configuração atual).
+- Logo buscada no Storage (`tenant-assets`) pelo `logo_path`; SHA-256 conferido contra o snapshot (falha se divergir).
+- QR code apontando para `axosrelatorios.com/verificar/{documento}/{revisao}`.
+- Upload para bucket privado `report-pdfs`; registro em `report_pdfs` (apenas inserção).
+- `QR_BASE_URL` = `https://axosrelatorios.com/verificar`.
+
+**Tabelas/Storage:**
+- `report_pdfs`: id, tenant_id, report_id, storage_path, sha256, generated_at. Só inserção (trigger bloqueia update/delete). RLS de leitura por tenant.
+- `report_number_counters`: tenant_id, method, year, seq (único por tenant+method+year).

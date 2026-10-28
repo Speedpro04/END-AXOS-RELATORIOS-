@@ -170,6 +170,15 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Commits: `f6e0a71` (db), `f143b22` (types), `ee3c27a` (componentes), `98cee78` (TenantHeader), `50e2012` (USPage).
 - Pendências: testes SQL (não-admin não atualiza tenants; outro tenant não lê/escreve bucket; tipo/tamanho inválido de logo recusados) não executados (banco não aplicado em ambiente de teste). Substituir cabeçalho/rodapé nas demais páginas de método (LPPage, MEPage, EVSPage, PMPage, NR13Page, PinturaPage).
 
+**Tarefa D · Congelar o cabeçalho na emissão, número pelo servidor e cabeçalho/rodapé do PDF (27/10/2026)**
+- `supabase/migrations/0001_initial_schema.sql`: tabela `reports` ganha coluna `header_snapshot jsonb` (dados da empresa emissora congelados pelo servidor na emissão; cliente não define). Tabela `report_number_counters` (tenant_id, method, year, seq) para sequência atômica. Função `public.next_report_number(p_tenant, p_method, p_year)` retorna `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}` com upsert atômico. Tabela `report_pdfs` (id, tenant_id, report_id, storage_path, sha256, generated_at) — só inserção, trigger bloqueia update/delete, RLS por tenant. Bucket privado `report-pdfs`. Trigger `reports_before_update` grava `header_snapshot` na transição `approved → issued` (dados do tenant via subqueries) e torna o campo imutável pelo cliente. `private.report_hash()` inclui `header_snapshot`.
+- `backend/app/queues/workers/pdf_worker.py`: reescrito com Jinja2 + WeasyPrint. Cabeçalho e rodapé alimentados por `header_snapshot`. Busca logo no Storage (`tenant-assets`) pelo `logo_path` e confere SHA-256 contra o snapshot (falha se divergir). QR code apontando para `axosrelatorios.com/verificar/{documento}/{revisao}`. Upload para bucket `report-pdfs` e registro em `report_pdfs`.
+- `backend/app/core/config.py`, `backend/.env.example`: `QR_BASE_URL` alterado de `https://axos.app/verificar` para `https://axosrelatorios.com/verificar`.
+- `backend/app/queues/workers/sync_worker.py`: comentário "Método NDT" → "Método END".
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa; `py_compile pdf_worker.py sync_worker.py` OK; `pytest backend/tests` → 5 passam, 1 falha pré-existente (mock ARQ/Redis, não relacionado).
+- Commits: `6011bd0` (db report_pdfs), `77a29c1` (db header_snapshot/contadores), `5b498a8` (pdf_worker), `dd89576` (fix terminologia sync_worker).
+- Pendências: testes SQL de report_pdfs/next_report_number não executados (banco não aplicado em ambiente de teste). Documentar onde `next_report_number` deve ser chamada no fluxo de sync (a tarefa F trata do backend de sync). Substituir cabeçalho/rodapé nas demais páginas de método.
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)
