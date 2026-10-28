@@ -212,6 +212,7 @@ create table public.reports (
   revision            int not null default 0 check (revision >= 0),
   inspector_id        uuid not null,
   status              public.report_status not null default 'draft',
+  report_number       text,                              -- número definitivo do laudo, atribuído pelo servidor na emissão ({PREFIXO}-{MÉTODO}-{ANO}-{SEQ})
 
   -- campos TÉCNICOS: só o inspetor responsável altera (rascunho ou devolvido)
   equipment_tag       text,
@@ -246,6 +247,7 @@ create table public.reports (
 create index on public.reports (tenant_id, status);
 create index on public.reports (inspector_id);
 create index on public.reports (work_order_id);
+create index on public.reports (report_number);
 -- no máximo uma revisão em andamento por documento
 create unique index reports_one_open_revision
   on public.reports (document_id)
