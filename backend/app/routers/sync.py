@@ -248,12 +248,20 @@ async def _process_client(
     client_id: str,
     client_revision: int,
 ) -> SyncItemResponse:
-    # Apenas revisor/admin ou inspetor se allow_field_creation
-    if role not in ("admin", "supervisor") and not current_user_can_inspect(role):
-        return SyncItemResponse(
-            client_id=client_id, ok=False, error_code="FORBIDDEN",
-            message="Apenas admin/supervisor podem criar contratantes",
-        )
+    # Apenas revisor/admin ou inspetor (se allow_field_creation estiver ligado)
+    if role not in ("admin", "supervisor"):
+        if role == "inspector":
+            tenant_res = sb.table("tenants").select("allow_field_creation").eq("id", tenant_id).execute()
+            if tenant_res.data and not tenant_res.data[0].get("allow_field_creation", True):
+                return SyncItemResponse(
+                    client_id=client_id, ok=False, error_code="FORBIDDEN",
+                    message="Criação em campo desabilitada para este tenant",
+                )
+        else:
+            return SyncItemResponse(
+                client_id=client_id, ok=False, error_code="FORBIDDEN",
+                message="Apenas admin/supervisor podem criar contratantes",
+            )
 
     # Verifica idempotência: já existe com client_revision <= atual?
     existing = sb.table("clients").select("id, updated_at").eq("id", client_id).execute()
@@ -457,7 +465,7 @@ async def _process_report(
     existing = sb.table("reports").select("id, status, revision").eq("id", client_id).execute()
     if existing.data and len(existing.data) > 0:
         row = existing.data[0]
-        if client_revision <= row["revision"]:
+        if client_revision <= row.get("revision", 0):
             # Reenvio seguro: não altera nada
             return SyncItemResponse(
                 client_id=client_id, ok=True,
@@ -502,6 +510,7 @@ async def _process_report(
                 "template_id": template_id,
                 "inspector_id": user_id,
                 "status": "draft",
+                "revision": client_revision,
                 "equipment_tag": item["equipment_tag"],
                 "inspection_date": item["inspection_date"],
                 "technical_data": item["technical_data"],
@@ -530,9 +539,10 @@ async def _process_report(
                 )
 
             # Após submeter, buscar número do laudo se já foi emitido (improvável no mesmo request)
-            report_res = sb.table("reports").select("report_number, status").eq("id", server_id).single().execute()
-            report_number = report_res.data.get("report_number") if report_res.data else None
-            workflow_status = report_res.data.get("status") if report_res.data else "submitted"
+            report_res = sb.table("reports").select("report_number, status").eq("id", server_id).execute()
+            report_rows = report_res.data or []
+            report_number = report_rows[0].get("report_number") if report_rows else None
+            workflow_status = report_rows[0].get("status") if report_rows else "submitted"
 
             return SyncItemResponse(
                 client_id=client_id, ok=True,
@@ -542,9 +552,10 @@ async def _process_report(
             )
 
         # Sem submit: retorna status draft
-        report_res = sb.table("reports").select("report_number, status").eq("id", server_id).single().execute()
-        report_number = report_res.data.get("report_number") if report_res.data else None
-        workflow_status = report_res.data.get("status") if report_res.data else "draft"
+        report_res = sb.table("reports").select("report_number, status").eq("id", server_id).execute()
+        report_rows = report_res.data or []
+        report_number = report_rows[0].get("report_number") if report_rows else None
+        workflow_status = report_rows[0].get("status") if report_rows else "draft"
 
         return SyncItemResponse(
             client_id=client_id, ok=True,

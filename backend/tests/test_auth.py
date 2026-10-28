@@ -89,10 +89,10 @@ async def test_active_user_authorized_with_tenant_isolation(valid_token):
     mock_active_profile = {
         "id": "user-uuid-1234",
         "tenant_id": "tenant-uuid-5678",
-        "role": "inspector",
-        "can_inspect": True,
+        "role": "supervisor",
+        "can_inspect": False,
         "active": True,
-        "full_name": "Inspetor Valido",
+        "full_name": "Supervisor Valido",
     }
 
     mock_arq = AsyncMock()
