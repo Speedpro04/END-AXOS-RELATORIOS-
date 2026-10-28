@@ -257,6 +257,57 @@ begin
   return v_number;
 end $$;
 
+-- ---------------------------------------------------------------------
+-- Tabela de PDFs emitidos (somente inserção; não permite update/delete)
+-- ---------------------------------------------------------------------
+create table public.report_pdfs (
+  id           uuid primary key default gen_random_uuid(),
+  tenant_id    uuid not null references public.tenants (id) on delete restrict,
+  report_id    uuid not null,
+  storage_path text not null,   -- report-pdfs/{tenant_id}/{report_id}.pdf
+  sha256       text not null,   -- hash do PDF gerado
+  generated_at timestamptz not null default now(),
+  unique (id, tenant_id),
+  unique (report_id, tenant_id),
+  foreign key (report_id, tenant_id) references public.reports (id, tenant_id) on delete cascade
+);
+create index on public.report_pdfs (tenant_id);
+create index on report_pdfs (report_id);
+
+-- Somente inserção: bloqueia update e delete
+create or replace function private.report_pdfs_immutable()
+returns trigger language plpgsql set search_path = '' as $$
+begin
+  raise exception 'REPORT_PDFS_IS_APPEND_ONLY';
+end $$;
+
+create trigger report_pdfs_no_update before update on public.report_pdfs
+  for each row execute function private.report_pdfs_immutable();
+create trigger report_pdfs_no_delete before delete on public.report_pdfs
+  for each row execute function private.report_pdfs_immutable();
+create trigger report_pdfs_no_truncate before truncate on public.report_pdfs
+  for each statement execute function private.report_pdfs_immutable();
+
+-- RLS: leitura só por membros do tenant
+alter table public.report_pdfs enable row level security;
+create policy report_pdfs_select on public.report_pdfs for select to authenticated
+  using (tenant_id = (select private.my_tenant_id()));
+create policy report_pdfs_insert on public.report_pdfs for insert to authenticated
+  with check (tenant_id = (select private.my_tenant_id()));
+
+-- ---------------------------------------------------------------------
+-- Storage: bucket privado report-pdfs (escrita só pelo backend)
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('report-pdfs', 'report-pdfs', false, 10485760, array['application/pdf'])
+on conflict (id) do nothing;
+
+create policy report_pdfs_storage_select on storage.objects for select to authenticated
+  using (
+    bucket_id = 'report-pdfs'
+    and (storage.foldername(name))[1] = ((select private.my_tenant_id())::text)
+  );
+
 create table public.report_instruments (
   report_id     uuid not null,
   instrument_id uuid not null,
