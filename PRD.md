@@ -122,3 +122,9 @@ O produto é brasileiro. O termo correto é **END** (Ensaios Não Destrutivos). 
 - Sigla inglesa proibida = vedada. Converter para `END` sem perguntar.
 - Prefixo do número do laudo: configurável por tenant via campo `reportPrefix` (padrão `'END'`). Formato do código de laudo: `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ}` (SEQ com 3 dígitos, ex: `END-LP-2026-0042`). Ano vem de `new Date().getFullYear()`.
 - Função única de geração: `buildReportCode(prefix, method, year, seq)` em `frontend/src/utils/buildReportCode.ts`, usada em todos os lugares que montam código de laudo.
+
+---
+
+## 7. Autenticação
+
+O login é feito exclusivamente via `supabase.auth.signInWithPassword` (Supabase Auth). Não existe login de demonstração, sessão simulada, token falso (`mock-access-token`) nem credencial hardcoded em nenhum ambiente. Qualquer referência a `mock-access-token`, `axos-demo` ou e-mail/senha de exemplo deve ser removida sem perguntar.

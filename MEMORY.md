@@ -112,6 +112,15 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 
 **Pendência (banco/backend):** não há verificação de campo `reportPrefix` na tabela `tenants` do Supabase. Não foi criada migration nesta tarefa. Pendente: confirmar existência do campo em `tenants` e, se ausente, adicionar migration correspondente.
 
+## 7. Registro de Execução — Tarefas Concluídas
+
+**T-01 · Remover login de demonstração (27/10/2026)**
+- `frontend/src/contexts/AuthContext.tsx`: removido o bloco de login direto para demonstração (e-mail/senha hardcoded e sessão simulada com `mock-access-token`) da função `signIn`; o login passa a ser exclusivamente `supabase.auth.signInWithPassword`.
+- `frontend/src/pages/LoginPage.tsx`: placeholder do campo de email alterado de `axosrelatorios@gmail.com` para `seu@email.com`.
+- Verificação: busca por `mock-access-token`, `axos-demo` e `axosrelatorios@gmail.com` no código e no bundle `dist/` → zero ocorrências; `npm run build` passa.
+- Commit: `2d5742d` (T-01: Remover login de demonstração e placeholder de credencial).
+- Nota: o commit histórico `f1eef30` já continha essas credenciais; responsável foi avisado (senha não impressa).
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)
