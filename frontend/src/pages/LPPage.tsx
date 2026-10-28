@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Eye, CheckCircle2, AlertTriangle, ArrowLeft, Printer, Save, Plus, Trash2, Camera, ShieldCheck, X, FileText, Download } from 'lucide-react'
 import type { TenantProfile } from '../types/tenant'
+import { buildReportCode } from '../utils/buildReportCode'
 
 interface LPPageProps {
   onBack: () => void
@@ -13,7 +14,7 @@ export const LPPage: React.FC<LPPageProps> = ({ onBack, tenantName = 'Empresa Co
   const [isometric, setIsometric] = useState('ISO-RPBC-U2100-FOLHA-04')
   const [material, setMaterial] = useState('Aço Carbono ASTM A-106 Gr. B (DN 6" Sch 40)')
   const [surfaceState, setSurfaceState] = useState('Escovada mecanicamente / Isenta de carepa e óleo')
-  const [procedureCode, setProcedureCode] = useState('PR-NDT-LP-002 Rev. 04')
+  const [procedureCode, setProcedureCode] = useState('PR-END-LP-002 Rev. 04')
   const [acceptanceNorm, setAcceptanceNorm] = useState('ASME Sec. VIII Div. 1 - Apêndice 8')
   
   // Fotos de Evidências em Campo
@@ -575,13 +576,13 @@ export const LPPage: React.FC<LPPageProps> = ({ onBack, tenantName = 'Empresa Co
                       CNPJ: {tenant?.cnpj || '12.345.678/0001-90'} • Unidade: {tenant?.operationalUnit || 'Refinaria RPBC'}
                     </p>
                     <p className="text-[10px] text-slate-500">
-                      Contrato: {tenant?.contractRef || 'CTR-2024-NDT-089'} • Sistema Axos Relatórios
+                      Contrato: {tenant?.contractRef || 'CTR-2026-END-089'} • Sistema Axos Relatórios
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right border-l border-slate-300 pl-4 font-mono text-[11px]">
-                  <p className="font-bold text-slate-900">LAUDO Nº: NDT-LP-2026-001</p>
+                  <p className="font-bold text-slate-900">LAUDO Nº: {buildReportCode(tenant?.reportPrefix ?? 'END', 'LP', new Date().getFullYear(), 1)}</p>
                   <p className="text-slate-600">DATA: {new Date().toLocaleDateString('pt-BR')}</p>
                   <p className="text-slate-600">FOLHA: 01/01</p>
                 </div>

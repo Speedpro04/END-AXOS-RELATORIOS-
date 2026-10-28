@@ -4,6 +4,7 @@ import { TenantFooter } from './components/TenantFooter'
 import { InspectionModal } from './components/InspectionModal'
 import { DEFAULT_TENANT, type TenantProfile } from './types/tenant'
 import type { InspectionReport } from './types/inspection'
+import { buildReportCode } from './utils/buildReportCode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 
 // Páginas Dedicadas
@@ -20,7 +21,7 @@ import { LoginPage } from './pages/LoginPage'
 const INITIAL_REPORTS: InspectionReport[] = [
   {
     id: '1',
-    code: 'NDT-LP-2024-001',
+    code: 'END-LP-2026-001',
     method: 'LP',
     title: 'Líquido Penetrante no Spool SP-2101 / Junta J-01',
     equipmentTag: 'SP-2101-J01',
@@ -39,7 +40,7 @@ const INITIAL_REPORTS: InspectionReport[] = [
   },
   {
     id: '2',
-    code: 'NDT-ME-2024-042',
+    code: 'END-ME-2026-042',
     method: 'ME',
     title: 'Medição de Espessura no Costado do Vaso V-2104',
     equipmentTag: 'V-2104',
@@ -58,7 +59,7 @@ const INITIAL_REPORTS: InspectionReport[] = [
   },
   {
     id: '3',
-    code: 'NDT-EVS-2024-019',
+    code: 'END-EVS-2026-019',
     method: 'EVS',
     title: 'Exame Visual de Solda em Tubulação de Alta Pressão',
     equipmentTag: 'LIN-HP-401',
@@ -77,7 +78,7 @@ const INITIAL_REPORTS: InspectionReport[] = [
   },
   {
     id: '4',
-    code: 'NR13-VASO-2024-08',
+    code: 'NR13-VASO-2026-08',
     method: 'NR13_VASO',
     title: 'Inspeção Periódica de Vaso de Pressão (NR-13)',
     equipmentTag: 'TQ-501-A',
@@ -96,7 +97,7 @@ const INITIAL_REPORTS: InspectionReport[] = [
   },
   {
     id: '5',
-    code: 'NDT-PM-2024-012',
+    code: 'END-PM-2026-012',
     method: 'PM',
     title: 'Partícula Magnética em Munhão de Suporte',
     equipmentTag: 'MN-8802',
@@ -183,9 +184,9 @@ function AppContent() {
     } else {
       const newReport: InspectionReport = {
         id: Date.now().toString(),
-        code: `NDT-${reportData.method}-${new Date().getFullYear()}-${String(reports.length + 1).padStart(3, '0')}`,
+        code: buildReportCode(tenant.reportPrefix, reportData.method || 'LP', new Date().getFullYear(), reports.length + 1),
         method: reportData.method || 'LP',
-        title: reportData.title || 'Laudo Técnico NDT',
+        title: reportData.title || 'Laudo Técnico END',
         equipmentTag: reportData.equipmentTag || 'TAG-PENDENTE',
         unitArea: reportData.unitArea || 'Área Industrial',
         inspectorName: reportData.inspectorName || 'Inspetor',

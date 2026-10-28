@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react'
 import { X, Check, ShieldAlert, FileSpreadsheet, Eye, Gauge, Layers, Wrench, HardHat } from 'lucide-react'
-import { METHOD_LABELS, type InspectionReport, type NDTMethod, type ReportStatus } from '../types/inspection'
+import { METHOD_LABELS, type InspectionReport, type ENDMethod, type ReportStatus } from '../types/inspection'
 
 interface InspectionModalProps {
   isOpen: boolean
@@ -15,7 +15,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   onSave,
   initialReport,
 }) => {
-  const [method, setMethod] = useState<NDTMethod>('LP')
+  const [method, setMethod] = useState<ENDMethod>('LP')
   const [equipmentTag, setEquipmentTag] = useState('')
   const [title, setTitle] = useState('')
   const [unitArea, setUnitArea] = useState('')
@@ -142,7 +142,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     onClose()
   }
 
-  const methodIcons: Record<NDTMethod, React.ComponentType<{ className?: string }>> = {
+  const methodIcons: Record<ENDMethod, React.ComponentType<{ className?: string }>> = {
     LP: Eye,
     PM: Gauge,
     EVS: Wrench,
@@ -182,7 +182,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[82vh] space-y-5">
           
-          {/* Seletor de Método NDT */}
+          {/* Seletor de Método END */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-[#0F172A] dark:text-[#E6E8EA] uppercase tracking-wider">
@@ -193,7 +193,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               </span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
-              {(Object.keys(METHOD_LABELS) as NDTMethod[]).map((m) => {
+              {(Object.keys(METHOD_LABELS) as ENDMethod[]).map((m) => {
                 const isSelected = method === m
                 const Icon = methodIcons[m]
                 return (

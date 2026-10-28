@@ -1,4 +1,4 @@
-export type NDTMethod =
+export type ENDMethod =
   | 'LP'
   | 'PM'
   | 'EVS'
@@ -11,8 +11,8 @@ export type ReportStatus = 'rascunho' | 'enviado' | 'aprovado' | 'reprovado'
 
 export interface InspectionReport {
   id: string
-  code: string // Ex: NDT-LP-2024-0042
-  method: NDTMethod
+  code: string // Ex: END-LP-2026-0042
+  method: ENDMethod
   title: string
   equipmentTag: string
   unitArea: string
@@ -29,7 +29,7 @@ export interface InspectionReport {
   updatedAt: string
 }
 
-export const METHOD_LABELS: Record<NDTMethod, { label: string; full: string; code: string }> = {
+export const METHOD_LABELS: Record<ENDMethod, { label: string; full: string; code: string }> = {
   LP: { label: 'LP', full: 'Líquido Penetrante', code: 'ASME V Art. 6 / Petrobras N-1596' },
   PM: { label: 'PM', full: 'Partícula Magnética', code: 'ASME V Art. 7 / Petrobras N-1598' },
   EVS: { label: 'EVS', full: 'Inspeção Visual de Solda', code: 'AWS D1.1 / ASME V Art. 9' },

@@ -1,7 +1,7 @@
-# PRD – AXOS Relatórios (Plataforma de Integridade & NDT)
+# PRD – AXOS Relatórios (Plataforma de Integridade & END)
 
 ## 1. Visão Geral do Produto
-O **AXOS Relatórios** é uma plataforma SaaS e PWA (Progressive Web App) voltada para o setor de Ensaios Não Destrutivos (END / NDT) e Inspeção de Integridade de Equipamentos Industriais (Caldeiras, Vasos de Pressão, Tubulações e Tanques de Armazenamento – NR-13, ASME, Petrobras, ISO).
+O **AXOS Relatórios** é uma plataforma SaaS e PWA (Progressive Web App) voltada para o setor de Ensaios Não Destrutivos (END) e Inspeção de Integridade de Equipamentos Industriais (Caldeiras, Vasos de Pressão, Tubulações e Tanques de Armazenamento – NR-13, ASME, Petrobras, ISO).
 
 O sistema resolve os gargalos de digitalização de laudos em campo, permitindo coleta offline-first sem perda de dados, sincronização idempotente em lote, fila de espera assíncrona com Redis para proteger o banco de dados relacional e geração automatizada de relatórios técnicos padronizados e assinados.
 
@@ -55,3 +55,70 @@ O sistema resolve os gargalos de digitalização de laudos em campo, permitindo 
 2. **Resiliência**: Políticas de retry exponencial via `tenacity` em conexões de banco e Redis; isolamento de falhas em DLQ.
 3. **Performance**: Ingestão de laudos no endpoint `/sync` respondendo em menos de 50ms (enfileiramento assíncrono).
 4. **Compliance**: Rastreabilidade completa de auditoria em conformidade com normas regulamentadoras (NR-13).
+
+---
+
+## 5. Diretrizes Comportamentais — Base para Todas as Operações (Karpathy Guidelines)
+
+Todas as operações de desenvolvimento neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
+
+### 5.1. Think Before Coding (Pense Antes de Codificar)
+- Não faça suposições silenciosas. Se houver dúvida, pergunte antes de implementar.
+- Apresente múltiplas interpretações quando houver ambiguidade; não escolha silenciosamente.
+- Exponha tradeoffs e contras antes de decidir um caminho.
+- Se algo estiver confuso, pare. Nomeie o que não está claro e peça esclarecimento.
+- Se houver uma abordagem mais simples, diga isso e resista à sobreengenharia.
+
+### 5.2. Simplicity First (Simplicidade em Primeiro Lugar)
+- Código mínimo que resolve o problema. Nada especulativo.
+- Sem funcionalidades além do que foi solicitado.
+- Sem abstrações para código de uso único.
+- Sem "flexibilidade" ou "configurabilidade" não solicitadas.
+- Sem tratamento de erro para cenários impossíveis.
+- Se 200 linhas pudessem ser 50, reescreva em 50.
+- Pergunta de validação: "Um engenheiro sênior diria que isso está supercomplicado?" Se sim, simplifique.
+
+### 5.3. Surgical Changes (Mudanças Cirúrgicas)
+- Toque apenas o que é necessário. Limpe apenas a sua própria bagunça.
+- Não "melhore" código, comentários ou formatação adjacentes.
+- Não refatore o que não está quebrado.
+- Mantenha o estilo existente, mesmo que faria diferente.
+- Se notar código morto não relacionado, mencione — não apague.
+- Remova apenas imports/variáveis/funções que **SUAS** mudanças tornaram órfãos.
+- Teste de validação: toda linha alterada deve rastrear diretamente à solicitação do usuário.
+
+### 5.4. Goal-Driven Execution (Execução Guiada por Objetivos)
+- Defina critérios de sucesso verificáveis. Loop até verificar.
+- Transforme tarefas imperativas em objetivos declarativos com verificação:
+  - "Adicionar validação" → "Escrever testes para entradas inválidas, então fazê-las passar"
+  - "Corrigir o bug" → "Escrever um teste que reproduza o bug, então fazê-lo passar"
+  - "Refatorar X" → "Garantir que os testes passem antes e depois"
+- Para tarefas de múltiplas etapas, apresente um plano breve:
+  ```
+  1. [Etapa] → verificar: [checagem]
+  2. [Etapa] → verificar: [checagem]
+  3. [Etapa] → verificar: [checagem]
+  ```
+- Critérios de sucesso fortes permitem execução autônoma. Critérios fracos ("faça funcionar") exigem esclarecimento constante.
+
+### 5.5. Sinais de que as Diretrizes Estão Funcionando
+- Menos alterações desnecessárias nos diffs (apenas o solicitado aparece).
+- Menos reescritas por supercomplicação (código simples de primeira).
+- Perguntas de esclarecimento vêm **antes** da implementação, não depois dos erros.
+- PRs limpos e minimalistas — sem refatoração "de passagem" ou "melhorias" não solicitadas.
+
+### 5.6. Fonte da Skill
+- Repositório: https://github.com/multica-ai/andrej-karpathy-skills.git
+- Arquivo base: `CLAUDE.md` (quatro princípios detalhados)
+- Exemplos: `EXAMPLES.md` (anti-padrões e correções)
+
+---
+
+## 6. Terminologia — END (Ensaios Não Destrutivos)
+
+O produto é brasileiro. O termo correto é **END** (Ensaios Não Destrutivos). A sigla inglesa proibida é vedada em qualquer capitalização, em UI, textos, comentários, identificadores, mocks, testes ou documentação.
+
+- **END** = Ensaios Não Destrutivos (sempre usar esta sigla).
+- Sigla inglesa proibida = vedada. Converter para `END` sem perguntar.
+- Prefixo do número do laudo: configurável por tenant via campo `reportPrefix` (padrão `'END'`). Formato do código de laudo: `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ}` (SEQ com 3 dígitos, ex: `END-LP-2026-0042`). Ano vem de `new Date().getFullYear()`.
+- Função única de geração: `buildReportCode(prefix, method, year, seq)` em `frontend/src/utils/buildReportCode.ts`, usada em todos os lugares que montam código de laudo.

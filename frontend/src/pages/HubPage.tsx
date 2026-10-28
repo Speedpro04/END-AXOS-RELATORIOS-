@@ -154,7 +154,7 @@ export const HubPage: React.FC<HubPageProps> = ({
 
       {/* ── SEÇÃO 1: Catálogo de Modelos ── */}
       <section>
-        <SectionLabel count="7 PROCEDIMENTOS & MODELOS NDT / NR-13">
+        <SectionLabel count="7 PROCEDIMENTOS & MODELOS END / NR-13">
           Catálogo de Modelos Técnicos
         </SectionLabel>
         <p style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '15px', color: 'var(--text-muted)', marginBottom: '16px', marginTop: '-6px' }}>

@@ -1,7 +1,7 @@
 # MEMORY – AXOS Relatórios (Contexto e Memória Arquitetural)
 
 ## 1. Resumo do Repositório e Missão
-O **AXOS Relatórios** é uma solução de software para o segmento de Integridade Estrutural e NDT. O sistema opera tanto em modo PWA offline no campo quanto em servidores gerenciados no EasyPanel via Docker.
+O **AXOS Relatórios** é uma solução de software para o segmento de Integridade Estrutural e Ensaios Não Destrutivos. O sistema opera tanto em modo PWA offline no campo quanto em servidores gerenciados no EasyPanel via Docker.
 
 ---
 
@@ -85,3 +85,81 @@ END-AXOS-RELATORIOS/
 1. Integrar geração definitiva de PDF no `pdf_worker.py` (usando ReportLab ou WeasyPrint).
 2. Conectar envio real de e-mails (Resend, SendGrid ou SES) em `email_worker.py`.
 3. Adicionar testes unitários e de integração para a fila Redis com pytest.
+
+---
+
+## 5. Regra Permanente — Terminologia END (valida para esta e todas as tarefas futuras)
+
+- **Nunca escrever a sigla inglesa proibida (nenhuma capitalização)** em UI, textos, comentários, identificadores, mocks, testes ou docs. Usar sempre "END".
+- Se o usuário ou exemplo externo usar a sigla inglesa proibida, converter para "END" sem perguntar.
+- Antes de concluir qualquer tarefa futura, rodar busca por a sigla inglesa proibida (case-insensitive, palavra inteira) excluindo node_modules, dev-dist e .git → resultado esperado: ZERO ocorrências.
+
+## 6. Resumo da Mudança — Padronização END (27/10/2026)
+
+Remoção da sigla inglesa proibida e padronização para "END" em todo o frontend:
+
+- `frontend/src/types/tenant.ts`: adicionado `reportPrefix: string` (padrão `'END'`); `tradeName` → `QUALITEC END & INSPEÇÕES`; `contractRef` → `CT-PETRO-2026/0892`; `contactEmail` → `operacoes@qualitec-end.com.br`.
+- `frontend/src/types/inspection.ts`: tipo de método (sigla antiga em inglês) → `ENDMethod`; comentário de `code` → `// Ex: END-LP-2026-0042`.
+- `frontend/src/utils/buildReportCode.ts`: novo util `buildReportCode(prefix, method, year, seq)` → `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}`.
+- `frontend/src/App.tsx`: mocks atualizados para códigos `END-...-2026-...` (e `NR13-VASO-2026-08`); `handleSaveReport` usa `buildReportCode(tenant.reportPrefix, ...)`; título fallback → `Laudo Técnico END`.
+- `frontend/src/pages/HubPage.tsx`: `sigla antiga em inglês / NR-13` → `END / NR-13`.
+- `frontend/src/components/TenantFooter.tsx`: `& sigla antiga em inglês` → `& END`.
+- `frontend/src/components/InspectionModal.tsx`: comentário `Método END`; tipo de método (sigla antiga em inglês) → `ENDMethod`.
+- `frontend/src/components/InspectionTable.tsx`: tipo de método (sigla antiga em inglês) → `ENDMethod`.
+- `frontend/src/pages/LPPage.tsx`: `procedureCode` → `PR-END-LP-002 Rev. 04`; contrato fallback → `CTR-2026-END-089`; `LAUDO Nº` gerado via `buildReportCode`.
+- `PRD.md`: seção 6 "Terminologia — END".
+- `AGENTS.md`: criado na raiz com a regra permanente.
+
+**Pendência (banco/backend):** não há verificação de campo `reportPrefix` na tabela `tenants` do Supabase. Não foi criada migration nesta tarefa. Pendente: confirmar existência do campo em `tenants` e, se ausente, adicionar migration correspondente.
+
+Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
+
+### 5.1. Think Before Coding (Pense Antes de Codificar)
+- Não faça suposições silenciosas. Se houver dúvida, pergunte antes de implementar.
+- Apresente múltiplas interpretações quando houver ambiguidade; não escolha silenciosamente.
+- Exponha tradeoffs e contras antes de decidir um caminho.
+- Se algo estiver confuso, pare. Nomeie o que não está claro e peça esclarecimento.
+- Se houver uma abordagem mais simples, diga isso e resista à sobreengenharia.
+
+### 5.2. Simplicity First (Simplicidade em Primeiro Lugar)
+- Código mínimo que resolve o problema. Nada especulativo.
+- Sem funcionalidades além do que foi solicitado.
+- Sem abstrações para código de uso único.
+- Sem "flexibilidade" ou "configurabilidade" não solicitadas.
+- Sem tratamento de erro para cenários impossíveis.
+- Se 200 linhas pudessem ser 50, reescreva em 50.
+- Pergunta de validação: "Um engenheiro sênior diria que isso está supercomplicado?" Se sim, simplifique.
+
+### 5.3. Surgical Changes (Mudanças Cirúrgicas)
+- Toque apenas o que é necessário. Limpe apenas a sua própria bagunça.
+- Não "melhore" código, comentários ou formatação adjacentes.
+- Não refatore o que não está quebrado.
+- Mantenha o estilo existente, mesmo que faria diferente.
+- Se notar código morto não relacionado, mencione — não apague.
+- Remova apenas imports/variáveis/funções que **SUAS** mudanças tornaram órfãos.
+- Teste de validação: toda linha alterada deve rastrear diretamente à solicitação do usuário.
+
+### 5.4. Goal-Driven Execution (Execução Guiada por Objetivos)
+- Defina critérios de sucesso verificáveis. Loop até verificar.
+- Transforme tarefas imperativas em objetivos declarativos com verificação:
+  - "Adicionar validação" → "Escrever testes para entradas inválidas, então fazê-las passar"
+  - "Corrigir o bug" → "Escrever um teste que reproduza o bug, então fazê-lo passar"
+  - "Refatorar X" → "Garantir que os testes passem antes e depois"
+- Para tarefas de múltiplas etapas, apresente um plano breve:
+  ```
+  1. [Etapa] → verificar: [checagem]
+  2. [Etapa] → verificar: [checagem]
+  3. [Etapa] → verificar: [checagem]
+  ```
+- Critérios de sucesso fortes permitem execução autônoma. Critérios fracos ("faça funcionar") exigem esclarecimento constante.
+
+### 5.5. Sinais de que as Diretrizes Estão Funcionando
+- Menos alterações desnecessárias nos diffs (apenas o solicitado aparece).
+- Menos reescritas por supercomplicação (código simples de primeira).
+- Perguntas de esclarecimento vêm **antes** da implementação, não depois dos erros.
+- PRs limpos e minimalistas — sem refatoração "de passagem" ou "melhorias" não solicitadas.
+
+### 5.6. Fonte da Skill
+- Repositório: https://github.com/multica-ai/andrej-karpathy-skills.git
+- Arquivo base: `CLAUDE.md` (quatro princípios detalhados)
+- Exemplos: `EXAMPLES.md` (anti-padrões e correções)

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { METHOD_LABELS, type InspectionReport, type NDTMethod, type ReportStatus } from '../types/inspection'
+import { METHOD_LABELS, type InspectionReport, type ENDMethod, type ReportStatus } from '../types/inspection'
 
 interface InspectionTableProps {
   reports: InspectionReport[]
@@ -103,7 +103,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               className="text-[14px] bg-transparent text-[#334155] font-medium outline-hidden cursor-pointer"
             >
               <option value="ALL">Todos os Ensaios END</option>
-              {(Object.keys(METHOD_LABELS) as NDTMethod[]).map((m) => (
+              {(Object.keys(METHOD_LABELS) as ENDMethod[]).map((m) => (
                 <option key={m} value={m}>
                   [{METHOD_LABELS[m].label}] {METHOD_LABELS[m].full}
                 </option>

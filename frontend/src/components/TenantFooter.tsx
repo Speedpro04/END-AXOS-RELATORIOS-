@@ -36,7 +36,7 @@ export const TenantFooter: React.FC = () => {
               background: '#10b981',
             }} />
             <span style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '14px', color: 'var(--text-muted)' }}>
-              <span>Plataforma de Integridade Estrutural & NDT</span>
+              <span>Plataforma de Integridade Estrutural & END</span>
             </span>
           </div>
         </div>
