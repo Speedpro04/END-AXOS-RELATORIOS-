@@ -34,7 +34,7 @@ from datetime import datetime
 class LaudoSyncPayload(BaseModel):
     """Schema mínimo esperado de um laudo vindo do frontend offline."""
     id: str = Field(..., description="UUID do laudo gerado no frontend (Dexie.js)")
-    method: str = Field(..., description="Método NDT: LP, ME, EVS, NR13, PM, US, PINTURA")
+    method: str = Field(..., description="Método END: LP, ME, EVS, NR13, PM, US, PINTURA")
     title: str
     equipment_tag: str = Field(..., alias="equipmentTag")
     unit_area: str = Field(..., alias="unitArea")
