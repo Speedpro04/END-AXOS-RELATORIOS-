@@ -130,6 +130,15 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 - Senha antiga NÃO foi impressa no terminal nem no resumo. O histórico do git ainda contém a senha antiga (commit `f1eef30`); responsável deve trocá-la.
 - Commits: `2537ffb` (feat(auth): login demo em dev via variáveis de ambiente), `52ace26` (feat(env): variáveis de demo de desenvolvimento no .env.example).
 
+**Tarefa A · Terminologia END e remoção de ABENDI dos textos (27/10/2026)**
+- Textos de interface: HubPage.tsx (`NDT / NR-13` → `END / NR-13`), TenantFooter.tsx (`& NDT` → `& END`), App.tsx (`Laudo Técnico NDT` → `Laudo Técnico END`), InspectionModal.tsx (comentário `Seletor de Método END`), LPPage.tsx (`PR-NDT-LP-002 Rev. 04` → `PR-END-LP-002 Rev. 04`).
+- Identificadores: tipo `NDTMethod` → `ENDMethod` em types/inspection.ts, InspectionModal.tsx, InspectionTable.tsx.
+- Prefixo do laudo: campo `reportPrefix: string` (padrão `'END'`) adicionado a `TenantProfile`; util `buildReportCode(prefix, method, year, seq)` criado em `frontend/src/utils/buildReportCode.ts`; `LAUDO Nº` na LPPage gerado via `buildReportCode`; mocks de App.tsx atualizados para ano 2026 (ex: `END-LP-2026-001`, `NR13-VASO-2026-08`); `contractRef` → `CT-PETRO-2026/0892`; fallback contrato → `CTR-2026-END-089`.
+- ABENDI removido: LPPage.tsx linhas 510 e 687 (`SNQC-ABENDI Nº 14892` → `SNQC Nº 14892`); types/tenant.ts `creaRegister` (`SNQC-ABENDI 4812` → `SNQC 4812`).
+- Verificação padrão: `grep -rniE "\bndt" frontend/src` → zero; busca por `abendi` em `frontend/src` → zero; `npm run build` passa.
+- Commit: `54d6417` (feat(terminologia): remover ABENDI de textos e tipos).
+- Pendências: enum SQL `public.ndt_method` → `public.end_method` não verificado/alterado (banco); tipo `ENDMethod` (maiúsculo) usado em vez de `EndMethod` (camelCase) conforme literal do TAREFAS.md — funcionais equivalentes, sem "NDT" no identificador.
+
 Todas as operações neste repositório são regidas pela skill **andrej-karpathy-skills** (https://github.com/multica-ai/andrej-karpathy-skills.git), inspirada nas observações de Andrej Karpathy sobre armadilhas comuns de LLMs em programação. Ela é a **base obrigatória** para qualquer alteração, implementação ou revisão de código.
 
 ### 5.1. Think Before Coding (Pense Antes de Codificar)
