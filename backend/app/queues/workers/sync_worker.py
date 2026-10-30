@@ -3,9 +3,11 @@
 Responsabilidades:
   1. Recebe o payload do laudo (proveniente do PWA offline via Dexie.js).
   2. Valida o schema com Pydantic.
-  3. Grava no Supabase com retry exponencial (até 3 tentativas).
-  4. Dispara a fila de geração de PDF se o laudo estiver 'aprovado'.
-  5. Em caso de falha definitiva, move para a Dead Letter Queue (DLQ).
+  3. Mapeia campos para o schema real da tabela `reports` no Supabase.
+  4. Mapeia status do frontend para o banco (draft/submitted/approved/issued/returned).
+  5. Grava via função SQL RPC que respeita triggers e regras de inspetor.
+  6. Dispara a fila de geração de PDF quando o laudo estiver 'issued'.
+  7. Em caso de falha definitiva, move para a Dead Letter Queue (DLQ).
 """
 
 from __future__ import annotations
@@ -25,8 +27,28 @@ from tenacity import (
 logger = logging.getLogger(__name__)
 
 # ─────────────────────────────────────────────────────────
+# Mapa de status: frontend ↔ banco (ISO 9001 - rastreabilidade)
+# ─────────────────────────────────────────────────────────
+
+STATUS_MAP_FRONT_TO_DB = {
+    "rascunho": "draft",
+    "enviado": "submitted",
+    "aprovado": "approved",
+    "reprovado": "draft",  # não há status de reprovado no banco; retorna para rascunho
+}
+
+STATUS_DB_TO_FRONT = {
+    "draft": "rascunho",
+    "submitted": "enviado",
+    "approved": "aprovado",
+    "issued": "emitido",
+    "returned": "devolvido",
+}
+
+# ─────────────────────────────────────────────────────────
 # Schemas de validação (Pydantic)
 # ─────────────────────────────────────────────────────────
+
 from pydantic import BaseModel, Field
 from datetime import datetime
 
@@ -54,7 +76,54 @@ class LaudoSyncPayload(BaseModel):
 
 
 # ─────────────────────────────────────────────────────────
-# Gravação no Supabase com retry exponencial
+# Mapeamento de payload frontend → colunas da tabela `reports`
+# ─────────────────────────────────────────────────────────
+
+def _map_payload_to_report(laudo: LaudoSyncPayload, user_id: str) -> dict[str, Any]:
+    """Mapeia campos do frontend para a tabela `reports` do Supabase.
+
+    Regras:
+      - equipmentTag → equipment_tag
+      - date → inspection_date
+      - title, summary, unitArea, method, norm_procedure, acceptance_criteria,
+        findings_count → technical_data ou administrative_data
+      - inspector_id = user_id do token (quem assina o laudo)
+      - work_order_id e template_id: resolvidos via busca padrão do tenant
+    """
+    db_status = STATUS_MAP_FRONT_TO_DB.get(laudo.status, "draft")
+
+    technical_data = {
+        **laudo.technical_data,
+        "method": laudo.method,
+        "title": laudo.title,
+        "unit_area": laudo.unit_area,
+        "norm_procedure": laudo.norm_procedure,
+        "acceptance_criteria": laudo.acceptance_criteria,
+        "findings_count": laudo.findings_count,
+    }
+
+    administrative_data = {
+        "summary": laudo.summary,
+        "inspector_name": laudo.inspector_name,
+        "inspector_snqc": laudo.inspector_snqc,
+    }
+
+    return {
+        "id": laudo.id,
+        "tenant_id": laudo.technical_data.get("tenant_id", ""),
+        "work_order_id": laudo.technical_data.get("work_order_id", ""),
+        "template_id": laudo.technical_data.get("template_id", ""),
+        "inspector_id": user_id,
+        "status": db_status,
+        "equipment_tag": laudo.equipment_tag,
+        "inspection_date": laudo.date,
+        "technical_data": technical_data,
+        "administrative_data": administrative_data,
+    }
+
+
+# ─────────────────────────────────────────────────────────
+# Gravação no Supabase via função SQL RPC (respeita triggers)
 # ─────────────────────────────────────────────────────────
 
 @retry(
@@ -64,27 +133,26 @@ class LaudoSyncPayload(BaseModel):
     before_sleep=before_sleep_log(logger, logging.WARNING),
     reraise=True,
 )
-async def _upsert_laudo_supabase(laudo: LaudoSyncPayload) -> dict[str, Any]:
-    """Grava ou atualiza o laudo no Supabase.
-    Usa UPSERT para ser idempotente: se o laudo já existir, atualiza.
+async def _upsert_laudo_supabase(report_data: dict[str, Any]) -> dict[str, Any]:
+    """Grava ou atualiza o laudo na tabela `reports` via função SQL RPC.
+
+    Usa a função `upsert_laudo` que respeita triggers e regras de inspetor
+    responsável, em vez de upsert direto com service role.
     """
     from supabase import create_client
     from app.core.config import settings
 
     sb = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
 
-    data = laudo.model_dump(by_alias=False, mode="json")
-
     result = (
-        sb.table("laudos")
-        .upsert(data, on_conflict="id")
+        sb.rpc("upsert_laudo", report_data)
         .execute()
     )
 
     if not result.data:
-        raise RuntimeError(f"Supabase não retornou dados após upsert: {result}")
+        raise RuntimeError(f"Supabase não retornou dados após upsert_laudo: {result}")
 
-    logger.info("Laudo %s gravado no Supabase.", laudo.id)
+    logger.info("Laudo %s gravado na tabela reports.", report_data.get("id"))
     return result.data[0]
 
 
@@ -110,9 +178,10 @@ async def task_sync_laudo(ctx: dict, *, payload: dict[str, Any]) -> dict[str, An
 
     Fluxo:
       1. Valida schema
-      2. Upsert no Supabase (3 tentativas com backoff)
-      3. Se aprovado → dispara geração de PDF
-      4. Falha definitiva → DLQ
+      2. Mapeia campos para tabela `reports`
+      3. Grava via função SQL RPC (respeita triggers)
+      4. Se issued → dispara geração de PDF
+      5. Falha definitiva → DLQ
     """
     logger.info("[sync_laudo] Iniciando processamento do laudo: %s", payload.get("id"))
 
@@ -124,20 +193,30 @@ async def task_sync_laudo(ctx: dict, *, payload: dict[str, Any]) -> dict[str, An
         await _move_to_dlq(ctx, payload, str(e))
         return {"status": "erro_validacao", "detail": str(e)}
 
-    # 2. Gravação no Supabase
+    user_id = payload.get("user_id", "")
+
+    # 2. Mapeamento de campos para tabela `reports`
     try:
-        saved = await _upsert_laudo_supabase(laudo)
+        report_data = _map_payload_to_report(laudo, user_id)
+    except Exception as e:
+        logger.error("[sync_laudo] Falha ao mapear campos: %s", e)
+        await _move_to_dlq(ctx, payload, str(e))
+        return {"status": "erro_mapeamento", "detail": str(e)}
+
+    # 3. Gravação no Supabase via RPC
+    try:
+        saved = await _upsert_laudo_supabase(report_data)
     except Exception as e:
         logger.error("[sync_laudo] Falha definitiva ao gravar laudo %s: %s", laudo.id, e)
         await _move_to_dlq(ctx, payload, str(e))
         return {"status": "erro_banco", "detail": str(e)}
 
-    # 3. Dispara geração de PDF se o laudo estiver aprovado
-    if laudo.status == "aprovado":
+    # 4. Dispara geração de PDF se o laudo estiver 'issued'
+    db_status = STATUS_MAP_FRONT_TO_DB.get(laudo.status, "draft")
+    if db_status == "issued":
         try:
             from app.queues.enqueue import enqueue_generate_pdf
             arq: ArqRedis = ctx["redis"]
-            # tenant_id pode vir no payload ou ser consultado via Supabase
             tenant_id = payload.get("tenant_id", "default")
             await enqueue_generate_pdf(arq, laudo_id=laudo.id, tenant_id=tenant_id)
             logger.info("[sync_laudo] PDF enfileirado para laudo %s", laudo.id)
