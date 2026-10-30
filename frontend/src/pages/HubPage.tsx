@@ -1,15 +1,13 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { DashboardMetrics } from '../components/DashboardMetrics'
 import { InspectionTable } from '../components/InspectionTable'
 import type { InspectionReport } from '../types/inspection'
-import { SyncStatusIndicator } from '../components/laudo/SyncStatusIndicator'
-import { ReportStatusChip } from '../components/laudo/ReportStatusChip'
 import {
   METHOD_GROUPS,
   METHODS_CATALOG,
   type MethodCatalogItem,
-  type MethodGroup,
 } from '../data/methodsCatalog'
+import { EmptyState, MethodSection, SearchField } from '../components/catalog'
 
 interface HubPageProps {
   reports: InspectionReport[]
@@ -19,46 +17,12 @@ interface HubPageProps {
   onDeleteReport: (id: string) => void
 }
 
-const RECENT_STORAGE_KEY = 'axos_recent_methods'
-const MAX_RECENT = 3
-
 function normalize(text: string): string {
   return text
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
-}
-
-function MethodButton({ item, onClick, lastStatus, lastError }: { item: MethodCatalogItem; onClick: (item: MethodCatalogItem) => void; lastStatus?: string; lastError?: string }) {
-  return (
-    <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: '4px' }}>
-      <button
-        type="button"
-        onClick={() => onClick(item)}
-        disabled={!item.available}
-        style={{
-          width: '100%',
-          padding: '8px 10px',
-          borderRadius: '4px',
-          border: `1px solid ${item.available ? 'var(--border)' : '#e5e7eb'}`,
-          background: item.available ? 'var(--bg-surface)' : '#f3f4f6',
-          color: item.available ? 'var(--text-primary)' : '#9ca3af',
-          fontSize: '13px',
-          cursor: item.available ? 'pointer' : 'not-allowed',
-          textAlign: 'left',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          opacity: item.available ? 1 : 0.5,
-        }}
-      >
-        <span style={{ fontWeight: 600 }}>{item.name}</span>
-        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{item.code}</span>
-      </button>
-      <ReportStatusChip localStatus={(lastStatus || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro'} serverStatus={lastStatus as string | undefined} lastError={lastError as string | undefined} />
-    </div>
-  )
 }
 
 export const HubPage: React.FC<HubPageProps> = ({
@@ -69,56 +33,18 @@ export const HubPage: React.FC<HubPageProps> = ({
   onDeleteReport,
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
-  const [expandedGroupId, setExpandedGroupId] = useState<string | null>(null)
-  const [recentMethods, setRecentMethods] = useState<string[]>([])
+  const [error, setError] = useState<string | null>(null)
+  const [reportsLoaded, setReportsLoaded] = useState(false)
+  const firstResultRef = useRef<HTMLElement>(null)
 
-  const addRecent = useCallback((code: string) => {
-    setRecentMethods((prev) => {
-      const next = [code, ...prev.filter((c) => c !== code)].slice(0, MAX_RECENT)
-      try {
-        localStorage.setItem(RECENT_STORAGE_KEY, JSON.stringify(next))
-      } catch {
-        // ignore storage errors
+  const draftCountsByMethod = useMemo<Record<string, number>>(() => {
+    const counts: Record<string, number> = {}
+    reports.forEach((r) => {
+      if (r.status === 'rascunho') {
+        counts[r.method] = (counts[r.method] || 0) + 1
       }
-      return next
     })
-  }, [])
-
-  React.useEffect(() => {
-    try {
-      const raw = localStorage.getItem(RECENT_STORAGE_KEY)
-      if (raw) {
-        const parsed = JSON.parse(raw) as string[]
-        if (Array.isArray(parsed)) {
-          setRecentMethods(parsed.slice(0, MAX_RECENT))
-        }
-      }
-    } catch {
-      // ignore storage errors
-    }
-  }, [])
-
-  const handleMethodClick = (item: MethodCatalogItem) => {
-    addRecent(item.code)
-    onSelectModel(item.route)
-  }
-
-  const groupsWithCounts = useMemo<MethodGroup[]>(() => {
-    return METHOD_GROUPS.map((group) => ({
-      ...group,
-      methods: group.methods.map((m) => {
-        const methodReports = reports.filter((r) => r.method === m.code)
-        const lastReport = methodReports.length > 0
-          ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
-          : null
-        return {
-          ...m,
-          count: methodReports.length,
-          lastStatus: lastReport?.status as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro' | undefined,
-          lastError: (lastReport as any)?.lastError,
-        }
-      }),
-    }))
+    return counts
   }, [reports])
 
   const normalizedQuery = normalize(searchQuery)
@@ -133,226 +59,171 @@ export const HubPage: React.FC<HubPageProps> = ({
 
   const isSearchActive = normalizedQuery.length > 0
 
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>
+    timer = setTimeout(() => {
+      // Debounce já está implícito no estado
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [normalizedQuery])
+
+  const handleClear = useCallback(() => {
+    setSearchQuery('')
+  }, [])
+
+  const handleMethodClick = (code: string) => {
+    onSelectModel(code)
+  }
+
+  if (!reportsLoaded) {
+    return (
+      <section
+        role='region'
+        aria-label='Carregando'
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '16px',
+          padding: '48px 24px',
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ fontSize: '16px', color: 'var(--text-muted)', margin: 0 }}>
+          Carregando catálogo de métodos…
+        </p>
+      </section>
+    )
+  }
+
+  if (error) {
+    return (
+      <section
+        role='region'
+        aria-label='Erro'
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '16px',
+          padding: '48px 24px',
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ fontSize: '16px', color: 'var(--text)', margin: 0 }}>
+          Não foi possível carregar o catálogo de métodos.
+        </p>
+        <button
+          type='button'
+          onClick={() => {
+            setError(null)
+            setReportsLoaded(false)
+          }}
+          style={{
+            minHeight: '40px',
+            padding: '0 18px',
+            borderRadius: '5px',
+            border: '1px solid var(--border)',
+            background: 'var(--surface)',
+            color: 'var(--text)',
+            fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
+            fontSize: '16px',
+            fontWeight: 500,
+            cursor: 'pointer',
+          }}
+        >
+          Tentar novamente
+        </button>
+      </section>
+    )
+  }
+
   return (
-    <div className="animate-slide-up" style={{
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '32px',
-      padding: '24px',
-      borderRadius: '12px',
-      background: 'linear-gradient(to bottom, var(--bg-base), var(--bg-surface))',
-      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-      backdropFilter: 'blur(8px)',
-    }}>
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '32px',
+        padding: '32px 24px',
+        maxWidth: '1280px',
+        margin: '0 auto',
+      }}
+    >
       {/* ── SEÇÃO 1: Catálogo de Modelos ── */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-          <div style={{
-            width: '3px', height: '18px',
-            background: 'var(--accent)',
-            borderRadius: '3px',
-          }} />
-          <h3 style={{
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-            fontSize: '18px',
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h2 style={{
+            fontSize: '24px',
             fontWeight: 600,
-            color: 'var(--text-primary)',
+            color: 'var(--text)',
             margin: 0,
             letterSpacing: '-0.01em',
           }}>
-            Catálogo de Modelos Técnicos
-          </h3>
+            Catálogo de modelos
+          </h2>
         </div>
+        <p style={{
+          fontSize: '16px',
+          color: 'var(--text-muted)',
+          margin: 0,
+        }}>
+          Escolha o método de END para iniciar um novo laudo.
+        </p>
 
-        <div style={{ position: 'relative', width: '100%', maxWidth: '520px' }}>
-          <input
-            type="text"
-            placeholder="Buscar método, sigla ou norma..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === '/') {
-                e.preventDefault()
-                ;(e.target as HTMLInputElement).focus()
-              }
-              if (e.key === 'Escape') {
-                setSearchQuery('')
-              }
-            }}
-            style={{
-              width: '100%',
-              padding: '10px 12px 10px 36px',
-              borderRadius: '6px',
-              border: '1px solid var(--border)',
-              background: 'var(--bg-surface)',
-              color: 'var(--text-primary)',
-              fontSize: '14px',
-              boxSizing: 'border-box',
-            }}
-          />
-          <span style={{
-            position: 'absolute',
-            left: '10px',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            color: '#4B5563',
-            fontSize: '14px',
-          }}>🔍</span>
-        </div>
+        <SearchField
+          value={searchQuery}
+          onChange={(v) => setSearchQuery(v)}
+          onClear={handleClear}
+          resultCount={searchResults.length}
+          onFocusFirstResult={() => {
+            if (firstResultRef.current) {
+              ;(firstResultRef.current as HTMLElement).focus()
+            }
+          }}
+        />
 
-        {/* Usados recentemente */}
-        {!isSearchActive && recentMethods.length > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-            <span style={{
-              fontSize: '12px',
-              color: 'var(--text-muted)',
-              fontWeight: 600,
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em',
-            }}>Usados recentemente</span>
-            {recentMethods.map((code) => {
-              const item = METHODS_CATALOG.find((m) => m.code === code)
-              if (!item) return null
+        {isSearchActive && searchResults.length === 0 ? (
+          <EmptyState term={searchQuery} onClear={handleClear} />
+        ) : (
+          <>
+            {METHOD_GROUPS.map((group) => {
+              const groupMethods = isSearchActive
+                ? group.methods.filter((m) => searchResults.some((r) => r.code === m.code))
+                : group.methods
+
+              if (groupMethods.length === 0) return null
+
               return (
-                <button
-                  key={item.code}
-                  type="button"
-                  onClick={() => handleMethodClick(item)}
-                  style={{
-                    padding: '6px 10px',
-                    borderRadius: '4px',
-                    border: '1px solid var(--border)',
-                    background: 'var(--bg-surface)',
-                    color: 'var(--text-primary)',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  {item.code}
-                </button>
+                <MethodSection
+                  key={group.id}
+                  group={group}
+                  methods={groupMethods}
+                  hrefFor={(code) => `/laudo/${code}`}
+                  onClick={handleMethodClick}
+                  draftByMethod={Object.fromEntries(
+                    group.methods.map((m) => [m.code, { status: 'rascunho' as const, count: draftCountsByMethod[m.code] || 0 }])
+                  )}
+                  highlightTerm={isSearchActive ? searchQuery : undefined}
+                />
               )
             })}
-          </div>
+
+            {isSearchActive && searchResults.length === 0 && (
+              <EmptyState term={searchQuery} onClear={handleClear} />
+            )}
+          </>
         )}
-
-        {/* Catálogo de modelos */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, minmax(240px, 1fr))',
-          gap: '24px',
-        }}>
-          {groupsWithCounts.map((group) => {
-            const totalEmitidos = group.methods.reduce((sum, m) => sum + (m.count ?? 0), 0)
-            const isExpanded = expandedGroupId === group.id
-
-            return (
-              <div
-                key={group.id}
-                style={{
-                  background: 'var(--bg-surface)',
-                  border: '1px solid var(--border)',
-                  borderRadius: '6px',
-                  borderLeft: `4px solid ${group.accentColor}`,
-                  padding: '14px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '10px',
-                  cursor: 'pointer',
-                  transition: 'all 0.18s ease-in-out',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border-strong)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = 'var(--border)'
-                }}
-                onClick={() => setExpandedGroupId(isExpanded ? null : group.id)}
-              >
-                <div style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}>
-                  <h4 style={{
-                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
-                    fontSize: '15px',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                  }}>
-                    {group.name}
-                  </h4>
-                  <span style={{
-                    fontFamily: "'DM Mono', monospace",
-                    fontSize: '12px',
-                    fontWeight: 600,
-                    padding: '2px 8px',
-                    background: 'var(--bg-surface-alt)',
-                    border: '1px solid var(--border)',
-                    borderRadius: '3px',
-                    color: 'var(--text-secondary)',
-                  }}>
-                    {totalEmitidos} emitidos
-                  </span>
-                </div>
-
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '6px',
-                  marginTop: '4px',
-                }}>
-                  {group.methods.map((m) => {
-                    const methodReports = reports.filter((r) => r.method === m.code)
-                    const lastReport = methodReports.length > 0
-                      ? methodReports.sort((a, b) => (a.updatedAt || '').localeCompare(b.updatedAt || ''))[0]
-                      : null
-                    return (
-                      <MethodButton
-                        key={m.id}
-                        item={m}
-                        onClick={handleMethodClick}
-                        lastStatus={(lastReport?.status || 'rascunho') as 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 'erro' | 'aprovado'}
-                        lastError={(lastReport as any)?.lastError}
-                      />
-                    )
-                  })}
-                  {group.methods.some((m) => !m.available) && (
-                    <div style={{
-                      fontSize: '11px',
-                      color: '#9ca3af',
-                      fontStyle: 'italic',
-                      paddingLeft: '2px',
-                    }}>Em breve</div>
-                  )}
-                  {group.methods.length > 1 && (
-                    <div style={{
-                      fontSize: '11px',
-                      color: '#6b7280',
-                      fontStyle: 'italic',
-                      paddingLeft: '2px',
-                      marginTop: '4px',
-                    }}>
-                      +{group.methods.length - 1} método(s) na busca
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </section>
 
-      {/* ── SEÇÃO 2: KPIs ── */}
+      {/* ── SEÇÃO 2: KPIs (mantida) ── */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <div style={{
             width: '3px', height: '18px',
             background: 'var(--accent)',
-            borderRadius: '3px',
+            borderRadius: '5px',
           }} />
           <h3 style={{
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
@@ -368,13 +239,13 @@ export const HubPage: React.FC<HubPageProps> = ({
         <DashboardMetrics reports={reports} />
       </section>
 
-      {/* ── SEÇÃO 3: Tabela ── */}
+      {/* ── SEÇÃO 3: Tabela (mantida) ── */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <div style={{
             width: '3px', height: '18px',
             background: 'var(--accent)',
-            borderRadius: '3px',
+            borderRadius: '5px',
           }} />
           <h3 style={{
             fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
