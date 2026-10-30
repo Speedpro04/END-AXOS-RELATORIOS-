@@ -22,12 +22,16 @@ O sistema resolve os gargalos de digitalização de laudos em campo, permitindo 
 ### 3.1. Frontend PWA (Offline-First)
 - **Tecnologias**: React 18, TypeScript, Vite, Dexie.js (IndexedDB).
 - **Operação Offline**: Armazenamento de dados de inspeção e imagens/anexos localmente no IndexedDB via Dexie (`axos-anexos`).
-- **Design System & Estética**:
-  - Tema escuro por padrão (grafite neutro `#121315`, campos `#24272B`, acento ciano `#2FB8D6`).
-  - Modo claro alternável (`#F1F3F4`, `#FFFFFF`) com botão Sol/Lua (mínimo 44px) no canto superior direito.
-  - Sincronização de tema instantânea sem flash via chave `axos_theme` no `localStorage`.
-  - Fontes tipográficas industriais: **Archivo** (títulos e botões de ação) e **IBM Plex Sans** (textos, campos e leitura técnica).
-  - Tela de login unificada e delimitada em **1140px** no desktop, com painel de marca (grafite constante com animação A-Scan de ultrassom) alinhado horizontalmente topo-a-topo com a logo e base-a-base com as linhas inferiores de rodapé.
+- **Design System & Estética** (regras em `.agents/skills/design-frontend/skill.md`):
+  - Tema único: **escuro (dark mode)** em todos os sistemas. Não existe tema claro nem botão de alternar tema.
+  - Raio de borda: **5px** em tudo (botão, input, card, modal, badge, tabela, menu). Única exceção: avatar circular.
+  - **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço (Lucide), 16px ou 20px, traço 1.75.
+  - Toda cor, tamanho, espaçamento e raio vem dos tokens de design. Sem valores soltos.
+  - Sem gradientes, sem glassmorphism, sem sombras pesadas, sem animação decorativa.
+  - Fontes tipográficas: **Archivo** (Google Fonts), pesos 400 a 600. Sem serifa no painel.
+  - Cores de superfície: fundo `#0B0F14`, superfície `#121821`, superfície-muted `#1A2230`, borda `#263042`, texto `#E8ECF2`, texto-muted `#9AA6B8`.
+  - Acento: `#2F6FDB` (botão primário, texto branco). Status com cor + texto em badge.
+  - Controles (botão, input, select): altura 40px, raio 5px. Padding de card/modal: 24px.
 
 ### 3.2. Backend & Fila de Espera Redis
 - **Tecnologias**: Python 3.11+, FastAPI, Redis 7+ (hiredis), ARQ (Async Redis Queue), Tenacity.

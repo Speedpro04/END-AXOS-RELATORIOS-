@@ -21,19 +21,20 @@ O **AXOS Relatórios** é uma solução de software para o segmento de Integrida
 - **Implementação**:
   - `frontend/src/services/dbDexie.ts`: Utilização de `import Dexie, { type Table } from 'dexie'` e schema `axos-anexos` indexado por `laudoId`.
 
-### 2.3. Design System & Tela de Login
-- **Tema Escuro Padrão**: Sincronizado com `ThemeContext.tsx`, inicializa sempre em `dark` na primeira visita e persiste a chave `axos_theme` no `localStorage`.
-- **Layout Unificado 1140px**:
-  - Container delimitado em `maxWidth: 1140px` com centralização automática.
-  - Painéis unidos sem lacunas (`login-brand-panel` em grafite `#0D0F11` e `login-form-panel` em `#1A1C1F` no escuro ou `#FFFFFF` no claro).
-  - Alinhamento superior: O topo do formulário ("Portal de Acesso" e título) está alinhado com a logo Axos.
-  - Alinhamento inferior: O rodapé de links e segurança está alinhado com as três linhas de bullets técnicos do painel esquerdo.
-  - Gráfico animado de ultrassom A-scan centralizado no painel esquerdo.
-  - Logo oficial AXOS Relatórios centralizada no painel de login e inserida no rodapé (`TenantFooter`).
+### 2.3. Design System (regras em `.agents/skills/design-frontend/skill.md`)
+- **Tema único**: escuro (dark mode) em todos os sistemas. Não existe tema claro nem botão de alternar tema.
+- **Raio de borda**: 5px em tudo (botão, input, card, modal, badge, tabela, menu). Exceção: avatar circular.
+- **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço (Lucide), 16px ou 20px, traço 1.75.
+- **Cores de superfície**: fundo `#0B0F14`, superfície `#121821`, superfície-muted `#1A2230`, borda `#263042`, texto `#E8ECF2`, texto-muted `#9AA6B8`.
+- **Acento**: `#2F6FDB` (botão primário, texto branco).
+- **Controles**: altura 40px, raio 5px. Padding de card/modal: 24px.
+- **Sem gradientes, glassmorphism, sombras pesadas ou animação decorativa**.
 
-### 2.4. Cards de Métricas Operacionais (Alto Contraste)
-- Redesenho completo do `DashboardMetrics.tsx` eliminando o visual leitoso/apagado anterior (`rgba(255,255,255,0.45)`).
-- Cards em grafite escuro sólido (`#1C1F24` a `#15171A`), com faixa de destaque superior colorida (3px), ícones Lucide específicos por status, números em Archivo de alto contraste e tipografia mono nítida sem truncamentos.
+### 2.4. Cards de Métricas Operacionais
+- Card de KPI: rótulo 14px `--text-muted`, valor 28px peso 600, variação opcional em 14px com cor de status.
+- Cards seguem as regras do Design System: raio 5px, fundo `--surface`, borda 1px `--border`, sem sombra.
+- Ícones apenas em SVG de traço (Lucide), 16px ou 20px, traço 1.75.
+- Números com `font-variant-numeric: tabular-nums`.
 
 ### 2.5. Deploy e Containers (EasyPanel)
 - `backend/Dockerfile`: Imagem multi-stage Python 3.11 compartilhada entre API (Uvicorn) e Worker (ARQ).
