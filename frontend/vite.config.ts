@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      includeAssets: ['favicon.png', 'favicon.svg'],
       manifest: {
         name: 'AXOS — Laudos de Inspeção',
         short_name: 'AXOS',
@@ -30,7 +30,7 @@ export default defineConfig({
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [],
       },
-      devOptions: { enabled: true },
+      devOptions: { enabled: false },
     }),
   ],
   resolve: {

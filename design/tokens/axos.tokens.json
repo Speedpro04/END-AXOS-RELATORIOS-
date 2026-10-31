@@ -1,0 +1,22 @@
+{
+  "_nota": "Fonte unica de verdade visual. Edite aqui e rode `node scripts/build-tokens.mjs`. Itens com 'confirmar' precisam de decisao.",
+  "color": {
+    "navy":       { "value": "#0A2540" },
+    "gold":       { "value": "#C9A24B", "confirmar": "hex do dourado ainda nao definido" },
+    "bg":         { "value": "#07182B" },
+    "surface":    { "value": "#0D2D4D" },
+    "border":     { "value": "#1B3F66" },
+    "text":       { "value": "#E8EEF5" },
+    "text-muted": { "value": "#9FB3C8" },
+    "danger":     { "value": "#E5484D" },
+    "success":    { "value": "#30A46C" }
+  },
+  "font": {
+    "ui":      { "value": "Archivo, system-ui, sans-serif" },
+    "display": { "value": "'Cormorant Garamond', serif" },
+    "brand":   { "value": "Montserrat, system-ui, sans-serif" }
+  },
+  "radius": { "base": { "value": "5px" } },
+  "space":  { "1": {"value":"4px"}, "2": {"value":"8px"}, "3": {"value":"12px"}, "4": {"value":"16px"}, "6": {"value":"24px"}, "8": {"value":"32px"} },
+  "weight": { "regular": {"value":"400"}, "medium": {"value":"500"}, "semibold": {"value":"600"} }
+}

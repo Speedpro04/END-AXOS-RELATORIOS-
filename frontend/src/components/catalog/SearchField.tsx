@@ -4,6 +4,7 @@ interface SearchFieldProps {
   onClear: () => void
   resultCount: number
   onFocusFirstResult: () => void
+  style?: React.CSSProperties
 }
 
 export const SearchField: React.FC<SearchFieldProps> = ({
@@ -12,6 +13,7 @@ export const SearchField: React.FC<SearchFieldProps> = ({
   onClear,
   resultCount,
   onFocusFirstResult,
+  style,
 }) => {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === '/') {
@@ -28,23 +30,12 @@ export const SearchField: React.FC<SearchFieldProps> = ({
   }
 
   return (
-    <div style={{ position: 'relative', width: '100%', maxWidth: '480px' }}>
-      <label
-        htmlFor='catalogo-busca'
-        style={{
-          display: 'block',
-          fontSize: '14px',
-          fontWeight: 500,
-          color: 'var(--text)',
-          marginBottom: '6px',
-        }}
-      >
-        Buscar método, sigla ou norma
-      </label>
+    <div style={{ position: 'relative', width: '100%', ...style }}>
       <input
         id='catalogo-busca'
         type='text'
-        placeholder='Buscar método, sigla ou norma...'
+        aria-label='Buscar por método, sigla ou norma'
+        placeholder='Buscar por método, sigla ou norma'
         value={value}
         onChange={(e) => onChange(e.target.value)}
         onKeyDown={handleKeyDown}
@@ -52,20 +43,21 @@ export const SearchField: React.FC<SearchFieldProps> = ({
         spellCheck={false}
         style={{
           width: '100%',
-          padding: '10px 12px 10px 36px',
+          height: '48px',
+          boxSizing: 'border-box',
+          padding: '0 48px 0 40px',
           borderRadius: '5px',
           border: '1px solid var(--border)',
-          background: 'var(--surface)',
-          color: 'var(--text)',
-          fontSize: '16px',
+          background: 'var(--bg-surface)',
+          color: 'var(--text-primary)',
+          fontSize: '15px',
           fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
-          boxSizing: 'border-box',
         }}
       />
       <span
         style={{
           position: 'absolute',
-          left: '12px',
+          left: '14px',
           top: '50%',
           transform: 'translateY(-50%)',
           color: 'var(--text-muted)',
@@ -78,6 +70,22 @@ export const SearchField: React.FC<SearchFieldProps> = ({
           <circle cx='11' cy='11' r='8' />
           <line x1='21' y1='21' x2='16.65' y2='16.65' />
         </svg>
+      </span>
+      <span
+        style={{
+          position: 'absolute',
+          right: '40px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          color: 'var(--text-muted)',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          fontSize: '11px',
+          fontWeight: 500,
+        }}
+        aria-hidden='true'
+      >
+        /
       </span>
       {value.length > 0 && (
         <button

@@ -1,0 +1,34 @@
+{
+  "_nota": "Camada Axos Relatorios. App: base grafite, acento azul industrial, alertas verde e vermelho, sobrio e com rigor normativo. Suporte a tema escuro nas telas e tema claro exclusivo para impressao/PDF.",
+  "layout": {
+    "lp-max-width": { "value": "1140px" },
+    "app-max-width": { "value": "1280px" },
+    "sidebar-width": { "value": "240px" }
+  },
+  "color": {
+    "bg":             { "value": "#0B0F14" },
+    "surface":        { "value": "#121821" },
+    "surface-muted":  { "value": "#1A2230" },
+    "border":         { "value": "#263042" },
+    "text":           { "value": "#E8ECF2" },
+    "text-muted":     { "value": "#9AA6B8" },
+    "accent":         { "value": "#2F6FDB" },
+    "accent-hover":   { "value": "#2A64C8" },
+    "accent-text":    { "value": "#6FA8FF" },
+    "accent-soft":    { "value": "#16263F" },
+    "success":        { "value": "#3DBE7A" },
+    "success-soft":   { "value": "#11271C" },
+    "warning":        { "value": "#E0A93B" },
+    "warning-soft":   { "value": "#2B2210" },
+    "danger":         { "value": "#F06A6A" },
+    "danger-soft":    { "value": "#2E1618" },
+    "info":           { "value": "#6FA8FF" },
+    "info-soft":      { "value": "#14253D" }
+  },
+  "theme-print": {
+    "paper":          { "value": "#FFFFFF" },
+    "ink":            { "value": "#111111" },
+    "border":         { "value": "#CCCCCC" },
+    "muted":          { "value": "#555555" }
+  }
+}

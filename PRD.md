@@ -22,16 +22,19 @@ O sistema resolve os gargalos de digitalização de laudos em campo, permitindo 
 ### 3.1. Frontend PWA (Offline-First)
 - **Tecnologias**: React 18, TypeScript, Vite, Dexie.js (IndexedDB).
 - **Operação Offline**: Armazenamento de dados de inspeção e imagens/anexos localmente no IndexedDB via Dexie (`axos-anexos`).
-- **Design System & Estética** (regras em `.agents/skills/design-frontend/skill.md`):
-  - Tema único: **escuro (dark mode)** em todos os sistemas. Não existe tema claro nem botão de alternar tema.
+- **Design System & Estética** (especificação em `design/` e regras em `.agents/skills/design-frontend/skill.md`):
+  - **Fonte de verdade de tokens**: `design/tokens/products/axos-relatorios.tokens.json`, compilados via `node design/scripts/build-tokens.mjs` para `design/tokens/dist/axos-relatorios.css`.
+  - Tema único em tela: **escuro (dark mode)** em todos os sistemas operacionais e PWA. Não existe tema claro nas telas.
+  - Tema claro exclusivo para laudos técnicos em PDF/impressão (`theme-print`): papel `#FFFFFF` e tinta `#111111` para conformidade com normas NR-13 e Petrobras.
   - Raio de borda: **5px** em tudo (botão, input, card, modal, badge, tabela, menu). Única exceção: avatar circular.
-  - **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço (Lucide), 16px ou 20px, traço 1.75.
-  - Toda cor, tamanho, espaçamento e raio vem dos tokens de design. Sem valores soltos.
+  - **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço uniforme (Lucide ou catálogo de métodos de END em `design/brand/icons/end/`), 16px ou 20px, traço 1.75.
+  - Toda cor, tamanho, espaçamento e raio vem dos tokens de design compilados. Sem valores soltos.
   - Sem gradientes, sem glassmorphism, sem sombras pesadas, sem animação decorativa.
-  - Fontes tipográficas: **Archivo** (Google Fonts), pesos 400 a 600. Sem serifa no painel.
+  - Fontes tipográficas: **Archivo** (Google Fonts), pesos 400 a 600. Sem serifa no painel. Números com `tabular-nums`.
   - Cores de superfície: fundo `#0B0F14`, superfície `#121821`, superfície-muted `#1A2230`, borda `#263042`, texto `#E8ECF2`, texto-muted `#9AA6B8`.
   - Acento: `#2F6FDB` (botão primário, texto branco). Status com cor + texto em badge.
   - Controles (botão, input, select): altura 40px, raio 5px. Padding de card/modal: 24px.
+  - Controle de qualidade visual guiado por `design/docs/qualidade-checklist.md`.
 
 ### 3.2. Backend & Fila de Espera Redis
 - **Tecnologias**: Python 3.11+, FastAPI, Redis 7+ (hiredis), ARQ (Async Redis Queue), Tenacity.
@@ -137,9 +140,10 @@ Em ambiente de desenvolvimento, um bloco de login direto pode estar ativo apenas
 
 ---
 
-## 8. Hub — Catálogo de Métodos (6 grupos, busca e cascata)
+## 8. Hub — Catálogo de Métodos (6 grupos, busca)
 
-O Hub exibe os modelos técnicos organizados em 6 grupos:
+O Hub exibe todos os modelos técnicos em uma **grade única de botões**, todos visíveis de uma vez, um clique para entrar e trabalhar naquele método.
+
 1. Superfície: LP (Líquido Penetrante), PM (Partícula Magnética)
 2. Ultrassom: US (Ultrassom Industrial), ME (Medição de Espessura)
 3. Radiográfico: Radiografia Industrial (disponível em breve)
@@ -148,11 +152,13 @@ O Hub exibe os modelos técnicos organizados em 6 grupos:
 6. Vasos de Pressão (NR-13): NR-13
 
 Funcionalidades:
-- Barra de busca larga com atalho "/" (foco) e Esc (limpa). Busca normalizada (sem acento, minúsculas) casando em nome, sigla, normas e aliases.
-- Linha "Usados recentemente" (até 3 chips), persistidos em `localStorage` (`axos_recent_methods`).
-- Grade de 6 quadros de grupo, cada um com borda lateral colorida, nome do grupo e contador de laudos emitidos.
-- Cascata: clicar no grupo expõe a lista de métodos do grupo abaixo da grade; só um grupo aberto por vez.
-- Métodos `available:false` aparecem desabilitados com "Em breve".
+- Barra de busca na largura total do contêiner de métodos (mesma largura dos botões abaixo), altura 48px, raio 5px, borda 1px, ícone de lupa à esquerda. Placeholder: "Buscar por método, sigla ou norma". Atalho "/" foca o campo; Esc limpa. Ao lado direito, dentro do campo, dica "/" em fonte pequena e cor secundária.
+- Busca normalizada (sem acento, minúsculas) casando em nome, sigla, norma, aliases e nome da família (a família não é exibida na tela, mas serve como termo de busca).
+- Contagem abaixo do campo: "N método(s) disponível(ões)" quando a busca estiver vazia; "N resultado(s)" quando houver busca ativa.
+- Ordem alfabética pelo nome do método, `localeCompare('pt-BR', { sensitivity: 'base' })`. Métodos `available:false` ("Em breve") ficam no final, também em ordem alfabética.
+- Botões: 52px de altura, padding horizontal 20px, raio 5px, borda 1px, nome do método à esquerda (16px, peso 500) e sigla à direita (14px, cor secundária, `tabular-nums`). Sem ícone, sem caixa alta, sem monoespaçada. Hover: borda no tom de acento e fundo um nível mais claro. Desabilitado ("Em breve"): texto secundário, sem hover, sem foco por clique.
+- Contagem "N métodos disponíveis" fica abaixo do campo, alinhada à esquerda, 14px, cor secundária.
+- Clique no método abre diretamente a rota `/laudo/{code}` (mesma rota de antes). Suporte a abrir em nova aba com clique do meio ou Ctrl/Cmd+clique (usar `<a>` com `href` real).
 
 Catálogo em `frontend/src/data/methodsCatalog.ts`. Função `getEnabledMethods(tenant)` retorna os métodos disponíveis, com ponto de extensão para habilitação por tenant.
 

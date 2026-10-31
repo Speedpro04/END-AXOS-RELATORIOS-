@@ -21,14 +21,17 @@ O **AXOS Relatórios** é uma solução de software para o segmento de Integrida
 - **Implementação**:
   - `frontend/src/services/dbDexie.ts`: Utilização de `import Dexie, { type Table } from 'dexie'` e schema `axos-anexos` indexado por `laudoId`.
 
-### 2.3. Design System (regras em `.agents/skills/design-frontend/skill.md`)
-- **Tema único**: escuro (dark mode) em todos os sistemas. Não existe tema claro nem botão de alternar tema.
+### 2.3. Design System (repositório `design/` e regras em `.agents/skills/design-frontend/skill.md`)
+- **Fonte única de tokens**: `design/tokens/products/axos-relatorios.tokens.json`, compilado via `node design/scripts/build-tokens.mjs` para `design/tokens/dist/axos-relatorios.css`.
+- **Tema único nas telas**: escuro (dark mode) em todos os sistemas operacionais e PWA. Não existe tema claro na interface de campo.
+- **Tema de impressão claro (`theme-print`)**: papel `#FFFFFF` e texto `#111111` exclusivamente para laudos impressos e geração de PDFs técnicos (normas NR-13, ASME, Petrobras).
 - **Raio de borda**: 5px em tudo (botão, input, card, modal, badge, tabela, menu). Exceção: avatar circular.
-- **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço (Lucide), 16px ou 20px, traço 1.75.
+- **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço uniforme (Lucide ou catálogo de métodos de END em `design/brand/icons/end/`), 16px ou 20px, traço 1.75, cor via `currentColor`.
 - **Cores de superfície**: fundo `#0B0F14`, superfície `#121821`, superfície-muted `#1A2230`, borda `#263042`, texto `#E8ECF2`, texto-muted `#9AA6B8`.
 - **Acento**: `#2F6FDB` (botão primário, texto branco).
 - **Controles**: altura 40px, raio 5px. Padding de card/modal: 24px.
 - **Sem gradientes, glassmorphism, sombras pesadas ou animação decorativa**.
+- **Controle de qualidade**: validado contra `design/docs/qualidade-checklist.md`.
 
 ### 2.4. Cards de Métricas Operacionais
 - Card de KPI: rótulo 14px `--text-muted`, valor 28px peso 600, variação opcional em 14px com cor de status.
@@ -50,6 +53,12 @@ END-AXOS-RELATORIOS/
 ├── PRD.md                               ← Documento de Requisitos do Produto
 ├── MEMORY.md                            ← Histórico de decisões e arquitetura
 ├── docker-compose.yml                   ← Ambiente local (Redis, API, Worker, Front)
+├── design/                              ← Design System oficial Axos Hub
+│   ├── README.md                        ← Guia de integração e uso do design
+│   ├── tokens/                          ← Tokens base e do produto (axos-relatorios.tokens.json)
+│   ├── brand/icons/end/                 ← Catálogo de ícones de métodos de END
+│   ├── docs/                            ← Especificação de ícones, QA checklist e PDCA
+│   └── scripts/                         ← build-tokens.mjs e check-assets.mjs
 ├── backend/
 │   ├── Dockerfile                       ← Build da API e Worker ARQ
 │   ├── pyproject.toml                   ← Dependências Python
@@ -265,3 +274,34 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
 - Repositório: https://github.com/multica-ai/andrej-karpathy-skills.git
 - Arquivo base: `CLAUDE.md` (quatro princípios detalhados)
 - Exemplos: `EXAMPLES.md` (anti-padrões e correções)
+
+---
+
+## Tarefa H · Correção e evolução do Hub, catálogo e cards (31/10/2026)
+
+- `frontend/src/pages/HubPage.tsx`: removido o estado falso `reportsLoaded` que travava a tela eternamente em "Carregando catálogo de métodos…"; o conteúdo agora renderiza direto. Catálogo redesenhado em **grade única de botões** (todos visíveis de uma vez, um clique), ordem alfabética `localeCompare('pt-BR')` com "Em breve" no final, busca que também casa o nome da família, contagem "N método(s) disponível(ões)" / "N resultado(s)" abaixo do campo, rota `/laudo/{code}` preservada. Wrapper da página com largura máxima 1280px, centralizado, padding lateral 32px — mesma régua do cabeçalho.
+- `frontend/src/components/catalog/MethodButton.tsx`: botão 52px, raio 5px, nome 16px/500 à esquerda e sigla 14px `tabular-nums` à direita, sem ícone, sem caixa alta, sem monoespaçada; hover com borda no tom de acento; desabilitado ("Em breve") texto secundário sem hover.
+- `frontend/src/components/catalog/MethodSection.tsx`: removido (não usado mais).
+- `frontend/src/components/catalog/SearchField.tsx`: campo na largura total do contêiner, 48px, ícone de lupa à esquerda, dica "/" dentro do campo, placeholder completo "Buscar por método, sigla ou norma"; props `style` adicionada.
+- `frontend/src/components/catalog/EmptyState.tsx`: botão "Limpar busca" discreto (sem borda, texto secundário).
+- `frontend/src/components/InspectionTable.tsx`: reescrita. Tabela com `table-layout: fixed`, larguras proporcionais por coluna, sem `overflow-x` nem `min-width` forçado (zero rolagem horizontal na tabela e na página). Cabeçalhos em uma linha: Código, Ensaio, Tag, Unidade / área, Emissão, Inspetor, Veredito — sem caixa alta, sem monoespaçada. Células longas com `text-overflow: ellipsis` e tooltip completo. Coluna Ensaio mostra só a sigla uma vez. Ações: "Abrir" visível; PDF e Remover movidas para menu de três pontos (todas as ações e permissões preservadas). Abaixo de 768px, cada laudo vira card empilhado, sem rolagem horizontal.
+- `frontend/src/components/DashboardMetrics.tsx`: cards de KPI com única cor de detalhe (azul acento `--accent-text`) na faixa superior, número e barra de progresso; "Não-conformes" em vermelho (`--danger`) só quando valor > 0.
+- `frontend/src/components/TenantHeader.tsx`: selo de papel do usuário (Administrador/Supervisor/Inspetor) em azul escuro (`#0C4A6E`) para todos os papéis; largura dos containers de header alinhada em 1280px.
+- `frontend/src/index.css`: adicionados tokens `--card-met-azul`, `--card-met-azul-hover`, `--card-met-azul-texto`, `--accent-text`; removidos tokens órfãos de chip verde.
+- `frontend/vite.config.ts`: service worker desativado em desenvolvimento (`devOptions.enabled = false`); `includeAssets` corrigido para os arquivos existentes (`favicon.png`, `favicon.svg`).
+- `frontend/public/pwa-192x192.png` e `pwa-512x512.png`: gerados a partir do `logo-axos.png` sobre fundo `#0f172a`, substituindo ícones ausentes/inexistentes que causavam erro de ícone inválido no PWA.
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` passa.
+- Commits pendentes: tudo abaixo em um único commit.
+
+**Pendências:** banco (Supabase) não aplicado em ambiente de teste; migrations de `tenants`, `report_pdfs`, `sites`, `work_orders` não verificadas contra o projeto real. Telas de cadastro usam dados mockados. Pendente: rotacionar senha do demo (commit `f1eef30` ainda contém senha antiga no histórico do git).
+
+
+## 7. Integração do Design System Oficial Axos Hub (31/10/2026)
+
+- Incorporação do repositório `design/` (originado de `axos-design`):
+  - Tokens semânticos e overrides consolidados em `design/tokens/products/axos-relatorios.tokens.json`.
+  - Compilação automatizada via `node design/scripts/build-tokens.mjs` gerando `design/tokens/dist/axos-relatorios.css` (25 overrides validados com zero pendências).
+  - Regra de dualidade: tema escuro exclusivo para PWA e telas operacionais em campo; `theme-print` (papel `#FFFFFF`, tinta `#111111`) exclusivo para geração de PDFs e relatórios impressos (NR-13, ASME, Petrobras).
+  - Catálogo de ícones de Ensaios Não Destrutivos em `design/brand/icons/end/end-methods.json` com especificações em `design/docs/icones-end.md` (grade 24x24, traço uniforme 1.75px, `currentColor`).
+  - Checklist de controle de qualidade e QA visual documentado em `design/docs/qualidade-checklist.md`.
+

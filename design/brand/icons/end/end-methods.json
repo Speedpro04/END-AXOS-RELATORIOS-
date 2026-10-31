@@ -1,0 +1,21 @@
+{
+  "_nota": "Rascunho a partir das siglas de metodos_end_16.md. CONFIRMAR nomes e escopo contra o arquivo original antes de desenhar.",
+  "arquivo": "icon-end-<sigla>.svg",
+  "metodos": [
+    { "sigla": "vt",           "nome": "Ensaio visual" },
+    { "sigla": "pt",           "nome": "Liquido penetrante" },
+    { "sigla": "mt",           "nome": "Particulas magneticas" },
+    { "sigla": "ut",           "nome": "Ultrassom" },
+    { "sigla": "rt",           "nome": "Radiografia" },
+    { "sigla": "et",           "nome": "Correntes parasitas" },
+    { "sigla": "estanqueidade","nome": "Estanqueidade" },
+    { "sigla": "paut",         "nome": "Phased array" },
+    { "sigla": "tofd",         "nome": "ToFD" },
+    { "sigla": "cr-dr",        "nome": "Radiografia computadorizada e digital" },
+    { "sigla": "eca",          "nome": "ECA" },
+    { "sigla": "ea",           "nome": "Emissao acustica" },
+    { "sigla": "termografia",  "nome": "Termografia" },
+    { "sigla": "acfm",         "nome": "ACFM" },
+    { "sigla": "tfm-fmc",      "nome": "TFM e FMC" }
+  ]
+}

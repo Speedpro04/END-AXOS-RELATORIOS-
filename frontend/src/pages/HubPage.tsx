@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { DashboardMetrics } from '../components/DashboardMetrics'
 import { InspectionTable } from '../components/InspectionTable'
 import type { InspectionReport } from '../types/inspection'
@@ -7,8 +7,7 @@ import {
   METHODS_CATALOG,
   type MethodCatalogItem,
 } from '../data/methodsCatalog'
-import { EmptyState, MethodSection, SearchField } from '../components/catalog'
-
+import { EmptyState, MethodButton, SearchField } from '../components/catalog'
 interface HubPageProps {
   reports: InspectionReport[]
   onSelectModel: (modelKey: string) => void
@@ -34,38 +33,46 @@ export const HubPage: React.FC<HubPageProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
-  const [reportsLoaded, setReportsLoaded] = useState(false)
-  const firstResultRef = useRef<HTMLElement>(null)
-
-  const draftCountsByMethod = useMemo<Record<string, number>>(() => {
-    const counts: Record<string, number> = {}
-    reports.forEach((r) => {
-      if (r.status === 'rascunho') {
-        counts[r.method] = (counts[r.method] || 0) + 1
-      }
-    })
-    return counts
-  }, [reports])
+  const resultsWrapRef = useRef<HTMLDivElement>(null)
 
   const normalizedQuery = normalize(searchQuery)
+
+  // Nome da família entra na busca embora os títulos por família não apareçam na tela
+  const familyNameByCode = useMemo<Record<string, string>>(() => {
+    const map: Record<string, string> = {}
+    METHOD_GROUPS.forEach((g) => {
+      g.methods.forEach((m) => {
+        map[m.code] = g.name
+      })
+    })
+    return map
+  }, [])
 
   const searchResults = useMemo<MethodCatalogItem[]>(() => {
     if (!normalizedQuery) return []
     return METHODS_CATALOG.filter((m) => {
-      const haystack = normalize(`${m.name} ${m.code} ${m.norm} ${m.aliases.join(' ')}`)
+      const haystack = normalize(
+        `${m.name} ${m.code} ${m.norm} ${familyNameByCode[m.code] ?? ''} ${m.aliases.join(' ')}`
+      )
       return haystack.includes(normalizedQuery)
     })
-  }, [normalizedQuery])
+  }, [normalizedQuery, familyNameByCode])
 
   const isSearchActive = normalizedQuery.length > 0
 
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout>
-    timer = setTimeout(() => {
-      // Debounce já está implícito no estado
-    }, 100)
-    return () => clearTimeout(timer)
-  }, [normalizedQuery])
+  const byName = (a: MethodCatalogItem, b: MethodCatalogItem) =>
+    a.name.localeCompare(b.name, 'pt-BR', { sensitivity: 'base' })
+
+  const visibleMethods = useMemo<MethodCatalogItem[]>(() => {
+    const base = isSearchActive ? searchResults : METHODS_CATALOG
+    return [
+      ...base.filter((m) => m.available).sort(byName),
+      ...base.filter((m) => !m.available).sort(byName),
+    ]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isSearchActive, searchResults])
+
+  const availableCount = visibleMethods.filter((m) => m.available).length
 
   const handleClear = useCallback(() => {
     setSearchQuery('')
@@ -73,28 +80,6 @@ export const HubPage: React.FC<HubPageProps> = ({
 
   const handleMethodClick = (code: string) => {
     onSelectModel(code)
-  }
-
-  if (!reportsLoaded) {
-    return (
-      <section
-        role='region'
-        aria-label='Carregando'
-        style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '16px',
-          padding: '48px 24px',
-          textAlign: 'center',
-        }}
-      >
-        <p style={{ fontSize: '16px', color: 'var(--text-muted)', margin: 0 }}>
-          Carregando catálogo de métodos…
-        </p>
-      </section>
-    )
   }
 
   if (error) {
@@ -119,7 +104,6 @@ export const HubPage: React.FC<HubPageProps> = ({
           type='button'
           onClick={() => {
             setError(null)
-            setReportsLoaded(false)
           }}
           style={{
             minHeight: '40px',
@@ -146,7 +130,7 @@ export const HubPage: React.FC<HubPageProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: '32px',
-        padding: '32px 24px',
+        padding: '32px 32px',
         maxWidth: '1280px',
         margin: '0 auto',
       }}
@@ -158,7 +142,7 @@ export const HubPage: React.FC<HubPageProps> = ({
             fontSize: '24px',
             fontWeight: 600,
             color: 'var(--text)',
-            margin: 0,
+            margin: '0 0 8px',
             letterSpacing: '-0.01em',
           }}>
             Catálogo de modelos
@@ -167,7 +151,7 @@ export const HubPage: React.FC<HubPageProps> = ({
         <p style={{
           fontSize: '16px',
           color: 'var(--text-muted)',
-          margin: 0,
+          margin: '0 0 24px',
         }}>
           Escolha o método de END para iniciar um novo laudo.
         </p>
@@ -178,42 +162,44 @@ export const HubPage: React.FC<HubPageProps> = ({
           onClear={handleClear}
           resultCount={searchResults.length}
           onFocusFirstResult={() => {
-            if (firstResultRef.current) {
-              ;(firstResultRef.current as HTMLElement).focus()
-            }
+            const first = resultsWrapRef.current?.querySelector<HTMLAnchorElement>('a[href]')
+            first?.focus()
           }}
+          style={{ marginBottom: '8px' }}
         />
+        <p
+          style={{
+            fontSize: '14px',
+            fontWeight: 500,
+            color: 'var(--text-muted)',
+            margin: '0 0 16px',
+          }}
+        >
+          {isSearchActive && searchResults.length > 0 ? `${searchResults.length === 1 ? '1' : searchResults.length} resultado(s)` : availableCount === 1 ? '1 método disponível' : `${availableCount} métodos disponíveis`}
+        </p>
 
         {isSearchActive && searchResults.length === 0 ? (
           <EmptyState term={searchQuery} onClear={handleClear} />
         ) : (
-          <>
-            {METHOD_GROUPS.map((group) => {
-              const groupMethods = isSearchActive
-                ? group.methods.filter((m) => searchResults.some((r) => r.code === m.code))
-                : group.methods
-
-              if (groupMethods.length === 0) return null
-
-              return (
-                <MethodSection
-                  key={group.id}
-                  group={group}
-                  methods={groupMethods}
-                  hrefFor={(code) => `/laudo/${code}`}
+          <div ref={resultsWrapRef}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
+                gap: '16px',
+              }}
+            >
+              {visibleMethods.map((m) => (
+                <MethodButton
+                  key={m.code}
+                  item={m}
+                  href={`/laudo/${m.code}`}
                   onClick={handleMethodClick}
-                  draftByMethod={Object.fromEntries(
-                    group.methods.map((m) => [m.code, { status: 'rascunho' as const, count: draftCountsByMethod[m.code] || 0 }])
-                  )}
                   highlightTerm={isSearchActive ? searchQuery : undefined}
                 />
-              )
-            })}
-
-            {isSearchActive && searchResults.length === 0 && (
-              <EmptyState term={searchQuery} onClear={handleClear} />
-            )}
-          </>
+              ))}
+            </div>
+          </div>
         )}
       </section>
 

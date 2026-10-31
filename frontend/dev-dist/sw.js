@@ -67,7 +67,7 @@ if (!self.define) {
     });
   };
 }
-define(['./workbox-6d4f622d'], (function (workbox) { 'use strict';
+define(['./workbox-7e5eb42b'], (function (workbox) { 'use strict';
 
   self.skipWaiting();
   workbox.clientsClaim();
@@ -81,26 +81,11 @@ define(['./workbox-6d4f622d'], (function (workbox) { 'use strict';
     "revision": "3ca0b8505b4bec776b69afdba2768812"
   }, {
     "url": "index.html",
-    "revision": "0.j5tc1a99csk"
+    "revision": "0.c4gs61ervns"
   }], {});
   workbox.cleanupOutdatedCaches();
   workbox.registerRoute(new workbox.NavigationRoute(workbox.createHandlerBoundToURL("index.html"), {
     allowlist: [/^\/$/]
   }));
-  workbox.registerRoute(/\/rest\/v1\/ordem_servico/, new workbox.NetworkFirst({
-    "cacheName": "axos-os-cache",
-    "networkTimeoutSeconds": 5,
-    plugins: [new workbox.ExpirationPlugin({
-      maxEntries: 200,
-      maxAgeSeconds: 604800
-    })]
-  }), 'GET');
-  workbox.registerRoute(/\/rest\/v1\/template/, new workbox.StaleWhileRevalidate({
-    "cacheName": "axos-templates-cache",
-    plugins: [new workbox.ExpirationPlugin({
-      maxEntries: 50,
-      maxAgeSeconds: 2592000
-    })]
-  }), 'GET');
 
 }));

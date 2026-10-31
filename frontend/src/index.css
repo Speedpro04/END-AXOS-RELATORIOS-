@@ -49,6 +49,15 @@
   --accent-subtle:    #F0F9FF;
   --accent-subtle-border: #BAE6FD;
 
+  /* Card de método (catálogo) — ciano institucional */
+  --card-met-azul:        #2FB8D6;
+  --card-met-azul-hover:  #2AA7C4;
+  --card-met-azul-texto:  #FFFFFF;
+
+  /* Detalhe de acento e perigo */
+  --accent-text:      #0284C7;
+  --danger:           #DC2626;
+
   /* Status bar */
   --topbar-bg:        #1E293B;
   --topbar-brand:     #38BDF8;
@@ -119,6 +128,14 @@ html.dark, :root[data-theme="dark"] {
   --accent-hover:     #A6CDFF;
   --accent-subtle:    #1F242B;
   --accent-subtle-border: #3B82F6;
+
+  /* Card de método (catálogo) — ciano institucional */
+  --card-met-azul:        #2FB8D6;
+  --card-met-azul-hover:  #45C6E0;
+  --card-met-azul-texto:  #06222B;
+
+  /* Detalhe de acento */
+  --accent-text:      #7CB7FF;
 
   /* Status semânticos */
   --ok:               #3DDC97;

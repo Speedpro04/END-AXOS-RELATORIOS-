@@ -1,0 +1,9 @@
+{
+  "_nota": "Ferramentas de design (ArtCraft). Todas MIT OR Apache-2.0, escritas em Rust, com CLI e servidor MCP. Fixe a versao e atualize de forma deliberada (fase Agir do PDCA).",
+  "tools": {
+    "figcraft":    { "uso": "UI, telas, componentes, prototipos", "versao": "0.13.1", "repo": "https://github.com/storytold/figcraft" },
+    "vectorcraft": { "uso": "logos, icones, ilustracao vetorial", "versao": "0.19.0", "repo": "https://github.com/storytold/vectorcraft" },
+    "photocraft":  { "uso": "tratamento de imagem, mockups, PSD",  "versao": "0.18.0", "repo": "https://github.com/storytold/photocraft" },
+    "designcraft": { "uso": "diagramacao: PDFs, laudos, material impresso", "versao": "0.15.2", "repo": "https://github.com/storytold/designcraft" }
+  }
+}

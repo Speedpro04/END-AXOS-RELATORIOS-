@@ -1,0 +1,12 @@
+{
+  "_nota": "Camada V Mob sobre a base Axos. So o que difere da base. Marca aprovada em out/2026.",
+  "color": {
+    "brand-gray":   { "value": "#DADADA", "uso": "V do wordmark" },
+    "brand-orange": { "value": "#FF751F", "uso": "Mob do wordmark; acao principal" },
+    "bg":           { "value": "#032834", "uso": "fundo verde-petroleo escuro" }
+  },
+  "_pendente": [
+    "surface, border e text-muted derivados do verde-petroleo (ajustar no FigCraft e confirmar)",
+    "fonte do app (herda Archivo da base ate decisao)"
+  ]
+}

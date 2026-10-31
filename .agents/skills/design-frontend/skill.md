@@ -10,11 +10,12 @@ Objetivo: interface sóbria, nítida e rápida de ler. Consistência vale mais q
 ## Regras inegociáveis
 
 1. Raio de borda: **5px** em tudo (botão, input, card, modal, badge, tabela, menu). Única exceção: avatar circular.
-2. **Nunca usar emojis**, nem na interface, nem em mensagens, nem em dados de exemplo. Ícones apenas em SVG de traço (Lucide), 16px ou 20px, traço 1.75.
-3. Nunca valores soltos: toda cor, tamanho, espaçamento e raio vem dos tokens abaixo.
+2. **Nunca usar emojis**, nem na interface, nem em mensagens, nem em dados de exemplo. Ícones apenas em SVG de traço uniforme (Lucide ou ícones específicos de métodos de END em `design/brand/icons/end/`), 16px ou 20px, traço 1.75.
+3. Nunca valores soltos: toda cor, tamanho, espaçamento e raio vem dos tokens oficiais em `design/tokens/products/axos-relatorios.tokens.json` (gerados com `node design/scripts/build-tokens.mjs`).
 4. Poucas cores. Cor só existe quando comunica algo (ação principal, status, erro).
 5. Sem gradientes, sem glassmorphism, sem sombras pesadas, sem animação decorativa.
-6. Tema único: **escuro (dark mode)** em todos os sistemas. Não existe tema claro nem botão de alternar tema.
+6. Tema único nas telas: **escuro (dark mode)** em todos os sistemas operacionais e PWA. Não existe alternador de tema na UI de campo.
+7. Tema claro exclusivo para laudos impressos e PDF (`theme-print`): papel `#FFFFFF` e texto `#111111` para atender aos requisitos normativos (NR-13, ASME, Petrobras).
 
 ## Tipografia
 

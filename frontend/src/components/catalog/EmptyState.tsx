@@ -36,19 +36,19 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
         onClick={onClear}
         style={{
           minHeight: '40px',
-          padding: '0 18px',
+          padding: '0 12px',
           borderRadius: '5px',
-          border: '1px solid var(--border)',
-          background: 'var(--surface)',
-          color: 'var(--text)',
+          border: 'none',
+          background: 'transparent',
+          color: 'var(--text-muted)',
           fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
-          fontSize: '16px',
+          fontSize: '14px',
           fontWeight: 500,
           cursor: 'pointer',
-          transition: 'background 0.12s ease-out',
+          transition: 'color 0.12s ease-out',
         }}
-        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface-muted)' }}
-        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.background = 'var(--surface)' }}
+        onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-primary)' }}
+        onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.color = 'var(--text-muted)' }}
       >
         Limpar busca
       </button>
