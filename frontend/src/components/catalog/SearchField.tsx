@@ -51,7 +51,17 @@ export const SearchField: React.FC<SearchFieldProps> = ({
           background: 'var(--bg-surface)',
           color: 'var(--text-primary)',
           fontSize: '15px',
-          fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          outline: 'none',
+          transition: 'border-color 0.12s ease-out, box-shadow 0.12s ease-out',
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'var(--accent)'
+          e.currentTarget.style.boxShadow = '0 0 0 3px var(--input-focus-ring)'
+        }}
+        onBlur={(e) => {
+          e.currentTarget.style.borderColor = 'var(--border)'
+          e.currentTarget.style.boxShadow = 'none'
         }}
       />
       <span

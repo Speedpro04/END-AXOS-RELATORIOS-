@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Check, ShieldAlert, FileSpreadsheet, Eye, Gauge, Layers, Wrench, HardHat } from 'lucide-react'
+import { X, Check, ShieldAlert, FileSpreadsheet, Eye, Gauge, Layers, Wrench, HardHat, HardDrive, Thermometer, ScanEye, Wand2, Barcode, Wifi } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type ENDMethod, type ReportStatus } from '../types/inspection'
 
 interface InspectionModalProps {
@@ -15,7 +15,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   onSave,
   initialReport,
 }) => {
-  const [method, setMethod] = useState<ENDMethod>('LP')
+  const [method, setMethod] = useState<ENDMethod>('VT')
   const [equipmentTag, setEquipmentTag] = useState('')
   const [title, setTitle] = useState('')
   const [unitArea, setUnitArea] = useState('')
@@ -26,7 +26,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   const [findingsCount, setFindingsCount] = useState<number | string>('')
   const [summary, setSummary] = useState('')
 
-  const [techLP, setTechLP] = useState({
+  const [techPT, setTechPT] = useState({
     penetrantBrand: '',
     developerBrand: '',
     cleanerBrand: '',
@@ -37,7 +37,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     indications: '',
   })
 
-  const [techME, setTechME] = useState({
+  const [techUT, setTechUT] = useState({
     deviceModel: '',
     transducerType: '',
     couplant: '',
@@ -52,7 +52,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   useEffect(() => {
     if (isOpen) {
       if (initialReport) {
-        setMethod(initialReport.method || 'LP')
+        setMethod(initialReport.method || 'VT')
         setEquipmentTag(initialReport.equipmentTag || '')
         setTitle(initialReport.title || '')
         setUnitArea(initialReport.unitArea || '')
@@ -63,7 +63,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         setFindingsCount(initialReport.findingsCount ?? '')
         setSummary(initialReport.summary || '')
         const tech = (initialReport.technicalData as Record<string, string>) || {}
-        setTechLP({
+        setTechPT({
           penetrantBrand: tech.penetrantBrand || '',
           developerBrand: tech.developerBrand || '',
           cleanerBrand: tech.cleanerBrand || '',
@@ -73,7 +73,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
           surfaceTemp: tech.surfaceTemp || '',
           indications: tech.indications || '',
         })
-        setTechME({
+        setTechUT({
           deviceModel: tech.deviceModel || '',
           transducerType: tech.transducerType || '',
           couplant: tech.couplant || '',
@@ -85,7 +85,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         })
       } else {
         // NOVO LAUDO: Tudo 100% em branco para preenchimento de campo
-        setMethod('LP')
+        setMethod('VT')
         setEquipmentTag('')
         setTitle('')
         setUnitArea('')
@@ -95,7 +95,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         setStatus('rascunho')
         setFindingsCount('')
         setSummary('')
-        setTechLP({
+        setTechPT({
           penetrantBrand: '',
           developerBrand: '',
           cleanerBrand: '',
@@ -105,7 +105,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
           surfaceTemp: '',
           indications: '',
         })
-        setTechME({
+        setTechUT({
           deviceModel: '',
           transducerType: '',
           couplant: '',
@@ -136,20 +136,29 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
       findingsCount: findingsCount === '' ? 0 : Number(findingsCount),
       summary: summary || '',
       date: initialReport?.date || new Date().toISOString().split('T')[0],
-      technicalData: method === 'LP' ? techLP : method === 'ME' ? techME : {},
+      technicalData: method === 'PT' ? techPT : method === 'UT' ? techUT : {},
     }
     onSave(reportData)
     onClose()
   }
 
   const methodIcons: Record<ENDMethod, React.ComponentType<{ className?: string }>> = {
-    LP: Eye,
-    PM: Gauge,
-    EVS: Wrench,
-    ME: Layers,
-    US: Gauge,
-    PINTURA: HardHat,
-    NR13_VASO: ShieldAlert,
+    VT: Eye,
+    PT: Eye,
+    MT: Gauge,
+    UT: Gauge,
+    RT: ShieldAlert,
+    ET: Wand2,
+    LT: HardDrive,
+    LT_VACUO: HardDrive,
+    PAUT: Layers,
+    TOFD: Layers,
+    CRDR: ScanEye,
+    ECA: Wifi,
+    EA: Thermometer,
+    IRT: Thermometer,
+    ACFM: Barcode,
+    TFM: Wifi,
   }
 
   return (
@@ -168,7 +177,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               {initialReport ? 'REVISÃO TÉCNICA' : 'NOVO LAUDO'}
             </span>
             <h2 className="text-sm font-bold tracking-wide uppercase text-slate-100 dark:text-[#E6E8EA]">
-              {initialReport ? initialReport.code : 'Registro de Ensaio Não Destrutivo & NR-13'}
+              {initialReport ? initialReport.code : 'Registro de Ensaio Não Destrutivo (END)'}
             </h2>
           </div>
           <button
@@ -293,7 +302,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 <input
                   type="text"
                   required
-                  placeholder="Ex: SNQC 14892 (N2-LP/PM/EVS)"
+                  placeholder="Ex: SNQC 14892 (N2-VT/PT/MT)"
                   value={inspectorSNQC}
                   onChange={(e) => setInspectorSNQC(e.target.value)}
                   className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] focus:border-[#0284c7] dark:focus:border-[#7CB7FF] transition-colors"
@@ -324,7 +333,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               3. Parâmetros de Instrumentação ({METHOD_LABELS[method].label})
             </span>
 
-            {method === 'LP' && (
+            {method === 'PT' && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
@@ -333,8 +342,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: Metal-Chek VP-30 (Lote)"
-                    value={techLP.penetrantBrand}
-                    onChange={(e) => setTechLP({ ...techLP, penetrantBrand: e.target.value })}
+                    value={techPT.penetrantBrand}
+                    onChange={(e) => setTechPT({ ...techPT, penetrantBrand: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -346,8 +355,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: Metal-Chek D-70 (Lote)"
-                    value={techLP.developerBrand}
-                    onChange={(e) => setTechLP({ ...techLP, developerBrand: e.target.value })}
+                    value={techPT.developerBrand}
+                    onChange={(e) => setTechPT({ ...techPT, developerBrand: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -359,10 +368,10 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: 20 min / 15 min"
-                    value={techLP.dwellTime && techLP.developerTime ? `${techLP.dwellTime} / ${techLP.developerTime}` : (techLP.dwellTime || techLP.developerTime || '')}
+                    value={techPT.dwellTime && techPT.developerTime ? `${techPT.dwellTime} / ${techPT.developerTime}` : (techPT.dwellTime || techPT.developerTime || '')}
                     onChange={(e) => {
                       const [d, r] = e.target.value.split('/')
-                      setTechLP({ ...techLP, dwellTime: d?.trim() || '', developerTime: r?.trim() || '' })
+                      setTechPT({ ...techPT, dwellTime: d?.trim() || '', developerTime: r?.trim() || '' })
                     }}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
@@ -375,8 +384,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: 1250 Lux (Luz Branca Visível)"
-                    value={techLP.lightIntensity}
-                    onChange={(e) => setTechLP({ ...techLP, lightIntensity: e.target.value })}
+                    value={techPT.lightIntensity}
+                    onChange={(e) => setTechPT({ ...techPT, lightIntensity: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -388,8 +397,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: Nenhuma indicação linear relevante detectada"
-                    value={techLP.indications}
-                    onChange={(e) => setTechLP({ ...techLP, indications: e.target.value })}
+                    value={techPT.indications}
+                    onChange={(e) => setTechPT({ ...techPT, indications: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -397,7 +406,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               </div>
             )}
 
-            {method === 'ME' && (
+            {method === 'UT' && (
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
                 <div className="sm:col-span-2">
                   <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
@@ -406,8 +415,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: Olympus 38DL Plus (Cal. Válida)"
-                    value={techME.deviceModel}
-                    onChange={(e) => setTechME({ ...techME, deviceModel: e.target.value })}
+                    value={techUT.deviceModel}
+                    onChange={(e) => setTechUT({ ...techUT, deviceModel: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -419,8 +428,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: 12.7 mm"
-                    value={techME.nominalThickness}
-                    onChange={(e) => setTechME({ ...techME, nominalThickness: e.target.value })}
+                    value={techUT.nominalThickness}
+                    onChange={(e) => setTechUT({ ...techUT, nominalThickness: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -432,8 +441,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: 11.8 mm"
-                    value={techME.minFoundThickness}
-                    onChange={(e) => setTechME({ ...techME, minFoundThickness: e.target.value })}
+                    value={techUT.minFoundThickness}
+                    onChange={(e) => setTechUT({ ...techUT, minFoundThickness: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA] font-bold text-[#E11D48] dark:text-[#FF6B6B]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -445,8 +454,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   <input
                     type="text"
                     placeholder="Ex: 48 pontos inspecionados nos quadrantes A, B, C e D"
-                    value={techME.meshPoints}
-                    onChange={(e) => setTechME({ ...techME, meshPoints: e.target.value })}
+                    value={techUT.meshPoints}
+                    onChange={(e) => setTechUT({ ...techUT, meshPoints: e.target.value })}
                     className="w-full px-3 py-1.5 text-xs bg-white dark:bg-[#121315] border border-[#CBD5E1] dark:border-[#34383D] text-[#0F172A] dark:text-[#E6E8EA]"
                     style={{ borderRadius: '3px' }}
                   />
@@ -454,7 +463,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               </div>
             )}
 
-            {method !== 'LP' && method !== 'ME' && (
+            {method !== 'PT' && method !== 'UT' && (
               <div className="p-3 bg-white dark:bg-[#121315] text-xs text-[#64748B] dark:text-[#9AA0A6] border border-dashed border-[#CBD5E1] dark:border-[#34383D]" style={{ borderRadius: '3px' }}>
                 <p>
                   Parâmetros de <strong>{METHOD_LABELS[method].full}</strong> pré-configurados conforme{' '}

@@ -226,7 +226,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                   aspectRatio: '1 / 1',
                   background: 'var(--bg-surface-alt)',
                   border: '1px solid var(--border)',
-                  borderRadius: '6px',
+                  borderRadius: '5px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -257,11 +257,11 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                   minHeight: '42px',
                   aspectRatio: '1 / 1',
                   background: 'var(--btn-pri-bg)',
-                  borderRadius: '6px',
+                  borderRadius: '5px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
+                  fontFamily: 'Arial, Helvetica, sans-serif',
                   fontSize: `${Math.round(20 * scaleRatio)}px`,
                   fontWeight: 600,
                   color: '#ffffff',
@@ -278,15 +278,15 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
 
             {/* Nome e metadados */}
             <div style={{ minWidth: 0 }}>
-              <h1 style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '21px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px 0', letterSpacing: '-0.02em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              <h1 style={{ fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '20px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 3px 0', letterSpacing: '-0.01em', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                 {tenant.tradeName}
               </h1>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                <span style={{ fontSize: '15px', color: 'var(--text-muted)' }}>{tenant.operationalUnit}</span>
+                <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>{tenant.operationalUnit}</span>
                 <span style={{ color: 'var(--border)' }}>·</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '14px', color: 'var(--text-faint)' }}>{tenant.cnpj}</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-faint)' }}>{tenant.cnpj}</span>
                 <span style={{ color: 'var(--border)' }}>·</span>
-                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '14px', color: 'var(--text-faint)' }}>{tenant.contractRef}</span>
+                <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '13px', color: 'var(--text-faint)' }}>{tenant.contractRef}</span>
               </div>
             </div>
           </div>
@@ -304,10 +304,10 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                   textTransform: 'uppercase',
                   letterSpacing: '0.08em',
                   padding: '2px 6px',
-                  borderRadius: '4px',
+                  borderRadius: '5px',
                   backgroundColor: 'rgba(12, 74, 110, 0.9)',
                   color: '#E0F2FE',
-                  fontWeight: 700,
+                  fontWeight: 600,
                   fontFamily: "'DM Mono', monospace",
                   marginTop: '2px',
                 }}>
@@ -326,9 +326,9 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                 width: '40px', height: '40px',
                 background: 'var(--bg-surface-alt)',
                 border: '1px solid var(--border)',
-                borderRadius: '3px',
+                borderRadius: '5px',
                 cursor: 'pointer',
-                transition: 'all 0.2s ease',
+                transition: 'all 0.15s ease',
                 color: 'var(--text-muted)',
                 fontSize: '18px',
               }}
@@ -353,7 +353,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
             <button
               type="button"
               onClick={() => { setFormData({ ...tenant, logoScale: tenant.logoScale ?? 100 }); setIsModalOpen(true) }}
-              style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '3px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '7px', padding: '8px 16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '5px', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '14px', fontWeight: 500, color: 'var(--text-secondary)', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
               onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--border-strong)'; e.currentTarget.style.color = 'var(--text-primary)' }}
               onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border)'; e.currentTarget.style.color = 'var(--text-secondary)' }}
             >
@@ -365,7 +365,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
               <button
                 type="button"
                 onClick={onLogout}
-                style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '3px', fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif", fontSize: '15px', fontWeight: 600, color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
+                style={{ padding: '8px 16px', background: 'rgba(239, 68, 68, 0.08)', border: '1px solid rgba(239, 68, 68, 0.25)', borderRadius: '5px', fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '14px', fontWeight: 500, color: '#ef4444', cursor: 'pointer', transition: 'all 0.15s', whiteSpace: 'nowrap' }}
                 onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.14)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)' }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.25)' }}
               >
@@ -393,7 +393,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
             style={{
               background: 'var(--modal-bg)',
               border: '1px solid var(--border)',
-              borderRadius: '3px',
+              borderRadius: '5px',
               width: '100%',
               maxWidth: '580px',
               boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
@@ -435,7 +435,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
             <form onSubmit={handleSave} style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', overflowY: 'auto' }}>
 
               {/* Upload de Logo + Dispositivo de Zoom */}
-              <div style={{ padding: '16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '3px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
+              <div style={{ padding: '16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '5px', display: 'flex', flexDirection: 'column', gap: '14px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, textTransform: 'uppercase', color: 'var(--text-secondary)' }}>
                     Logotipo da Empresa
@@ -456,7 +456,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                   <div style={{
                     width: '64px', height: '64px', minWidth: '64px', minHeight: '64px',
                     aspectRatio: '1 / 1',
-                    background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: '6px',
+                    background: 'var(--bg-surface)', border: '1px solid var(--border-strong)', borderRadius: '5px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '6px',
                     boxSizing: 'border-box',
                   }}>
@@ -478,7 +478,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <label className="btn-industrial" style={{ padding: '8px 14px', borderRadius: '3px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
+                    <label className="btn-industrial" style={{ padding: '8px 14px', borderRadius: '5px', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '6px', fontSize: '13px' }}>
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
                       {formData.logoUrl ? 'Substituir Imagem' : 'Carregar Imagem'}
                       <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
@@ -517,7 +517,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                         background: 'var(--bg-surface)',
                         border: '1px solid var(--border)',
                         padding: '2px 8px',
-                        borderRadius: '3px',
+                        borderRadius: '5px',
                       }}>
                         {formData.logoScale ?? 100}%
                       </span>
@@ -556,7 +556,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                         fontSize: '18px',
                         fontWeight: 700,
                         padding: 0,
-                        borderRadius: '3px',
+                        borderRadius: '5px',
                         cursor: 'pointer',
                       }}
                     >
@@ -592,7 +592,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                         fontSize: '18px',
                         fontWeight: 700,
                         padding: 0,
-                        borderRadius: '3px',
+                        borderRadius: '5px',
                         cursor: 'pointer',
                       }}
                     >
@@ -622,7 +622,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                           background: (formData.logoScale ?? 100) === preset.val ? 'var(--accent)' : 'var(--bg-surface)',
                           color: (formData.logoScale ?? 100) === preset.val ? '#ffffff' : 'var(--text-secondary)',
                           border: '1px solid var(--border)',
-                          borderRadius: '3px',
+                          borderRadius: '5px',
                           cursor: 'pointer',
                           transition: 'all 0.15s ease',
                         }}
@@ -676,7 +676,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                       style={{
                         width: '100%',
                         fontSize: '13px',
-                        fontFamily: field.mono ? "'DM Mono', monospace" : "'Plus Jakarta Sans', system-ui, sans-serif",
+                        fontFamily: field.mono ? "'DM Mono', monospace" : "Arial, Helvetica, sans-serif",
                       }}
                     />
                   </div>

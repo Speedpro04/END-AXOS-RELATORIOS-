@@ -305,3 +305,31 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
   - Catálogo de ícones de Ensaios Não Destrutivos em `design/brand/icons/end/end-methods.json` com especificações em `design/docs/icones-end.md` (grade 24x24, traço uniforme 1.75px, `currentColor`).
   - Checklist de controle de qualidade e QA visual documentado em `design/docs/qualidade-checklist.md`.
 
+## 8. Padronização Tipográfica: Arial (31/10/2026)
+
+- Aprovada substituição da tipografia do frontend para **Arial** (sans-serif nativa de sistema, fallbacks `Helvetica, sans-serif`).
+- Removido import externo de fontes do Google Fonts (`Archivo`, `Inter`), garantindo carregamento instantâneo offline em campo e consistência multiplataforma.
+- Atualizados: `frontend/src/index.css`, `DashboardMetrics.tsx`, `InspectionTable.tsx`, `HubPage.tsx`, `LoginPage.tsx`, `PRD.md` e `.agents/skills/design-frontend/skill.md`.
+
+## 9. Elevação Visual e Acabamento Industrial — Design System Axos (31/10/2026)
+
+- Aplicação cirúrgica dos tokens do `axos-design` em toda a interface do Hub e componentes operacionais:
+  - **DashboardMetrics**:
+    - Removidas sombras difusas pesadas (`box-shadow`), alinhando ao princípio de profundidade por contraste de superfícies e divisores de 1px.
+    - Rótulos ajustados de caixa alta para *sentence case* (`Total de laudos`, `Em coleta / campo`, `Em revisão técnica`, `Conformes / aprovados`, `Não-conformes`).
+    - Número de destaque calibrado para 28px peso 600 com `tabular-nums`.
+    - Ícones Lucide padronizados em 16px com traço 1.75px.
+  - **MethodButton e SearchField**:
+    - Remoção de fontes residuais (`Archivo`), unificando em Arial nativa.
+    - Raio de 5px estrito e anel de foco acessível de 3px.
+    - Estado desabilitado com superfície atenuada e cursor `not-allowed`.
+  - **InspectionTable**:
+    - Substituição de classes Tailwind com hexadecimais soltos por tokens semânticos (`--bg-surface`, `--bg-surface-alt`, `--border`, `--text-primary`, `--text-secondary`, `--text-muted`).
+    - Badges de status semânticos refinados com fundo `-soft`, raio de 5px e peso 500.
+    - Botões de ação ("Abrir", menu "...") e campos de filtro alinhados aos tokens e raio de 5px.
+    - Versão mobile com cards perfeitamente integrados aos temas claro/escuro.
+  - **TenantHeader**:
+    - Normalização de raios residuais (3px/4px/6px) para 5px em todos os elementos, botões e modal de configurações.
+  - Verificação: `npm run build` passa com sucesso; busca pela sigla em inglês proibida com ZERO ocorrências.
+
+

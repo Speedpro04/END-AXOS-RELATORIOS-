@@ -16,7 +16,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
   const cards = [
     {
       code: '01',
-      label: 'TOTAL DE LAUDOS',
+      label: 'Total de laudos',
       value: total,
       sub: 'Base consolidada',
       icon: Files,
@@ -24,7 +24,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
     },
     {
       code: '02',
-      label: 'EM COLETA / CAMPO',
+      label: 'Em coleta / campo',
       value: rascunhos,
       sub: 'Rascunhos pendentes',
       icon: Clock,
@@ -32,7 +32,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
     },
     {
       code: '03',
-      label: 'EM REVISÃO TÉCNICA',
+      label: 'Em revisão técnica',
       value: enviados,
       sub: 'Avaliação Eng. PH',
       icon: ClipboardCheck,
@@ -40,7 +40,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
     },
     {
       code: '04',
-      label: 'CONFORMES / APROVADOS',
+      label: 'Conformes / aprovados',
       value: aprovados,
       sub: 'Critério atendido',
       icon: CheckCircle2,
@@ -48,7 +48,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
     },
     {
       code: '05',
-      label: 'NÃO-CONFORMES',
+      label: 'Não-conformes',
       value: reprovados,
       sub: 'Reparo / Reinspeção',
       icon: AlertTriangle,
@@ -84,18 +84,11 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
               padding: '18px 20px',
               display: 'flex',
               flexDirection: 'column',
-              gap: '14px',
+              gap: '12px',
               position: 'relative',
               overflow: 'hidden',
               cursor: 'default',
-              transition: 'box-shadow 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-              boxShadow: '0 2px 8px rgba(15, 23, 42, 0.08)',
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.boxShadow = '0 8px 20px -2px rgba(15, 23, 42, 0.14)'
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.boxShadow = '0 2px 8px rgba(15, 23, 42, 0.08)'
+              transition: 'background-color 0.12s ease-out, border-color 0.12s ease-out',
             }}
           >
             {/* Faixa superior (borda de acento) */}
@@ -111,12 +104,12 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
             />
 
             {/* Cabeçalho do Card: Ícone + Label + Código */}
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', minHeight: '34px' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '8px', minHeight: '32px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flex: 1 }}>
                 <div
                   style={{
-                    width: '26px',
-                    height: '26px',
+                    width: '28px',
+                    height: '28px',
                     borderRadius: '5px',
                     backgroundColor: 'var(--bg-surface-alt)',
                     display: 'flex',
@@ -126,17 +119,15 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
                     color: 'var(--text-secondary)',
                   }}
                 >
-                  <IconComponent size={14} strokeWidth={2.5} aria-hidden='true' />
+                  <IconComponent size={16} strokeWidth={1.75} aria-hidden='true' />
                 </div>
                 <span
                   style={{
-                    fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
-                    fontSize: '11px',
-                    fontWeight: 600,
-                    letterSpacing: '0.03em',
-                    textTransform: 'uppercase',
-                    color: 'var(--text-secondary)',
-                    lineHeight: 1.25,
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    color: 'var(--text-muted)',
+                    lineHeight: 1.3,
                   }}
                 >
                   {card.label}
@@ -145,8 +136,8 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
 
               <span
                 style={{
-                  fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
-                  fontSize: '10.5px',
+                  fontFamily: 'Arial, Helvetica, sans-serif',
+                  fontSize: '11px',
                   fontWeight: 600,
                   color: 'var(--text-muted)',
                   backgroundColor: 'var(--bg-surface-alt)',
@@ -154,22 +145,23 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
                   borderRadius: '5px',
                   padding: '2px 6px',
                   flexShrink: 0,
+                  fontVariantNumeric: 'tabular-nums',
                 }}
               >
                 #{card.code}
               </span>
             </div>
 
-            {/* Número principal — azul acento; vermelho em Não-conformes > 0; secundário quando 0 */}
+            {/* Número principal — 28px peso 600 (padrão de KPI da Axos) */}
             <div
               className="animate-number"
               style={{
-                fontFamily: 'Archivo, -apple-system, sans-serif',
-                fontSize: '38px',
-                fontWeight: 800,
-                lineHeight: 1,
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                fontSize: '28px',
+                fontWeight: 600,
+                lineHeight: 1.2,
                 color: detailColor,
-                letterSpacing: '-0.02em',
+                letterSpacing: '-0.01em',
                 margin: '2px 0',
                 fontVariantNumeric: 'tabular-nums',
               }}
@@ -180,7 +172,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
             {/* Barra de progresso — mesma cor do número */}
             <div
               style={{
-                height: '5px',
+                height: '4px',
                 backgroundColor: 'var(--bg-surface-alt)',
                 borderRadius: '5px',
                 overflow: 'hidden',
@@ -192,7 +184,7 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
                   width: card.barWidth,
                   backgroundColor: detailColor,
                   borderRadius: '5px',
-                  transition: 'width 0.5s cubic-bezier(0.16, 1, 0.3, 1)',
+                  transition: 'width 0.4s ease-out',
                 }}
               />
             </div>
@@ -200,11 +192,11 @@ export const DashboardMetrics: React.FC<DashboardMetricsProps> = ({ reports }) =
             {/* Subtítulo */}
             <span
               style={{
-                fontSize: '12.5px',
-                fontWeight: 500,
+                fontSize: '12px',
+                fontWeight: 400,
                 color: 'var(--text-muted)',
-                fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
-                letterSpacing: '0.01em',
+                fontFamily: 'Arial, Helvetica, sans-serif',
+                lineHeight: 1.4,
               }}
             >
               {card.sub}

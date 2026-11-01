@@ -21,20 +21,6 @@ export const MethodButton: React.FC<MethodButtonProps> = ({
   onClick,
   highlightTerm,
 }) => {
-  const isDisabled = !item.available
-
-  const handleMouseEnter = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (!isDisabled) {
-      ;(e.currentTarget as HTMLElement).style.background = 'var(--card-met-azul-hover)'
-      ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--card-met-azul-hover)'
-    }
-  }
-
-  const handleMouseLeave = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    ;(e.currentTarget as HTMLElement).style.background = 'var(--card-met-azul)'
-    ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--card-met-azul)'
-  }
-
   function highlightName(name: string): React.ReactNode {
     if (!highlightTerm) return name
     const q = normalize(highlightTerm)
@@ -55,12 +41,9 @@ export const MethodButton: React.FC<MethodButtonProps> = ({
       href={href}
       onClick={(e) => {
         e.preventDefault()
-        if (!isDisabled) {
-          onClick(item.code)
-        }
+        onClick(item.code)
       }}
-      aria-disabled={isDisabled ? true : undefined}
-      tabIndex={isDisabled ? -1 : 0}
+      tabIndex={0}
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -74,13 +57,20 @@ export const MethodButton: React.FC<MethodButtonProps> = ({
         background: 'var(--card-met-azul)',
         color: 'var(--card-met-azul-texto)',
         textDecoration: 'none',
-        fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
-        cursor: isDisabled ? 'default' : 'pointer',
-        transition: 'background 0.12s ease-out, border-color 0.12s ease-out',
+        fontFamily: 'Arial, Helvetica, sans-serif',
+        cursor: 'pointer',
+        transition: 'background-color 0.12s ease-out, border-color 0.12s ease-out',
       }}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={(e) => {
+        ;(e.currentTarget as HTMLElement).style.background = 'var(--card-met-azul-hover)'
+        ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--card-met-azul-hover)'
+      }}
+      onMouseLeave={(e) => {
+        ;(e.currentTarget as HTMLElement).style.background = 'var(--card-met-azul)'
+        ;(e.currentTarget as HTMLElement).style.borderColor = 'var(--card-met-azul)'
+      }}
       onFocus={(e) => {
+        ;(e.currentTarget as HTMLElement).style.outline = 'none'
         ;(e.currentTarget as HTMLElement).style.boxShadow = '0 0 0 3px var(--input-focus-ring)'
       }}
       onBlur={(e) => {
@@ -91,20 +81,20 @@ export const MethodButton: React.FC<MethodButtonProps> = ({
         style={{
           fontSize: '16px',
           fontWeight: 500,
-          color: isDisabled ? 'var(--text-muted)' : 'inherit',
+          color: 'inherit',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}
       >
-        {isDisabled ? 'Em breve' : highlightName(item.name)}
+        {highlightName(item.name)}
       </span>
       <span
         style={{
           fontSize: '14px',
           fontWeight: 500,
-          color: isDisabled ? 'var(--text-muted)' : 'inherit',
-          opacity: isDisabled ? 1 : 0.75,
+          color: 'inherit',
+          opacity: 0.75,
           fontVariantNumeric: 'tabular-nums',
           whiteSpace: 'nowrap',
         }}

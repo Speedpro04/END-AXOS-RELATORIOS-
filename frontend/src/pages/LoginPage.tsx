@@ -370,7 +370,7 @@ export const LoginPage: React.FC = () => {
             {/* Textos da marca */}
             <div style={{ position: 'relative', zIndex: 1 }}>
               <h2 style={{
-                fontFamily: "'Archivo', sans-serif",
+                fontFamily: "'Arial', sans-serif",
                 fontWeight: 800,
                 fontSize: 'clamp(24px, 2.6vw, 34px)',
                 color: BRAND.text,
@@ -455,7 +455,7 @@ export const LoginPage: React.FC = () => {
                 </div>
 
                 <h1 style={{
-                  fontFamily: "'Archivo', sans-serif",
+                  fontFamily: "'Arial', sans-serif",
                   fontWeight: 800,
                   fontSize: '28px',
                   color: C.text,
@@ -649,7 +649,7 @@ export const LoginPage: React.FC = () => {
                         padding: '13px',
                         fontSize: '16px',
                         fontWeight: 700,
-                        fontFamily: "'Archivo', sans-serif",
+                        fontFamily: "'Arial', sans-serif",
                         letterSpacing: '0.01em',
                         backgroundColor: C.cyan,
                         color: theme === 'dark' ? '#06222B' : '#FFFFFF',
@@ -690,7 +690,7 @@ export const LoginPage: React.FC = () => {
                         padding: '13px',
                         fontSize: '15px',
                         fontWeight: 700,
-                        fontFamily: "'Archivo', sans-serif",
+                        fontFamily: "'Arial', sans-serif",
                         backgroundColor: C.cyan,
                         color: theme === 'dark' ? '#06222B' : '#FFFFFF',
                         border: 'none',

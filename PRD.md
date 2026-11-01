@@ -30,7 +30,7 @@ O sistema resolve os gargalos de digitalização de laudos em campo, permitindo 
   - **Nunca usar emojis** (interface, mensagens ou dados de exemplo). Ícones apenas em SVG de traço uniforme (Lucide ou catálogo de métodos de END em `design/brand/icons/end/`), 16px ou 20px, traço 1.75.
   - Toda cor, tamanho, espaçamento e raio vem dos tokens de design compilados. Sem valores soltos.
   - Sem gradientes, sem glassmorphism, sem sombras pesadas, sem animação decorativa.
-  - Fontes tipográficas: **Archivo** (Google Fonts), pesos 400 a 600. Sem serifa no painel. Números com `tabular-nums`.
+  - Fontes tipográficas: **Arial** (sistema, sem serifa), com fallback `Helvetica, sans-serif`. Sem serifa no painel, carregamento instantâneo offline. Números com `tabular-nums`.
   - Cores de superfície: fundo `#0B0F14`, superfície `#121821`, superfície-muted `#1A2230`, borda `#263042`, texto `#E8ECF2`, texto-muted `#9AA6B8`.
   - Acento: `#2F6FDB` (botão primário, texto branco). Status com cor + texto em badge.
   - Controles (botão, input, select): altura 40px, raio 5px. Padding de card/modal: 24px.

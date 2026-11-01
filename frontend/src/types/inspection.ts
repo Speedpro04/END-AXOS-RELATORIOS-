@@ -1,17 +1,12 @@
 export type ENDMethod =
-  | 'LP'
-  | 'PM'
-  | 'EVS'
-  | 'ME'
-  | 'US'
-  | 'PINTURA'
-  | 'NR13_VASO'
+  | 'VT' | 'PT' | 'MT' | 'UT' | 'RT' | 'ET' | 'LT' | 'LT_VACUO'
+  | 'PAUT' | 'TOFD' | 'CRDR' | 'ECA' | 'EA' | 'IRT' | 'ACFM' | 'TFM'
 
 export type ReportStatus = 'rascunho' | 'enviado' | 'aprovado' | 'reprovado'
 
 export interface InspectionReport {
   id: string
-  code: string // Ex: END-LP-2026-0042
+  code: string // Ex: END-VT-2026-0042
   method: ENDMethod
   title: string
   equipmentTag: string
@@ -30,11 +25,20 @@ export interface InspectionReport {
 }
 
 export const METHOD_LABELS: Record<ENDMethod, { label: string; full: string; code: string }> = {
-  LP: { label: 'LP', full: 'Líquido Penetrante', code: 'ASME V Art. 6 / Petrobras N-1596' },
-  PM: { label: 'PM', full: 'Partícula Magnética', code: 'ASME V Art. 7 / Petrobras N-1598' },
-  EVS: { label: 'EVS', full: 'Inspeção Visual de Solda', code: 'AWS D1.1 / ASME V Art. 9' },
-  ME: { label: 'ME', full: 'Medição de Espessura (US)', code: 'Petrobras N-1594 / ASME V Art. 5' },
-  US: { label: 'US', full: 'Ultrassom Convencional/PA', code: 'ASME V Art. 4 / N-1594' },
-  PINTURA: { label: 'PINT', full: 'Pintura Industrial & Aderência', code: 'Petrobras N-13 / ISO 8501' },
-  NR13_VASO: { label: 'NR-13', full: 'Vaso de Pressão (NR-13)', code: 'NR-13 / ASME Sec. VIII Div. 1' },
+  VT: { label: 'VT', full: 'Ensaio Visual', code: 'ASME V Art. 9' },
+  PT: { label: 'PT', full: 'Líquidos Penetrantes', code: 'ASME V Art. 6 / Petrobras N-1596' },
+  MT: { label: 'MT', full: 'Partículas Magnéticas', code: 'Petrobras N-1598 / ASME VIII Ap. 6' },
+  UT: { label: 'UT', full: 'Ultrassom Convencional', code: 'ASME V Art. 4 / Petrobras N-1594' },
+  RT: { label: 'RT', full: 'Radiografia Industrial', code: 'ASME V Art. 2 / 3' },
+  ET: { label: 'ET', full: 'Correntes Parasitas Convencional', code: 'ASME V Art. 7' },
+  LT: { label: 'LT', full: 'Ensaio de Estanqueidade', code: 'ASME V Art. 10' },
+  LT_VACUO: { label: 'LT Vácuo', full: 'Estanqueidade por Caixa de Vácuo', code: 'ASME V Art. 10' },
+  PAUT: { label: 'PAUT', full: 'Ultrassom Phased Array', code: 'ASME V Art. 4 / ISO 13588' },
+  TOFD: { label: 'ToFD', full: 'Time of Flight Diffraction', code: 'ASME V Art. 4' },
+  CRDR: { label: 'CR/DR', full: 'Radiografia Computadorizada/Digital', code: 'ASTM E1742 / ISO 17636-2' },
+  ECA: { label: 'ECA', full: 'Eddy Current Array', code: 'ASME V Art. 8 / ISO 15548' },
+  EA: { label: 'EA', full: 'Emissão Acústica', code: 'ASME V Art. 12' },
+  IRT: { label: 'IRT', full: 'Termografia Infravermelha', code: 'ISO 18434-1 / ASTM E1934' },
+  ACFM: { label: 'ACFM', full: 'Alternating Current Field Measurement', code: '' },
+  TFM: { label: 'TFM', full: 'TFM / FMC', code: 'ISO 18563-3' },
 }

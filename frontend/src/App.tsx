@@ -11,13 +11,22 @@ import type { LocalReport } from './types/sync'
 
 // Páginas Dedicadas
 import { HubPage } from './pages/HubPage'
-import { LPPage } from './pages/LPPage'
-import { MEPage } from './pages/MEPage'
-import { EVSPage } from './pages/EVSPage'
-import { NR13Page } from './pages/NR13Page'
-import { PMPage } from './pages/PMPage'
-import { USPage } from './pages/USPage'
-import { PinturaPage } from './pages/PinturaPage'
+import { PTPage } from './pages/PTPage'
+import { MTPage } from './pages/MTPage'
+import { VTPage } from './pages/VTPage'
+import { UTPage } from './pages/UTPage'
+import { RTPage } from './pages/RTPage'
+import { ETPage } from './pages/ETPage'
+import { LTPage } from './pages/LTPage'
+import { LT_VACUOPage } from './pages/LT_VACUOPage'
+import { PAUTPage } from './pages/PAUTPage'
+import { TOFDPage } from './pages/TOFDPage'
+import { CRDRPage } from './pages/CRDRPage'
+import { ECAPage } from './pages/ECAPage'
+import { EAPage } from './pages/EAPage'
+import { IRTPage } from './pages/IRTPage'
+import { ACFMPage } from './pages/ACFMPage'
+import { TFMPage } from './pages/TFMPage'
 import { LoginPage } from './pages/LoginPage'
 
 // Relatório inicial padrão (apenas se não houver nada no Dexie)
@@ -66,23 +75,23 @@ function AppContent() {
             {
               id: '1',
               tenantId: tenant.id,
-              method: 'LP',
+              method: 'VT',
               data: {
                 id: '1',
-                code: 'END-LP-2026-001',
-                method: 'LP',
-                title: 'Líquido Penetrante no Spool SP-2101 / Junta J-01',
+                code: 'END-VT-2026-001',
+                method: 'VT',
+                title: 'Ensaio Visual no Spool SP-2101 / Junta J-01',
                 equipmentTag: 'SP-2101-J01',
                 unitArea: 'Unidade U-2100 (Processamento Primário)',
                 inspectorName: 'Carlos Eduardo Silva',
-                inspectorSNQC: 'SNQC 14892 (N2-LP)',
-                normProcedure: 'Petrobras N-1596 / ASME Sec. VIII',
+                inspectorSNQC: 'SNQC 14892 (N2-VT)',
+                normProcedure: 'ASME V Art. 9',
                 acceptanceCriteria: 'ASME Sec. VIII Div. 1 Apêndice 8',
                 date: '2026-10-21',
                 status: 'aprovado',
                 findingsCount: 0,
-                summary: 'Ensaio por Líquido Penetrante realizado 100% no cordão de solda e ZTA. Aprovado sem descontinuidades.',
-                technicalData: { penetrant: 'VP-30', developer: 'D-70' },
+                summary: 'Ensaio Visual realizado 100% na junta de solda. Aprovado sem descontinuidades.',
+                technicalData: { metodo: 'Visual direta', iluminacao: '500 lux' },
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
               },
@@ -91,7 +100,7 @@ function AppContent() {
               serverStatus: 'aprovado',
               clientRevision: 0,
               serverRevision: 0,
-              reportNumber: 'END-LP-2026-001',
+              reportNumber: 'END-VT-2026-001',
               updatedAt: new Date().toISOString(),
               lastSyncAt: new Date().toISOString(),
               lastError: null,
@@ -171,7 +180,7 @@ function AppContent() {
       const newReport: InspectionReport = {
         id: crypto.randomUUID(),
         code: 'RASCUNHO', // número definitivo atribuído pelo servidor na emissão
-        method: reportData.method || 'LP',
+        method: reportData.method || 'VT',
         title: reportData.title || 'Laudo Técnico END',
         equipmentTag: reportData.equipmentTag || 'TAG-PENDENTE',
         unitArea: reportData.unitArea || 'Área Industrial',
@@ -215,16 +224,26 @@ function AppContent() {
     await db.reports.delete(id)
   }
 
-  // Lista de Abas de Modelos Técnicos
+  // Lista de Abas de Modelos Técnicos — Convencional (8)
   const navItems = [
     { id: 'HUB', label: 'Catálogo Geral', tag: 'HUB' },
-    { id: 'LP', label: 'Líquido Penetrante', tag: 'LP' },
-    { id: 'ME', label: 'Medição de Espessura', tag: 'ME' },
-    { id: 'EVS', label: 'Visual de Solda', tag: 'EVS' },
-    { id: 'NR13', label: 'Vaso de Pressão (NR-13)', tag: 'NR-13' },
-    { id: 'PM', label: 'Partícula Magnética', tag: 'PM' },
-    { id: 'US', label: 'Ultrassom Industrial', tag: 'US' },
-    { id: 'PINTURA', label: 'Pintura & Aderência', tag: 'PINT' },
+    { id: 'VT', label: 'Ensaio Visual (VT)', tag: 'VT' },
+    { id: 'PT', label: 'Líquidos Penetrantes (PT)', tag: 'PT' },
+    { id: 'MT', label: 'Partículas Magnéticas (MT)', tag: 'MT' },
+    { id: 'UT', label: 'Ultrassom Convencional (UT)', tag: 'UT' },
+    { id: 'RT', label: 'Radiografia Industrial (RT)', tag: 'RT' },
+    { id: 'ET', label: 'Correntes Parasitas (ET)', tag: 'ET' },
+    { id: 'LT', label: 'Estanqueidade (LT)', tag: 'LT' },
+    { id: 'LT_VACUO', label: 'Estanqueidade Vácuo (LT)', tag: 'LV' },
+    // Avançado (8)
+    { id: 'PAUT', label: 'Ultrassom Phased Array (PAUT)', tag: 'PAUT' },
+    { id: 'TOFD', label: 'ToFD', tag: 'TOFD' },
+    { id: 'CRDR', label: 'Radiografia Digital (CR/DR)', tag: 'CR/DR' },
+    { id: 'ECA', label: 'Eddy Current Array (ECA)', tag: 'ECA' },
+    { id: 'EA', label: 'Emissão Acústica (EA)', tag: 'EA' },
+    { id: 'IRT', label: 'Termografia (IRT)', tag: 'IRT' },
+    { id: 'ACFM', label: 'ACFM', tag: 'ACFM' },
+    { id: 'TFM', label: 'TFM / FMC', tag: 'TFM' },
   ]
 
   const navRef = useRef<HTMLElement>(null)
@@ -396,32 +415,53 @@ function AppContent() {
           />
         )}
 
-        {currentPage === 'LP' && (
-          <LPPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        {currentPage === 'VT' && (
+          <VTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
-
-        {currentPage === 'ME' && (
-          <MEPage onBack={() => setCurrentPage('HUB')} tenantName={tenant.tradeName} />
+        {currentPage === 'PT' && (
+          <PTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
-
-        {currentPage === 'EVS' && (
-          <EVSPage onBack={() => setCurrentPage('HUB')} tenantName={tenant.tradeName} />
+        {currentPage === 'MT' && (
+          <MTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
-
-        {currentPage === 'NR13' && (
-          <NR13Page onBack={() => setCurrentPage('HUB')} tenantName={tenant.tradeName} />
+        {currentPage === 'UT' && (
+          <UTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
-
-        {currentPage === 'PM' && (
-          <PMPage onBack={() => setCurrentPage('HUB')} tenantName={tenant.tradeName} />
+        {currentPage === 'RT' && (
+          <RTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
-
-        {currentPage === 'US' && (
-          <USPage onBack={() => setCurrentPage('HUB')} tenantName={tenant.tradeName} />
+        {currentPage === 'ET' && (
+          <ETPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
-
-        {currentPage === 'PINTURA' && (
-          <PinturaPage onBack={() => setCurrentPage('HUB')} tenantName={tenant.tradeName} />
+        {currentPage === 'LT' && (
+          <LTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'LT_VACUO' && (
+          <LT_VACUOPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'PAUT' && (
+          <PAUTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'TOFD' && (
+          <TOFDPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'CRDR' && (
+          <CRDRPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'ECA' && (
+          <ECAPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'EA' && (
+          <EAPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'IRT' && (
+          <IRTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'ACFM' && (
+          <ACFMPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+        )}
+        {currentPage === 'TFM' && (
+          <TFMPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
         )}
       </main>
 

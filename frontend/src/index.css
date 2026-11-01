@@ -1,8 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Archivo:wght@400;500;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap');
+/* TESTE DE TIPOGRAFIA: Arial (sistema, sem serifa, sem import externo) */
+/* @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Archivo:wght@400;500;600;700&family=DM+Mono:ital,wght@0,400;0,500;1,400&display=swap'); */
 @import "tailwindcss";
 
 /* =====================================================================
-   AXOS RELATÓRIOS — Padrão Industrial & Rigor Técnico (Archivo)
+   AXOS RELATÓRIOS — Padrão Industrial & Rigor Técnico (Arial — teste tipográfico)
    Estética: Engenharia Industrial, Rigor Normativo e Alta Precisão
    ===================================================================== */
 
@@ -17,8 +18,8 @@
   --color-ice-accent-hover: #0369a1;
   --color-graphite: #1e293b;
 
-  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', Roboto, sans-serif;
+  --font-display: Arial, Helvetica, sans-serif;
+  --font-sans: Arial, Helvetica, sans-serif;
   --font-mono: 'DM Mono', 'Cascadia Code', Consolas, monospace;
 }
 
@@ -194,7 +195,7 @@ html.dark, :root[data-theme="dark"] {
 }
 
 html {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Archivo", sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 17px; /* +3px no tamanho base */
   background-color: var(--bg-base);
   color: var(--text-primary);
@@ -212,7 +213,7 @@ body {
   min-height: 100vh;
   background-color: var(--bg-base);
   color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Archivo", sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
@@ -239,7 +240,7 @@ b, strong, .font-bold, h1, h2, h3, h4, th {
 
 /* ── Tipografia ── */
 .font-display {
-  font-family: 'Plus Jakarta Sans', system-ui, sans-serif !important;
+  font-family: 'Arial', sans-serif !important;
 }
 
 .font-mono, .tabular-nums, code, input[type="number"], .font-tech {
@@ -383,7 +384,7 @@ button, input, select, textarea,
   background: var(--btn-sec-bg) !important;
   border: 1px solid var(--btn-sec-border) !important;
   color: var(--btn-sec-text) !important;
-  font-family: 'Archivo', system-ui, sans-serif !important;
+  font-family: Arial, Helvetica, sans-serif !important;
   font-size: 15px !important;
   font-weight: 600 !important;
   padding: 8px 16px;
@@ -404,7 +405,7 @@ button, input, select, textarea,
   background: var(--btn-pri-bg) !important;
   border: 1px solid var(--btn-pri-border) !important;
   color: var(--btn-pri-text) !important;
-  font-family: 'Archivo', system-ui, sans-serif !important;
+  font-family: Arial, Helvetica, sans-serif !important;
   font-size: 15px !important;
   font-weight: 600 !important;
   padding: 8px 18px;
@@ -423,7 +424,7 @@ button, input, select, textarea,
 
 /* ── Nav tabs ── */
 .nav-tab {
-  font-family: 'Archivo', system-ui, sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   font-size: 15px;
   font-weight: 600;
   transition: all 0.15s;

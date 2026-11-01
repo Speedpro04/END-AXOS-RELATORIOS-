@@ -9,7 +9,7 @@ interface InspectionTableProps {
   onDeleteReport: (id: string) => void
 }
 
-const FONT = 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif'
+const FONT = 'Arial, Helvetica, sans-serif'
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
@@ -54,30 +54,48 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       case 'aprovado':
         return (
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-semibold bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0]/70"
-            style={{ borderRadius: '4px' }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[13px] font-medium"
+            style={{
+              borderRadius: '5px',
+              background: 'rgba(61, 220, 151, 0.12)',
+              color: 'var(--ok, #3DDC97)',
+              border: '1px solid rgba(61, 220, 151, 0.3)',
+              fontFamily: FONT,
+            }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#10b981]"></span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--ok, #3DDC97)' }} />
             Conforme
           </span>
         )
       case 'enviado':
         return (
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-semibold bg-[#FFFBEB] text-[#d97706] border border-[#FDE68A]/70"
-            style={{ borderRadius: '4px' }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[13px] font-medium"
+            style={{
+              borderRadius: '5px',
+              background: 'rgba(245, 165, 36, 0.12)',
+              color: 'var(--warn, #F5A524)',
+              border: '1px solid rgba(245, 165, 36, 0.3)',
+              fontFamily: FONT,
+            }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#f59e0b]"></span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--warn, #F5A524)' }} />
             Em revisão
           </span>
         )
       case 'reprovado':
         return (
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-semibold bg-[#FFF1F2] text-[#ef4444] border border-[#FECDD3]/70"
-            style={{ borderRadius: '4px' }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[13px] font-medium"
+            style={{
+              borderRadius: '5px',
+              background: 'rgba(255, 107, 107, 0.12)',
+              color: 'var(--danger, #FF6B6B)',
+              border: '1px solid rgba(255, 107, 107, 0.3)',
+              fontFamily: FONT,
+            }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#f87171]"></span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--danger, #FF6B6B)' }} />
             Não conforme
           </span>
         )
@@ -85,10 +103,16 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       default:
         return (
           <span
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 text-[13px] font-semibold bg-[#F1F5F9] text-[#64748B] border border-[#CBD5E1]/70"
-            style={{ borderRadius: '4px' }}
+            className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[13px] font-medium"
+            style={{
+              borderRadius: '5px',
+              background: 'var(--bg-surface-alt)',
+              color: 'var(--text-muted)',
+              border: '1px solid var(--border)',
+              fontFamily: FONT,
+            }}
           >
-            <span className="w-1.5 h-1.5 rounded-full bg-[#94A3B8]"></span>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--text-muted)' }} />
             Rascunho
           </span>
         )
@@ -115,8 +139,22 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
           e.stopPropagation()
           onEditReport(report)
         }}
-        className="px-3 py-1 text-[14px] font-semibold text-[#334155] hover:text-black hover:bg-[#F1F5F9] border border-[#CBD5E1] rounded-md transition-colors"
-        style={{ fontFamily: FONT }}
+        className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+        style={{
+          fontFamily: FONT,
+          borderRadius: '5px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-primary)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+          e.currentTarget.style.borderColor = 'var(--border-strong)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
+          e.currentTarget.style.borderColor = 'var(--border)'
+        }}
       >
         Abrir
       </button>
@@ -128,7 +166,21 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
           e.stopPropagation()
           setMenuOpenId(menuOpenId === report.id ? null : report.id)
         }}
-        className="inline-flex items-center justify-center w-8 h-8 text-[#334155] hover:bg-[#F1F5F9] border border-[#CBD5E1] rounded-md transition-colors"
+        className="inline-flex items-center justify-center w-8 h-8 transition-colors cursor-pointer"
+        style={{
+          borderRadius: '5px',
+          background: 'var(--bg-surface)',
+          border: '1px solid var(--border)',
+          color: 'var(--text-secondary)',
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+          e.currentTarget.style.borderColor = 'var(--border-strong)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
+          e.currentTarget.style.borderColor = 'var(--border)'
+        }}
       >
         <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden='true' />
       </button>
@@ -152,7 +204,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               background: 'var(--bg-surface)',
               border: '1px solid var(--border)',
               borderRadius: '5px',
-              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.16)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
               minWidth: '140px',
               overflow: 'hidden',
             }}
@@ -164,8 +216,10 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
                 handlePdf(report)
                 closeMenu()
               }}
-              className="w-full text-left px-3 py-2 text-[14px] font-medium text-[#334155] hover:bg-[#F1F5F9] transition-colors"
-              style={{ fontFamily: FONT }}
+              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               Gerar PDF
             </button>
@@ -176,8 +230,10 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
                 handleDelete(report)
                 closeMenu()
               }}
-              className="w-full text-left px-3 py-2 text-[14px] font-medium text-[#ef4444] hover:bg-[#FFF1F2] transition-colors"
-              style={{ fontFamily: FONT }}
+              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+              style={{ fontFamily: FONT, color: 'var(--danger, #FF6B6B)', background: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
             >
               Remover laudo
             </button>
@@ -189,25 +245,39 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
 
   if (isMobile) {
     return (
-      <div className="bg-white border border-[#CBD5E1] shadow-2xs flex flex-col" style={{ borderRadius: '6px' }}>
+      <div className="flex flex-col overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px' }}>
         {/* Barra de Ações Superior */}
-        <div className="p-4 border-b border-[#CBD5E1] bg-white flex flex-col gap-3">
+        <div className="p-4 border-b flex flex-col gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
           <div className="relative w-full">
             <input
               type="text"
               placeholder="Pesquisar por TAG, laudo..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3.5 py-2 text-[15px] bg-[#F8FAFC] border border-[#CBD5E1] text-[#0F172A] focus:bg-white focus:border-[#0284c7] transition-all placeholder:text-[#94A3B8]"
-              style={{ borderRadius: '6px' }}
+              className="w-full px-3.5 py-2 text-[14px] transition-all"
+              style={{
+                borderRadius: '5px',
+                fontFamily: FONT,
+                background: 'var(--bg-surface-alt)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
             />
           </div>
           <div className="flex flex-wrap items-center gap-2.5">
             <select
               value={selectedMethod}
               onChange={(e) => setSelectedMethod(e.target.value)}
-              className="flex-1 min-w-0 px-3 py-2 text-[14px] bg-[#F8FAFC] border border-[#CBD5E1] text-[#334155] font-medium outline-hidden cursor-pointer"
-              style={{ borderRadius: '6px' }}
+              className="flex-1 min-w-0 px-3 py-2 text-[13px] font-medium cursor-pointer"
+              style={{
+                borderRadius: '5px',
+                fontFamily: FONT,
+                background: 'var(--bg-surface-alt)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
             >
               <option value="ALL">Todos os Ensaios END</option>
               {(Object.keys(METHOD_LABELS) as (keyof typeof METHOD_LABELS)[]).map((m) => (
@@ -219,8 +289,15 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="flex-1 min-w-0 px-3 py-2 text-[14px] bg-[#F8FAFC] border border-[#CBD5E1] text-[#334155] font-medium outline-hidden cursor-pointer"
-              style={{ borderRadius: '6px' }}
+              className="flex-1 min-w-0 px-3 py-2 text-[13px] font-medium cursor-pointer"
+              style={{
+                borderRadius: '5px',
+                fontFamily: FONT,
+                background: 'var(--bg-surface-alt)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
             >
               <option value="ALL">Todos os Vereditos</option>
               <option value="rascunho">Rascunhos (Coleta)</option>
@@ -231,8 +308,14 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
             <button
               type="button"
               onClick={onNewReport}
-              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#1e293b] hover:bg-[#334155] text-white text-[15px] font-semibold tracking-wide transition-all cursor-pointer shadow-sm"
-              style={{ borderRadius: '6px', fontFamily: FONT }}
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[14px] font-medium tracking-wide transition-all cursor-pointer"
+              style={{
+                borderRadius: '5px',
+                fontFamily: FONT,
+                background: 'var(--btn-pri-bg)',
+                border: '1px solid var(--btn-pri-border)',
+                color: 'var(--btn-pri-text)',
+              }}
             >
               <span>+ Novo Laudo Técnico</span>
             </button>
@@ -240,34 +323,35 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
         </div>
 
         {/* Cards empilhados (sem rolagem horizontal) */}
-        <div className="flex flex-col divide-y divide-[#CBD5E1]">
+        <div className="flex flex-col divide-y" style={{ borderColor: 'var(--border)' }}>
           {filteredReports.length === 0 ? (
-            <div className="py-12 text-center text-[#94A3B8] bg-white px-4">
-              <p className="font-semibold text-slate-700 text-[15px]">Nenhum laudo encontrado com os filtros aplicados.</p>
-              <p className="text-[14px] text-[#94A3B8] mt-1">Utilize o botão acima para cadastrar uma nova inspeção de campo.</p>
+            <div className="py-12 text-center px-4" style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+              <p className="font-medium text-[14px]" style={{ color: 'var(--text-primary)' }}>Nenhum laudo encontrado com os filtros aplicados.</p>
+              <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>Utilize o botão acima para cadastrar uma nova inspeção de campo.</p>
             </div>
           ) : (
             filteredReports.map((report) => (
               <div
                 key={report.id}
-                className="p-4 bg-white flex flex-col gap-2"
+                className="p-4 flex flex-col gap-2 transition-colors cursor-pointer"
+                style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)' }}
                 onClick={() => onEditReport(report)}
               >
                 <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold text-[15px] text-[#0F172A]" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <span className="font-medium text-[14px]" style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>
                     {report.code}
                   </span>
                   {renderStatusBadge(report.status)}
                 </div>
-                <div className="flex items-center gap-2 text-[14px]" style={{ fontFamily: FONT }}>
-                  <span className="font-semibold text-[#0F172A]">{report.method}</span>
-                  <span className="text-[#94A3B8]" aria-hidden='true'>—</span>
-                  <span className="text-[#334155] truncate" title={report.equipmentTag}>{report.equipmentTag}</span>
+                <div className="flex items-center gap-2 text-[13px]" style={{ fontFamily: FONT }}>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{report.method}</span>
+                  <span style={{ color: 'var(--border-strong)' }} aria-hidden='true'>—</span>
+                  <span className="truncate" style={{ color: 'var(--text-secondary)' }} title={report.equipmentTag}>{report.equipmentTag}</span>
                 </div>
-                <div className="text-[13.5px] text-[#64748B] truncate" style={{ fontFamily: FONT }} title={report.unitArea}>
+                <div className="text-[13px] truncate" style={{ fontFamily: FONT, color: 'var(--text-muted)' }} title={report.unitArea}>
                   {report.unitArea}
                 </div>
-                <div className="flex items-center justify-between gap-2 text-[13.5px] text-[#64748B]" style={{ fontFamily: FONT }}>
+                <div className="flex items-center justify-between gap-2 text-[13px]" style={{ fontFamily: FONT, color: 'var(--text-muted)' }}>
                   <span className="truncate" title={report.inspectorName}>{report.inspectorName}</span>
                   <span style={{ fontVariantNumeric: 'tabular-nums' }}>{report.date}</span>
                 </div>
@@ -280,7 +364,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
         </div>
 
         {/* Sub-barra */}
-        <div className="p-3 bg-[#F8FAFC] border-t border-[#CBD5E1] flex items-center justify-between text-[13.5px] text-[#64748B]" style={{ fontFamily: FONT }}>
+        <div className="p-3 border-t flex items-center justify-between text-[13px]" style={{ background: 'var(--bg-surface-alt)', borderColor: 'var(--border)', color: 'var(--text-muted)', fontFamily: FONT }}>
           <span>Mostrando {filteredReports.length} de {reports.length} laudos auditados</span>
           <span className="hidden sm:inline">Registro Rastreável</span>
         </div>
@@ -289,10 +373,10 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
   }
 
   return (
-    <div className="bg-white border border-[#CBD5E1] shadow-2xs flex flex-col" style={{ borderRadius: '6px' }}>
+    <div className="flex flex-col overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px' }}>
 
       {/* Barra de Ações Superior Limpa */}
-      <div className="p-4 border-b border-[#CBD5E1] bg-white flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Busca */}
           <div className="relative min-w-[260px] flex-1 max-w-md">
@@ -301,18 +385,33 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               placeholder="Pesquisar por TAG, laudo, junta soldada ou inspetor..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full px-3.5 py-2 text-[15px] bg-[#F8FAFC] border border-[#CBD5E1] text-[#0F172A] focus:bg-white focus:border-[#0284c7] transition-all placeholder:text-[#94A3B8]"
-              style={{ borderRadius: '6px', fontFamily: FONT }}
+              className="w-full px-3.5 py-2 text-[14px] transition-all"
+              style={{
+                borderRadius: '5px',
+                fontFamily: FONT,
+                background: 'var(--bg-surface-alt)',
+                border: '1px solid var(--border)',
+                color: 'var(--text-primary)',
+                outline: 'none',
+              }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--accent)'
+                e.currentTarget.style.boxShadow = '0 0 0 3px var(--input-focus-ring)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)'
+                e.currentTarget.style.boxShadow = 'none'
+              }}
             />
           </div>
 
           {/* Filtro por Método */}
-          <div className="flex items-center bg-[#F8FAFC] border border-[#CBD5E1] px-3 py-2" style={{ borderRadius: '6px' }}>
+          <div className="flex items-center px-3 py-2" style={{ borderRadius: '5px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)' }}>
             <select
               value={selectedMethod}
               onChange={(e) => setSelectedMethod(e.target.value)}
-              className="text-[14px] bg-transparent text-[#334155] font-medium outline-hidden cursor-pointer"
-              style={{ fontFamily: FONT }}
+              className="text-[13px] bg-transparent font-medium cursor-pointer"
+              style={{ fontFamily: FONT, color: 'var(--text-primary)', outline: 'none' }}
             >
               <option value="ALL">Todos os Ensaios END</option>
               {(Object.keys(METHOD_LABELS) as (keyof typeof METHOD_LABELS)[]).map((m) => (
@@ -324,12 +423,12 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
           </div>
 
           {/* Filtro por Status */}
-          <div className="flex items-center bg-[#F8FAFC] border border-[#CBD5E1] px-3 py-2" style={{ borderRadius: '6px' }}>
+          <div className="flex items-center px-3 py-2" style={{ borderRadius: '5px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)' }}>
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className="text-[14px] bg-transparent text-[#334155] font-medium outline-hidden cursor-pointer"
-              style={{ fontFamily: FONT }}
+              className="text-[13px] bg-transparent font-medium cursor-pointer"
+              style={{ fontFamily: FONT, color: 'var(--text-primary)', outline: 'none' }}
             >
               <option value="ALL">Todos os Vereditos</option>
               <option value="rascunho">Rascunhos (Coleta)</option>
@@ -344,8 +443,20 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
         <button
           type="button"
           onClick={onNewReport}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#1e293b] hover:bg-[#334155] text-white text-[15px] font-semibold tracking-wide transition-all cursor-pointer shadow-sm shrink-0"
-          style={{ borderRadius: '6px', fontFamily: FONT }}
+          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[14px] font-medium tracking-wide transition-all cursor-pointer shrink-0"
+          style={{
+            borderRadius: '5px',
+            fontFamily: FONT,
+            background: 'var(--btn-pri-bg)',
+            border: '1px solid var(--btn-pri-border)',
+            color: 'var(--btn-pri-text)',
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--btn-pri-hover-bg)'
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--btn-pri-bg)'
+          }}
         >
           <span>+ Novo Laudo Técnico</span>
         </button>
@@ -365,23 +476,23 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
             <col style={{ width: '10%' }} />
           </colgroup>
           <thead>
-            <tr className="bg-[#F8FAFC] text-[#475569] text-[13px] font-semibold border-b border-[#CBD5E1]">
-              <th className="py-3 px-4">Código</th>
-              <th className="py-3 px-4">Ensaio</th>
-              <th className="py-3 px-4">Tag</th>
-              <th className="py-3 px-4">Unidade / área</th>
-              <th className="py-3 px-4">Emissão</th>
-              <th className="py-3 px-4">Inspetor</th>
-              <th className="py-3 px-4">Veredito</th>
-              <th className="py-3 px-4">Ações</th>
+            <tr style={{ background: 'var(--bg-surface-alt)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
+              <th className="py-3 px-4 text-[13px] font-medium">Código</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Ensaio</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Tag</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Unidade / área</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Emissão</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Inspetor</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Veredito</th>
+              <th className="py-3 px-4 text-[13px] font-medium">Ações</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-[#CBD5E1] text-[15px] text-[#0F172A]">
+          <tbody className="divide-y text-[14px]" style={{ borderColor: 'var(--border)', color: 'var(--text-primary)' }}>
             {filteredReports.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-12 text-center text-[#94A3B8] bg-white px-4">
-                  <p className="font-semibold text-slate-700 text-[15px]">Nenhum laudo encontrado com os filtros aplicados.</p>
-                  <p className="text-[14px] text-[#94A3B8] mt-1">
+                <td colSpan={8} className="py-12 text-center px-4" style={{ background: 'var(--bg-surface)', color: 'var(--text-muted)' }}>
+                  <p className="font-medium text-[14px]" style={{ color: 'var(--text-primary)' }}>Nenhum laudo encontrado com os filtros aplicados.</p>
+                  <p className="text-[13px] mt-1" style={{ color: 'var(--text-muted)' }}>
                     Utilize o botão acima para cadastrar uma nova inspeção de campo.
                   </p>
                 </td>
@@ -390,52 +501,62 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               filteredReports.map((report) => (
                 <tr
                   key={report.id}
-                  className="hover:bg-[#F8FAFC] transition-colors group cursor-pointer"
+                  className="transition-colors group cursor-pointer"
+                  style={{ borderBottom: '1px solid var(--border)' }}
                   onClick={() => onEditReport(report)}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
                 >
                   {/* Código */}
                   <td
-                    className="py-3 px-4 font-semibold text-[#0F172A] text-[14px] whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="py-3 px-4 font-medium text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
                     title={report.code}
-                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                    style={{ color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}
                   >
                     {report.code}
                   </td>
 
                   {/* Ensaio — só a sigla, uma vez */}
                   <td className="py-3 px-4 whitespace-nowrap overflow-hidden text-ellipsis">
-                    <span className="text-[14px] font-semibold text-[#0F172A]">{report.method}</span>
+                    <span className="text-[13px] font-medium" style={{ color: 'var(--text-primary)' }}>{report.method}</span>
                   </td>
 
                   {/* Tag */}
                   <td
-                    className="py-3 px-4 font-semibold text-[#0F172A] text-[14px] whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="py-3 px-4 font-medium text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
                     title={report.equipmentTag}
+                    style={{ color: 'var(--text-primary)' }}
                   >
                     {report.equipmentTag}
                   </td>
 
                   {/* Unidade / área */}
                   <td
-                    className="py-3 px-4 text-[#64748B] text-[14px] whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="py-3 px-4 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
                     title={report.unitArea}
+                    style={{ color: 'var(--text-muted)' }}
                   >
                     {report.unitArea}
                   </td>
 
                   {/* Emissão */}
                   <td
-                    className="py-3 px-4 text-[#64748B] text-[14px] whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="py-3 px-4 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
                     title={report.date}
-                    style={{ fontVariantNumeric: 'tabular-nums' }}
+                    style={{ color: 'var(--text-muted)', fontVariantNumeric: 'tabular-nums' }}
                   >
                     {report.date}
                   </td>
 
                   {/* Inspetor */}
                   <td
-                    className="py-3 px-4 text-[#475569] text-[14px] whitespace-nowrap overflow-hidden text-ellipsis"
+                    className="py-3 px-4 text-[13px] whitespace-nowrap overflow-hidden text-ellipsis"
                     title={report.inspectorName}
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     {report.inspectorName}
                   </td>
@@ -458,7 +579,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       </div>
 
       {/* Sub-barra da Tabela */}
-      <div className="p-3 bg-[#F8FAFC] border-t border-[#CBD5E1] flex items-center justify-between text-[14px] text-[#64748B]" style={{ fontFamily: FONT }}>
+      <div className="p-3 border-t flex items-center justify-between text-[13px]" style={{ background: 'var(--bg-surface-alt)', borderColor: 'var(--border)', color: 'var(--text-muted)', fontFamily: FONT }}>
         <span>Mostrando {filteredReports.length} de {reports.length} laudos auditados</span>
         <span>Ambiente Seguro • Registro Rastreável</span>
       </div>

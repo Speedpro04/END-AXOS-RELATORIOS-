@@ -65,14 +65,11 @@ export const HubPage: React.FC<HubPageProps> = ({
 
   const visibleMethods = useMemo<MethodCatalogItem[]>(() => {
     const base = isSearchActive ? searchResults : METHODS_CATALOG
-    return [
-      ...base.filter((m) => m.available).sort(byName),
-      ...base.filter((m) => !m.available).sort(byName),
-    ]
+    return [...base].sort(byName)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isSearchActive, searchResults])
 
-  const availableCount = visibleMethods.filter((m) => m.available).length
+  const totalCount = visibleMethods.length
 
   const handleClear = useCallback(() => {
     setSearchQuery('')
@@ -112,7 +109,7 @@ export const HubPage: React.FC<HubPageProps> = ({
             border: '1px solid var(--border)',
             background: 'var(--surface)',
             color: 'var(--text)',
-            fontFamily: 'Archivo, system-ui, -apple-system, Segoe UI, sans-serif',
+            fontFamily: 'Arial, Helvetica, sans-serif',
             fontSize: '16px',
             fontWeight: 500,
             cursor: 'pointer',
@@ -175,35 +172,83 @@ export const HubPage: React.FC<HubPageProps> = ({
             margin: '0 0 16px',
           }}
         >
-          {isSearchActive && searchResults.length > 0 ? `${searchResults.length === 1 ? '1' : searchResults.length} resultado(s)` : availableCount === 1 ? '1 método disponível' : `${availableCount} métodos disponíveis`}
+          {isSearchActive && searchResults.length > 0 ? `${searchResults.length === 1 ? '1' : searchResults.length} resultado(s)` : totalCount === 1 ? '1 método disponível' : `${totalCount} métodos disponíveis`}
         </p>
 
         {isSearchActive && searchResults.length === 0 ? (
           <EmptyState term={searchQuery} onClear={handleClear} />
         ) : (
           <div ref={resultsWrapRef}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))',
-                gap: '16px',
-              }}
-            >
-              {visibleMethods.map((m) => (
-                <MethodButton
-                  key={m.code}
-                  item={m}
-                  href={`/laudo/${m.code}`}
-                  onClick={handleMethodClick}
-                  highlightTerm={isSearchActive ? searchQuery : undefined}
-                />
-              ))}
-            </div>
+            {/* ── Bloco 1: Convencional ── */}
+            <section style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '24px' }}>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: '0',
+                letterSpacing: '-0.01em',
+                textTransform: 'uppercase',
+              }}>
+                Convencional
+              </h3>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, minmax(260px, 1fr))',
+                  gap: '16px',
+                }}
+              >
+                {visibleMethods
+                  .filter((m) => m.groupId === 'convencional')
+                  .map((m) => (
+                    <MethodButton
+                      key={m.code}
+                      item={m}
+                      href={`/laudo/${m.code}`}
+                      onClick={handleMethodClick}
+                      highlightTerm={isSearchActive ? searchQuery : undefined}
+                    />
+                  ))}
+              </div>
+            </section>
+
+            {/* ── Bloco 2: Avançado e especial ── */}
+            <section style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <h3 style={{
+                fontSize: '14px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: '0',
+                letterSpacing: '-0.01em',
+                textTransform: 'uppercase',
+              }}>
+                Avançado e especial
+              </h3>
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(4, minmax(260px, 1fr))',
+                  gap: '16px',
+                }}
+              >
+                {visibleMethods
+                  .filter((m) => m.groupId === 'avancado')
+                  .map((m) => (
+                    <MethodButton
+                      key={m.code}
+                      item={m}
+                      href={`/laudo/${m.code}`}
+                      onClick={handleMethodClick}
+                      highlightTerm={isSearchActive ? searchQuery : undefined}
+                    />
+                  ))}
+              </div>
+            </section>
           </div>
         )}
       </section>
 
-      {/* ── SEÇÃO 2: KPIs (mantida) ── */}
+      {/* ── SEÇÃO 2: KPIs ── */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <div style={{
@@ -212,20 +257,20 @@ export const HubPage: React.FC<HubPageProps> = ({
             borderRadius: '5px',
           }} />
           <h3 style={{
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
+            fontFamily: 'Arial, Helvetica, sans-serif',
             fontSize: '18px',
             fontWeight: 600,
             color: 'var(--text-primary)',
             margin: 0,
             letterSpacing: '-0.01em',
           }}>
-            Consolidação Operacional da Unidade
+            Consolidação operacional da unidade
           </h3>
         </div>
         <DashboardMetrics reports={reports} />
       </section>
 
-      {/* ── SEÇÃO 3: Tabela (mantida) ── */}
+      {/* ── SEÇÃO 3: Tabela ── */}
       <section>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '14px' }}>
           <div style={{
@@ -234,14 +279,14 @@ export const HubPage: React.FC<HubPageProps> = ({
             borderRadius: '5px',
           }} />
           <h3 style={{
-            fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif",
+            fontFamily: 'Arial, Helvetica, sans-serif',
             fontSize: '18px',
             fontWeight: 600,
             color: 'var(--text-primary)',
             margin: 0,
             letterSpacing: '-0.01em',
           }}>
-            Histórico e Registro Central de Laudos
+            Histórico e registro central de laudos
           </h3>
         </div>
         <InspectionTable

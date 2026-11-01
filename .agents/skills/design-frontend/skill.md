@@ -19,7 +19,7 @@ Objetivo: interface sóbria, nítida e rápida de ler. Consistência vale mais q
 
 ## Tipografia
 
-Uma única família: **Archivo** (Google Fonts), largura normal, em fonte variável com os pesos 400 a 600. Fallback: system-ui, -apple-system, Segoe UI, sans-serif. Nada de serifa no painel. Carregar com `font-display: swap` e hospedar localmente (next/font ou arquivo próprio) para evitar atraso e quebra de layout.
+Uma única família: **Arial** (fonte nativa do sistema, sans-serif), com fallbacks `Helvetica, sans-serif`. Sem serifa no painel, sem dependência de imports externos, carregamento instantâneo e alta legibilidade industrial.
 
 Texto nítido: `-webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;`
 
