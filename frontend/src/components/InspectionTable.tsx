@@ -829,9 +829,8 @@ th { background: #f2f2f2; }
                           e.stopPropagation()
                           onEditReport(report)
                         }}
-                        className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+                        className="inline-flex items-center justify-center w-8 h-8 transition-colors cursor-pointer"
                         style={{
-                          fontFamily: FONT,
                           borderRadius: '5px',
                           background: 'transparent',
                           border: '1px solid var(--border)',
@@ -846,8 +845,7 @@ th { background: #f2f2f2; }
                           e.currentTarget.style.borderColor = 'var(--border)'
                         }}
                       >
-                        <Edit2 size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
-                        Abrir
+                        <Edit2 size={15} strokeWidth={1.75} aria-hidden='true' />
                       </button>
                       <button
                         type="button"
