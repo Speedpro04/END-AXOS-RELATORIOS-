@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { MoreHorizontal, FileText, Edit2, RefreshCw, History } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type ReportStatus } from '../types/inspection'
 
+const AZUL_DESTAQUE = 'var(--card-met-azul, #2FB8D6)'
+
 interface InspectionTableProps {
   reports: InspectionReport[]
   onNewReport: () => void
@@ -10,7 +12,6 @@ interface InspectionTableProps {
 }
 
 const FONT = 'Arial, Helvetica, sans-serif'
-const AZUL_DESTAQUE = 'var(--card-met-azul, #2FB8D6)'
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
@@ -188,6 +189,81 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
       window.open(url, '_blank')
     } catch (err: any) {
       setPdfError({ id: report.id, message: err?.message || 'Falha ao gerar PDF.' })
+    } finally {
+      setPdfGeneratingId(null)
+    }
+  }
+
+  const gerarPdfFiltrados = async () => {
+    setPdfGeneratingId('todos')
+    setPdfError(null)
+    try {
+      const emitidos = filteredReports.filter((r) => r.status === 'aprovado').length
+      const conteudo = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4; margin: 2cm; }
+body { font-family: 'Arial', sans-serif; font-size: 11px; color: #111; line-height: 1.4; }
+.watermark {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 60px; font-weight: bold; color: rgba(255, 0, 0, 0.15);
+  z-index: 1; pointer-events: none; white-space: nowrap;
+}
+.conteudo { position: relative; z-index: 2; }
+h1 { font-size: 18px; margin-bottom: 4px; color: #0284C7; }
+.sub { font-size: 11px; color: #666; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 10.5px; text-align: left; }
+th { background: #f2f2f2; }
+</style>
+</head>
+<body>
+<div class="conteudo">
+  <h1>Relatório de Laudos END</h1>
+  <div class="sub">
+    <strong>Total:</strong> ${filteredReports.length} laudo(s) &nbsp;|&nbsp;
+    <strong>Emitidos:</strong> ${emitidos} &nbsp;|&nbsp;
+    <strong>Gerado em:</strong> ${new Date().toLocaleString('pt-BR')}
+  </div>
+  <table>
+    <tr>
+      <th style="width:18%">Código</th>
+      <th style="width:12%">Método</th>
+      <th style="width:15%">TAG</th>
+      <th style="width:20%">Unidade / Área</th>
+      <th style="width:12%">Emissão</th>
+      <th style="width:15%">Inspetor</th>
+      <th style="width:8%">Veredito</th>
+    </tr>
+    ${filteredReports.map((r) => `
+    <tr>
+      <td>${r.code}</td>
+      <td>${r.method}</td>
+      <td>${r.equipmentTag}</td>
+      <td>${r.unitArea}</td>
+      <td>${r.date}</td>
+      <td>${r.inspectorName}</td>
+      <td>${r.status}</td>
+    </tr>
+    `).join('')}
+  </table>
+  <div style="margin-top:20px; font-size:10px; color:#666;">
+    Relatório consolidado gerado pelo sistema AXOS Relatórios.
+  </div>
+</div>
+</body>
+</html>
+      `
+      const blob = new Blob([conteudo], { type: 'application/pdf' })
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err: any) {
+      setPdfError({ id: 'todos', message: err?.message || 'Falha ao gerar PDF.' })
     } finally {
       setPdfGeneratingId(null)
     }
@@ -388,15 +464,12 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
     }
   }, [pdfError, pdfGeneratingId])
 
-  // Exibe toast de erro de PDF se houver
-  const pdfErroAtual = pdfError && pdfError.id === pdfGeneratingId ? null : pdfError
-
   if (isMobile) {
     return (
       <div className="flex flex-col overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px' }}>
         {/* Barra de Ações Superior */}
         <div className="p-4 border-b flex flex-col gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-          <div className="relative w-full" style={{ maxWidth: '420px' }}>
+          <div className="relative w-full" style={{ maxWidth: '390px' }}>
             <input
               type="text"
               placeholder="Pesquisar por TAG, laudo..."
@@ -506,11 +579,6 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
                 <div onClick={(e) => e.stopPropagation()}>
                   {actionsMenu(report)}
                 </div>
-                {pdfErroAtual && pdfErroAtual.id === report.id && (
-                  <div style={{ marginTop: '6px', color: 'var(--danger, #FF6B6B)', fontSize: '12px', fontFamily: FONT }}>
-                    ⚠ {pdfErroAtual.message}
-                  </div>
-                )}
               </div>
             ))
           )}
@@ -532,7 +600,7 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
       <div className="p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
           {/* Busca — largura reduzida para cerca de metade */}
-          <div className="relative w-full" style={{ maxWidth: '420px' }}>
+          <div className="relative w-full" style={{ maxWidth: '390px' }}>
             <input
               type="text"
               placeholder="Pesquisar por TAG, laudo, junta soldada ou inspetor..."
@@ -592,27 +660,59 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
           </div>
         </div>
 
-        {/* Botão de Novo Laudo */}
-        <button
-          type="button"
-          onClick={onNewReport}
-          className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[14px] font-medium tracking-wide transition-all cursor-pointer shrink-0"
-          style={{
-            borderRadius: '5px',
-            fontFamily: FONT,
-            background: 'var(--btn-pri-bg)',
-            border: '1px solid var(--btn-pri-border)',
-            color: 'var(--btn-pri-text)',
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = 'var(--btn-pri-hover-bg)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = 'var(--btn-pri-bg)'
-          }}
-        >
-          <span>+ Novo Laudo Técnico</span>
-        </button>
+        {/* Botão de Novo Laudo e Gerar PDF */}
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button
+            type="button"
+            onClick={onNewReport}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[14px] font-medium tracking-wide transition-all cursor-pointer shrink-0"
+            style={{
+              borderRadius: '5px',
+              fontFamily: FONT,
+              background: 'var(--btn-pri-bg)',
+              border: '1px solid var(--btn-pri-border)',
+              color: 'var(--btn-pri-text)',
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--btn-pri-hover-bg)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'var(--btn-pri-bg)'
+            }}
+          >
+            <span>+ Novo Laudo Técnico</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => gerarPdfFiltrados()}
+            disabled={pdfGeneratingId === 'todos'}
+            className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-[14px] font-medium tracking-wide transition-all cursor-pointer shrink-0"
+            style={{
+              borderRadius: '5px',
+              fontFamily: FONT,
+              background: AZUL_DESTAQUE,
+              border: `1px solid ${AZUL_DESTAQUE}`,
+              color: '#FFFFFF',
+              cursor: pdfGeneratingId === 'todos' ? 'not-allowed' : 'pointer',
+              opacity: pdfGeneratingId === 'todos' ? 0.7 : 1,
+            }}
+          >
+            {pdfGeneratingId === 'todos' ? (
+              <>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '6px', animation: 'spin 1s linear infinite' }}>
+                  <circle cx="12" cy="12" r="10" />
+                  <path d="M12 6v6l4 2" />
+                </svg>
+                Gerando…
+              </>
+            ) : (
+              <>
+                <FileText size={14} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                Gerar PDF
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Tabela — layout fixo, sem rolagem horizontal */}
@@ -717,188 +817,147 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
                   {/* Veredito */}
                   <td className="py-3 px-4 whitespace-nowrap">{renderStatusBadge(report.status)}</td>
 
-                  {/* Ações: Gerar PDF (principal) + Abrir (secundário) + menu "..." */}
+                  {/* Ações: Abrir (secundário) + menu "..." (ações secundárias) */}
                   <td
                     className="py-3 px-2 whitespace-nowrap overflow-visible"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
-                      {pdfErroAtual && pdfErroAtual.id === report.id ? (
-                        <span style={{ color: 'var(--danger, #FF6B6B)', fontSize: '11px', fontFamily: FONT, whiteSpace: 'nowrap' }}>
-                          ⚠ Erro ao gerar PDF
-                        </span>
-                      ) : (
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          onEditReport(report)
+                        }}
+                        className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+                        style={{
+                          fontFamily: FONT,
+                          borderRadius: '5px',
+                          background: 'transparent',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-primary)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+                          e.currentTarget.style.borderColor = 'var(--border-strong)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'transparent'
+                          e.currentTarget.style.borderColor = 'var(--border)'
+                        }}
+                      >
+                        <Edit2 size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
+                        Abrir
+                      </button>
+                      <button
+                        type="button"
+                        aria-label="Mais ações"
+                        title="Mais ações"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setMenuOpenId(menuOpenId === report.id ? null : report.id)
+                        }}
+                        className="inline-flex items-center justify-center w-8 h-8 transition-colors cursor-pointer"
+                        style={{
+                          borderRadius: '5px',
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--border)',
+                          color: 'var(--text-secondary)',
+                        }}
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+                          e.currentTarget.style.borderColor = 'var(--border-strong)'
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
+                          e.currentTarget.style.borderColor = 'var(--border)'
+                        }}
+                      >
+                        <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden='true' />
+                      </button>
+                      {menuOpenId === report.id && (
                         <>
-                          <button
-                            type="button"
+                          <div
+                            style={{ position: 'fixed', inset: 0, zIndex: 40 }}
                             onClick={(e) => {
                               e.stopPropagation()
-                              gerarPdf(report)
+                              closeMenu()
                             }}
-                            disabled={pdfGeneratingId === report.id}
-                            className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+                            aria-hidden='true'
+                          />
+                          <div
                             style={{
-                              fontFamily: FONT,
-                              borderRadius: '5px',
-                              background: pdfGeneratingId === report.id ? 'var(--bg-surface-alt)' : AZUL_DESTAQUE,
-                              border: pdfGeneratingId === report.id ? '1px solid var(--border)' : `1px solid ${AZUL_DESTAQUE}`,
-                              color: pdfGeneratingId === report.id ? 'var(--text-muted)' : '#FFFFFF',
-                              cursor: pdfGeneratingId === report.id ? 'not-allowed' : 'pointer',
-                              opacity: pdfGeneratingId === report.id ? 0.6 : 1,
-                            }}
-                          >
-                            {pdfGeneratingId === report.id ? (
-                              <>
-                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', animation: 'spin 1s linear infinite' }}>
-                                  <circle cx="12" cy="12" r="10" />
-                                  <path d="M12 6v6l4 2" />
-                                </svg>
-                                Gerando…
-                              </>
-                            ) : (
-                              <>
-                                <FileText size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
-                                Gerar PDF
-                              </>
-                            )}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              onEditReport(report)
-                            }}
-                            className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
-                            style={{
-                              fontFamily: FONT,
-                              borderRadius: '5px',
-                              background: 'transparent',
-                              border: '1px solid var(--border)',
-                              color: 'var(--text-primary)',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
-                              e.currentTarget.style.borderColor = 'var(--border-strong)'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent'
-                              e.currentTarget.style.borderColor = 'var(--border)'
-                            }}
-                          >
-                            <Edit2 size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
-                            Abrir
-                          </button>
-                          <button
-                            type="button"
-                            aria-label="Mais ações"
-                            title="Mais ações"
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setMenuOpenId(menuOpenId === report.id ? null : report.id)
-                            }}
-                            className="inline-flex items-center justify-center w-8 h-8 transition-colors cursor-pointer"
-                            style={{
-                              borderRadius: '5px',
+                              position: 'absolute',
+                              right: 0,
+                              top: '100%',
+                              marginTop: '4px',
+                              zIndex: 50,
                               background: 'var(--bg-surface)',
                               border: '1px solid var(--border)',
-                              color: 'var(--text-secondary)',
-                            }}
-                            onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
-                              e.currentTarget.style.borderColor = 'var(--border-strong)'
-                            }}
-                            onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
-                              e.currentTarget.style.borderColor = 'var(--border)'
+                              borderRadius: '5px',
+                              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                              minWidth: '160px',
+                              overflow: 'hidden',
                             }}
                           >
-                            <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden='true' />
-                          </button>
-                          {menuOpenId === report.id && (
-                            <>
-                              <div
-                                style={{ position: 'fixed', inset: 0, zIndex: 40 }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  closeMenu()
-                                }}
-                                aria-hidden='true'
-                              />
-                              <div
-                                style={{
-                                  position: 'absolute',
-                                  right: 0,
-                                  top: '100%',
-                                  marginTop: '4px',
-                                  zIndex: 50,
-                                  background: 'var(--bg-surface)',
-                                  border: '1px solid var(--border)',
-                                  borderRadius: '5px',
-                                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-                                  minWidth: '160px',
-                                  overflow: 'hidden',
-                                }}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    closeMenu()
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
-                                  style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                                >
-                                  <RefreshCw size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
-                                  Nova revisão
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    closeMenu()
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
-                                  style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                                >
-                                  <History size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
-                                  Histórico de versões
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    closeMenu()
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
-                                  style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                                >
-                                  <FileText size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
-                                  Duplicar laudo
-                                </button>
-                                <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
-                                <button
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation()
-                                    handleDelete(report)
-                                    closeMenu()
-                                  }}
-                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
-                                  style={{ fontFamily: FONT, color: 'var(--danger, #FF6B6B)', background: 'transparent' }}
-                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
-                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
-                                >
-                                  Remover laudo
-                                </button>
-                              </div>
-                            </>
-                          )}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                closeMenu()
+                              }}
+                              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                            >
+                              <RefreshCw size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                              Nova revisão
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                closeMenu()
+                              }}
+                              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                            >
+                              <History size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                              Histórico de versões
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                closeMenu()
+                              }}
+                              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                            >
+                              <FileText size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                              Duplicar laudo
+                            </button>
+                            <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(report)
+                                closeMenu()
+                              }}
+                              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                              style={{ fontFamily: FONT, color: 'var(--danger, #FF6B6B)', background: 'transparent' }}
+                              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                            >
+                              Remover laudo
+                            </button>
+                          </div>
                         </>
                       )}
                     </div>
