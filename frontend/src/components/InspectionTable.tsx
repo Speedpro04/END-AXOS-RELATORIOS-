@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { MoreHorizontal } from 'lucide-react'
+import { MoreHorizontal, FileText, Edit2, RefreshCw, History } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type ReportStatus } from '../types/inspection'
 
 interface InspectionTableProps {
@@ -10,6 +10,7 @@ interface InspectionTableProps {
 }
 
 const FONT = 'Arial, Helvetica, sans-serif'
+const AZUL_DESTAQUE = 'var(--card-met-azul, #2FB8D6)'
 
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
@@ -34,6 +35,8 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
   const [selectedMethod, setSelectedMethod] = useState<string>('ALL')
   const [selectedStatus, setSelectedStatus] = useState<string>('ALL')
   const [menuOpenId, setMenuOpenId] = useState<string | null>(null)
+  const [pdfGeneratingId, setPdfGeneratingId] = useState<string | null>(null)
+  const [pdfError, setPdfError] = useState<{ id: string; message: string } | null>(null)
   const isMobile = useIsMobile()
 
   const filteredReports = reports.filter((r) => {
@@ -119,8 +122,75 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
     }
   }
 
-  const handlePdf = (report: InspectionReport) => {
-    alert(`Gerando PDF corporativo do Laudo ${report.code}...`)
+  const estaEmitido = (status: ReportStatus) => status === 'aprovado'
+
+  const gerarPdf = async (report: InspectionReport) => {
+    setPdfGeneratingId(report.id)
+    setPdfError(null)
+    try {
+      const emitido = estaEmitido(report.status)
+      const conteudo = `
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4; margin: 2cm; }
+body { font-family: 'Arial', sans-serif; font-size: 11px; color: #111; line-height: 1.4; }
+.watermark {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 60px; font-weight: bold; color: rgba(255, 0, 0, 0.15);
+  z-index: 1; pointer-events: none; white-space: nowrap;
+}
+.conteudo { position: relative; z-index: 2; }
+h1 { font-size: 18px; margin-bottom: 4px; color: #0284C7; }
+.sub { font-size: 11px; color: #666; margin-bottom: 16px; }
+table { width: 100%; border-collapse: collapse; margin-top: 12px; }
+th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 10.5px; text-align: left; }
+th { background: #f2f2f2; }
+</style>
+</head>
+<body>
+${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
+<div class="conteudo">
+  <h1>Laudo Técnico END</h1>
+  <div class="sub">
+    <strong>Número:</strong> ${report.code || '—'} &nbsp;|&nbsp;
+    <strong>Método:</strong> ${report.method} &nbsp;|&nbsp;
+    <strong>Status:</strong> ${report.status} &nbsp;|&nbsp;
+    <strong>Revisão:</strong> ${report.technicalData?.revisao || '0'}
+  </div>
+  <table>
+    <tr><th style="width:30%">Campo</th><th>Valor</th></tr>
+    <tr><td>Código / Laudo</td><td>${report.code}</td></tr>
+    <tr><td>TAG / Equipamento</td><td>${report.equipmentTag}</td></tr>
+    <tr><td>Unidade / Área</td><td>${report.unitArea}</td></tr>
+    <tr><td>Data de Emissão</td><td>${report.date}</td></tr>
+    <tr><td>Inspetor</td><td>${report.inspectorName}</td></tr>
+    <tr><td>SNQC</td><td>${report.inspectorSNQC}</td></tr>
+    <tr><td>Norma / Procedimento</td><td>${report.normProcedure}</td></tr>
+    <tr><td>Critério de Aceitação</td><td>${report.acceptanceCriteria}</td></tr>
+    <tr><td>Título</td><td>${report.title}</td></tr>
+    <tr><td>Resumo</td><td>${report.summary || '—'}</td></tr>
+  </table>
+  <div style="margin-top:20px; font-size:10px; color:#666;">
+    ${emitido ? 'PDF oficial emitido pelo sistema AXOS Relatórios.' : 'PDF gerado a partir de laudo PROVISÓRIO. Sem valor oficial.'}
+  </div>
+</div>
+</body>
+</html>
+      `
+      const blob = new Blob([conteudo], { type: 'application/pdf' })
+      // Abre em nova aba para impressão/visualização (PDF simples via HTML renderizado pelo navegador)
+      const url = URL.createObjectURL(blob)
+      window.open(url, '_blank')
+    } catch (err: any) {
+      setPdfError({ id: report.id, message: err?.message || 'Falha ao gerar PDF.' })
+    } finally {
+      setPdfGeneratingId(null)
+    }
   }
 
   const handleDelete = (report: InspectionReport) => {
@@ -133,6 +203,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
 
   const actionsMenu = (report: InspectionReport) => (
     <div className="relative inline-flex items-center justify-end gap-1.5">
+      {/* Botão ABRIR — secundário, só contorno */}
       <button
         type="button"
         onClick={(e) => {
@@ -143,7 +214,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
         style={{
           fontFamily: FONT,
           borderRadius: '5px',
-          background: 'var(--bg-surface)',
+          background: 'transparent',
           border: '1px solid var(--border)',
           color: 'var(--text-primary)',
         }}
@@ -152,12 +223,50 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
           e.currentTarget.style.borderColor = 'var(--border-strong)'
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
+          e.currentTarget.style.backgroundColor = 'transparent'
           e.currentTarget.style.borderColor = 'var(--border)'
         }}
       >
+        <Edit2 size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
         Abrir
       </button>
+
+      {/* Botão GERAR PDF — principal, sempre visível, azul preenchido */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation()
+          gerarPdf(report)
+        }}
+        disabled={pdfGeneratingId === report.id}
+        className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+        style={{
+          fontFamily: FONT,
+          borderRadius: '5px',
+          background: pdfGeneratingId === report.id ? 'var(--bg-surface-alt)' : AZUL_DESTAQUE,
+          border: pdfGeneratingId === report.id ? '1px solid var(--border)' : `1px solid ${AZUL_DESTAQUE}`,
+          color: pdfGeneratingId === report.id ? 'var(--text-muted)' : '#FFFFFF',
+          cursor: pdfGeneratingId === report.id ? 'not-allowed' : 'pointer',
+          opacity: pdfGeneratingId === report.id ? 0.6 : 1,
+        }}
+      >
+        {pdfGeneratingId === report.id ? (
+          <>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', animation: 'spin 1s linear infinite' }}>
+              <circle cx="12" cy="12" r="10" />
+              <path d="M12 6v6l4 2" />
+            </svg>
+            Gerando…
+          </>
+        ) : (
+          <>
+            <FileText size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
+            Gerar PDF
+          </>
+        )}
+      </button>
+
+      {/* Menu "..." — apenas ações secundárias (sem Gerar PDF) */}
       <button
         type="button"
         aria-label="Mais ações"
@@ -205,7 +314,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               border: '1px solid var(--border)',
               borderRadius: '5px',
               boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
-              minWidth: '140px',
+              minWidth: '160px',
               overflow: 'hidden',
             }}
           >
@@ -213,7 +322,6 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation()
-                handlePdf(report)
                 closeMenu()
               }}
               className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
@@ -221,8 +329,38 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
             >
-              Gerar PDF
+              <RefreshCw size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+              Nova revisão
             </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                closeMenu()
+              }}
+              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+            >
+              <History size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+              Histórico de versões
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                closeMenu()
+              }}
+              className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+              onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+            >
+              <FileText size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+              Duplicar laudo
+            </button>
+            <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
             <button
               type="button"
               onClick={(e) => {
@@ -243,12 +381,22 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
     </div>
   )
 
+  // Limpa erro de PDF quando mudar de laudo
+  useEffect(() => {
+    if (pdfError && pdfError.id !== pdfGeneratingId) {
+      setPdfError(null)
+    }
+  }, [pdfError, pdfGeneratingId])
+
+  // Exibe toast de erro de PDF se houver
+  const pdfErroAtual = pdfError && pdfError.id === pdfGeneratingId ? null : pdfError
+
   if (isMobile) {
     return (
       <div className="flex flex-col overflow-hidden" style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px' }}>
         {/* Barra de Ações Superior */}
         <div className="p-4 border-b flex flex-col gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
-          <div className="relative w-full">
+          <div className="relative w-full" style={{ maxWidth: '420px' }}>
             <input
               type="text"
               placeholder="Pesquisar por TAG, laudo..."
@@ -358,6 +506,11 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
                 <div onClick={(e) => e.stopPropagation()}>
                   {actionsMenu(report)}
                 </div>
+                {pdfErroAtual && pdfErroAtual.id === report.id && (
+                  <div style={{ marginTop: '6px', color: 'var(--danger, #FF6B6B)', fontSize: '12px', fontFamily: FONT }}>
+                    ⚠ {pdfErroAtual.message}
+                  </div>
+                )}
               </div>
             ))
           )}
@@ -378,8 +531,8 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       {/* Barra de Ações Superior Limpa */}
       <div className="p-4 border-b flex flex-col md:flex-row md:items-center md:justify-between gap-3" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border)' }}>
         <div className="flex flex-wrap items-center gap-2.5 flex-1">
-          {/* Busca */}
-          <div className="relative min-w-[260px] flex-1 max-w-md">
+          {/* Busca — largura reduzida para cerca de metade */}
+          <div className="relative w-full" style={{ maxWidth: '420px' }}>
             <input
               type="text"
               placeholder="Pesquisar por TAG, laudo, junta soldada ou inspetor..."
@@ -564,12 +717,191 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
                   {/* Veredito */}
                   <td className="py-3 px-4 whitespace-nowrap">{renderStatusBadge(report.status)}</td>
 
-                  {/* Ações: Abrir + menu de três pontos (PDF / Remover) */}
+                  {/* Ações: Gerar PDF (principal) + Abrir (secundário) + menu "..." */}
                   <td
                     className="py-3 px-2 whitespace-nowrap overflow-visible"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    {actionsMenu(report)}
+                    <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      {pdfErroAtual && pdfErroAtual.id === report.id ? (
+                        <span style={{ color: 'var(--danger, #FF6B6B)', fontSize: '11px', fontFamily: FONT, whiteSpace: 'nowrap' }}>
+                          ⚠ Erro ao gerar PDF
+                        </span>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              gerarPdf(report)
+                            }}
+                            disabled={pdfGeneratingId === report.id}
+                            className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+                            style={{
+                              fontFamily: FONT,
+                              borderRadius: '5px',
+                              background: pdfGeneratingId === report.id ? 'var(--bg-surface-alt)' : AZUL_DESTAQUE,
+                              border: pdfGeneratingId === report.id ? '1px solid var(--border)' : `1px solid ${AZUL_DESTAQUE}`,
+                              color: pdfGeneratingId === report.id ? 'var(--text-muted)' : '#FFFFFF',
+                              cursor: pdfGeneratingId === report.id ? 'not-allowed' : 'pointer',
+                              opacity: pdfGeneratingId === report.id ? 0.6 : 1,
+                            }}
+                          >
+                            {pdfGeneratingId === report.id ? (
+                              <>
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', animation: 'spin 1s linear infinite' }}>
+                                  <circle cx="12" cy="12" r="10" />
+                                  <path d="M12 6v6l4 2" />
+                                </svg>
+                                Gerando…
+                              </>
+                            ) : (
+                              <>
+                                <FileText size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
+                                Gerar PDF
+                              </>
+                            )}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              onEditReport(report)
+                            }}
+                            className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+                            style={{
+                              fontFamily: FONT,
+                              borderRadius: '5px',
+                              background: 'transparent',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-primary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+                              e.currentTarget.style.borderColor = 'var(--border-strong)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'transparent'
+                              e.currentTarget.style.borderColor = 'var(--border)'
+                            }}
+                          >
+                            <Edit2 size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
+                            Abrir
+                          </button>
+                          <button
+                            type="button"
+                            aria-label="Mais ações"
+                            title="Mais ações"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setMenuOpenId(menuOpenId === report.id ? null : report.id)
+                            }}
+                            className="inline-flex items-center justify-center w-8 h-8 transition-colors cursor-pointer"
+                            style={{
+                              borderRadius: '5px',
+                              background: 'var(--bg-surface)',
+                              border: '1px solid var(--border)',
+                              color: 'var(--text-secondary)',
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)'
+                              e.currentTarget.style.borderColor = 'var(--border-strong)'
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.backgroundColor = 'var(--bg-surface)'
+                              e.currentTarget.style.borderColor = 'var(--border)'
+                            }}
+                          >
+                            <MoreHorizontal size={16} strokeWidth={1.75} aria-hidden='true' />
+                          </button>
+                          {menuOpenId === report.id && (
+                            <>
+                              <div
+                                style={{ position: 'fixed', inset: 0, zIndex: 40 }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  closeMenu()
+                                }}
+                                aria-hidden='true'
+                              />
+                              <div
+                                style={{
+                                  position: 'absolute',
+                                  right: 0,
+                                  top: '100%',
+                                  marginTop: '4px',
+                                  zIndex: 50,
+                                  background: 'var(--bg-surface)',
+                                  border: '1px solid var(--border)',
+                                  borderRadius: '5px',
+                                  boxShadow: '0 8px 24px rgba(0, 0, 0, 0.35)',
+                                  minWidth: '160px',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    closeMenu()
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                                  style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                                >
+                                  <RefreshCw size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                                  Nova revisão
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    closeMenu()
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                                  style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                                >
+                                  <History size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                                  Histórico de versões
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    closeMenu()
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                                  style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                                >
+                                  <FileText size={13} strokeWidth={1.75} style={{ marginRight: '6px' }} aria-hidden='true' />
+                                  Duplicar laudo
+                                </button>
+                                <div style={{ height: '1px', background: 'var(--border)', margin: '6px 0' }} />
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDelete(report)
+                                    closeMenu()
+                                  }}
+                                  className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
+                                  style={{ fontFamily: FONT, color: 'var(--danger, #FF6B6B)', background: 'transparent' }}
+                                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
+                                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
+                                >
+                                  Remover laudo
+                                </button>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))
