@@ -363,7 +363,7 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 
 ---
 
-## 15. Módulo de Obras / Escopo / Avanço (Plano Empresas)
+## 15. Módulo de Obras / Escopo / Avanço (planos de Equipe (ver valores.md))
 
 **Objetivo:** A empresa informa a quantidade de serviço contratada por obra e acompanha, por gráficos, o andamento medido pelos laudos emitidos. Público: gerente. Exclusivo do plano Empresas.
 
@@ -388,25 +388,15 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 - `GET /api/avanco/{obra_id}`: cálculo no servidor, retorna resumo, linhas, previsão.
 
 **Permissões:**
-- Gerente e administrador: veem e configuram.
-- Inspetor: vê apenas "Minha produção" (próprio medidor).
+- Gerente e administrador: veem e configuram o módulo, incluindo metas, preços e painel de todas as obras.
+- Inspetor: vê o painel completo da obra, inclusive as colunas dos colegas, com ocultador nas configurações da empresa (ligado por padrão).
 - Plano Individual: aba bloqueada com descrição curta e chamada para upgrade.
 
 **Telas:**
 - Escopo: cadastro de linhas e histórico de aditivos/supressões.
 - Avanço: filtros por período/método/inspetor; Curva S; rosca (aprovado / reprovado / saldo); barras por método; produção por inspetor (colunas verticais, sem ranking); pendências; previsão de término. Exportar PDF do painel.
 
-**Validação:** `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` e `py_compile` passam.
-
----
-
-## 16. Hexa, Hepta e Outras Melhorias Pendentes
-
-**Não implementado nesta fase:**
-- Boletim de medição por período e método (faturamento ao contratante) — previsto como recurso futuro.
-- Link somente leitura do avanço para o contratante — fora do escopo desta fase.
-- Valor de X para pendências e janela do ritmo médio — usar padrões até nova orientação.
-- Quantidade padrão de unidade por método — confirmar com o dono do produto.
+**Validação:** `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero.
 
 ---
 

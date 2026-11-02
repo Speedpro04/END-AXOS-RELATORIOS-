@@ -28,7 +28,6 @@ import { IRTPage } from './pages/IRTPage'
 import { ACFMPage } from './pages/ACFMPage'
 import { TFMPage } from './pages/TFMPage'
 import { LoginPage } from './pages/LoginPage'
-import { HistoricoPage } from './pages/HistoricoPage'
 import { ObraEscopoPage } from './pages/ObraEscopoPage'
 import { ObraAvancoPage } from './pages/ObraAvancoPage'
 import { ObrasPage } from './pages/ObrasPage'
@@ -243,7 +242,6 @@ function AppContent() {
   // Lista de Abas de Modelos Técnicos — Convencional (8)
   const navItems = [
     { id: 'HUB', label: 'Catálogo Geral', tag: 'HUB' },
-    { id: 'HISTORICO', label: 'Histórico de Laudos', tag: 'HIST' },
     { id: 'VT', label: 'Ensaio Visual (VT)', tag: 'VT' },
     { id: 'PT', label: 'Líquidos Penetrantes (PT)', tag: 'PT' },
     { id: 'MT', label: 'Partículas Magnéticas (MT)', tag: 'MT' },
@@ -434,14 +432,6 @@ function AppContent() {
               setIsModalOpen(true)
             }}
             onDeleteReport={handleDeleteReport}
-          />
-        )}
-
-        {currentPage === 'HISTORICO' && (
-          <HistoricoPage
-            onBack={() => setCurrentPage('HUB')}
-            tenant={tenant}
-            tenantName={tenant.tradeName}
           />
         )}
 

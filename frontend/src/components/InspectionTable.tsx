@@ -133,8 +133,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
     }
   }
 
-  const estaEmitido = (report: InspectionReport) =>
-    report.status === 'aprovado' && (report as any).serverStatus === 'sincronizado'
+  const estaEmitido = (report: InspectionReport) => report.status === 'issued'
 
   const gerarPdf = async (report: InspectionReport) => {
     setPdfGeneratingId(report.id)
@@ -1002,23 +1001,16 @@ th { background: #f2f2f2; }
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
+                                handleDelete(report)
                                 closeMenu()
                               }}
+                              disabled={report.status !== 'rascunho'}
                               className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
-                              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
+                              style={{ fontFamily: FONT, color: 'var(--danger, #FF6B6B)', background: 'transparent' }}
                               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
                               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
                             >
-                              {report.status !== 'rascunho' ? (
-                                <>
-                                  <span style={{ opacity: 0.5 }}>Remover laudo</span>
-                                  <span style={{ fontSize: '10px', marginLeft: '6px', color: 'var(--text-muted)' }}>somente rascunho</span>
-                                </>
-                              ) : (
-                                <>
-                                  <span style={{ color: 'var(--danger, #FF6B6B)' }}>Remover laudo</span>
-                                </>
-                              )}
+                              Remover laudo
                             </button>
                           </div>
                         </>
@@ -1039,7 +1031,7 @@ th { background: #f2f2f2; }
       </div>
       {pdfError && (
         <div style={{ padding: '8px 12px', color: 'var(--danger, #FF6B6B)', fontSize: '12px', fontFamily: FONT, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', margin: '0 12px 8px 12px' }}>
-          ⚠ {pdfError.message}
+          Erro ao gerar PDF: {pdfError.message}
         </div>
       )}
     </div>

@@ -5,6 +5,8 @@ import { useAuth } from '../contexts/AuthContext'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
+
 interface ObraAvancoPageProps {
   onBack: () => void
   siteId: string
@@ -43,7 +45,7 @@ export const ObraAvancoPage: React.FC<ObraAvancoPageProps> = ({ onBack, siteId, 
     const carregar = async () => {
       try {
         try {
-          const url = `http://localhost:8000/api/avanco/${siteId}${
+          const url = `${API_BASE_URL}/api/avanco/${siteId}${
             filtroMetodo ? `?metodo=${filtroMetodo}` : ''
           }`
           const resp = await fetch(url, {

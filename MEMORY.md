@@ -332,7 +332,7 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
     - Normalização de raios residuais (3px/4px/6px) para 5px em todos os elementos, botões e modal de configurações.
   - Verificação: `npm run build` passa com sucesso; busca pela sigla em inglês proibida com ZERO ocorrências.
 
-## 10. Módulo de Obras / Escopo / Avanço (Plano Empresas) (31/10/2026)
+## 10. Módulo de Obras / Escopo / Avanço (planos de Equipe (ver valores.md)) (31/10/2026)
 
 - `supabase/migrations/0002_obra_escopo.sql`: nova migração com 3 tabelas:
   - `obra_escopo_linha`: linha de serviço contratado por obra (método END, unidade, quantidade prevista, referência TAG, ativo).
@@ -348,9 +348,9 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
 - `frontend/src/App.tsx`: rotas `OBRAS`, `OBRA_ESCOPO`, `OBRA_AVANCO` no menu de navegação.
 - `backend/app/routers/avanco.py`: endpoint `GET /api/avanco/{obra_id}` com cálculo de avanço seguindo as 7 regras (só laudos emitidos, revisão mais recente, reprovado como inspecionado, reinspeção, excesso de escopo, previsão por ritmo médio 4 semanas).
 - `backend/app/main.py`: registro do router `avanco`.
-- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` e `py_compile` passam.
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero.
 
-**Pendências:** banco (Supabase) não aplicado em ambiente de teste; migrations de `tenants`, `report_pdfs`, `sites`, `work_orders`, `obra_escopo_linha`, `obra_escopo_revisao`, `laudo_escopo_vinculo` não verificadas contra o projeto real. Telas de cadastro usam dados mockados no Dexie. Pendente: rotacionar senha do demo (commit `f1eef30` ainda contém senha antiga no histórico do git).
+**Pendências:** banco (Supabase) não aplicado em ambiente de teste; migrations de `tenants`, `report_pdfs`, `sites`, `work_orders`, `obra_escopo_linha`, `obra_escopo_revisao`, `laudo_escopo_vinculo` não verificadas contra o projeto real. Telas de cadastro usam dados mockados no Dexie. Pendente: rotacionar senha do demo (commit `f1eef30` ainda contém senha antiga no histórico do git). Regra de visibilidade: inspetor vê o painel completo da obra (incluindo colunas dos colegas), com ocultador nas configurações da empresa (ligado por padrão); gerente e administrador veem também metas, preços e painel de todas as obras.
 
 
 

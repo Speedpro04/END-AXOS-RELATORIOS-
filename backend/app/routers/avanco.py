@@ -1,19 +1,20 @@
 """
 ╔═════════════════════════════════════════════════════════════════════╗
-║     ROTA /api/avanco – Avanço de Obras (Módulo Plano Empresas)     ║
+║     ROTA /api/avanco – Avanço de Obras (Plano Empresas)           ║
 ╠════════════════════════════════════════════════════════════════════╣
 ║  Cálculo de avanço de escopo por obra, baseado apenas em           ║
-║  laudos emitidos (aprovados e sincronizados).                      ║
+║  laudos emitidos (status issued).                                  ║
 ║                                                                   ║
-║  Regras de cálculo (seção 4 do briefing):                          ║
-║   1. Só contam laudos emitidos (aprovados + sincronizados).        ║
-║   2. Revisão: conta apenas a revisão mais recente.                 ║
+║  Regras de cálculo:                                                ║
+║   1. Só contam laudos emitidos (status issued).                    ║
+║   2. Para cada document_id, conta só a revisão mais recente com    ║
+║      status issued.                                                ║
 ║   3. Laudo reprovado conta como inspecionado, não como aprovado.   ║
 ║   4. Reinspeção: reprovado virado aprovado conta como aprovado,    ║
 ║      sem contar de novo como inspecionado.                         ║
 ║   5. Avanço aprovado % = aprovado / previsto.                      ║
 ║      Avanço inspecionado % = inspecionado / previsto.              ║
-║   6. Se > 100% do previsto → excesso de escopo (sugerir aditivo).  ║
+║   6. Se > 100% do previsto → excesso de escopo.                    ║
 ║   7. Previsão de término: ritmo médio últimas 4 semanas.           ║
 ╚════════════════════════════════════════════════════════════════════╝
 """
@@ -33,7 +34,7 @@ from app.core.security import CurrentUserDep
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/avanco", tags=["Avanço de Obras (Plano Empresas)"])
+router = APIRouter(prefix="/api/avanco", tags=["Avanço de Obras"])
 
 # ----------------------------------------------------------------------
 # Schemas de resposta
@@ -78,7 +79,7 @@ class Previsão(BaseModel):
 class AvanceObraResponse(BaseModel):
     resumo: ResumoObra
     linhas: list[LinhaAvanço]
-    previsao: Previsão
+    previsão: Previsão
 
 
 # ----------------------------------------------------------------------
@@ -86,10 +87,6 @@ class AvanceObraResponse(BaseModel):
 # ----------------------------------------------------------------------
 
 UNIDADES_VALIDAS = {'junta', 'ponto_medicao', 'peca', 'metro_linear', 'm2', 'filme', 'equipamento'}
-
-
-def _mes_ano(dt: datetime) -> str:
-    return dt.strftime('%Y-%m')
 
 
 def _semanas_entre(dt_inicial: datetime, dt_final: datetime) -> int:
@@ -118,14 +115,10 @@ async def avanco_obra(
     metodo: str | None = None,
     sb: Any = Depends(lambda: create_client(settings.supabase_url, settings.supabase_key)),
 ) -> AvanceObraResponse:
-    """
-    Retorna o avanço de escopo de uma obra, calculado no servidor
-    baseado apenas em laudos emitidos (aprovados + sincronizados).
-    """
     tenant_id = current_user.tenant_id
 
     # Verifica se a obra pertence ao tenant
-    obra = sb.table('sites').select('id, name, client_id').eq('id', obra_id).eq('tenant_id', tenant_id).execute()
+    obra = sb.table('sites').select('id, name').eq('id', obra_id).eq('tenant_id', tenant_id).execute()
     if not obra.data or len(obra.data) == 0:
         raise HTTPException(status_code=404, detail='Obra não encontrada neste tenant')
     obra_nome = obra.data[0]['name']
@@ -138,47 +131,63 @@ async def avanco_obra(
     linhas = linhas_res.data or []
 
     if not linhas:
-        return AvanceObraResponse(
-            resumo=ResumoObra(
-                obra_id=obra_id,
-                obra_nome=obra_nome,
-                total_previsto=0,
-                total_inspecionado=0,
-                total_aprovado=0,
-                total_reprovado=0,
-                avancao_aprovado_pct=0,
-                avancao_inspecionado_pct=0,
-                excesso_escopo=False,
-                data_atualizacao=datetime.utcnow().isoformat(),
-                metodo=metodo,
-            ),
-            linhas=[],
-            previsao=Previsão(
-                obra_id=obra_id,
-                saldo_restante=0,
-                ritmo_medio_semanal=None,
-                semanas_estimadas=None,
-                dados_insuficientes=True,
-            ),
-        )
+        return _vazio(obra_id, obra_nome, metodo)
 
     linha_ids = [l['id'] for l in linhas]
 
-    # Busca vínculos laudo-escopo para estas linhas
+    # Busca vínculos laudo-escopo para estas linhas (uma única consulta)
     vinculos_res = sb.table('laudo_escopo_vinculo').select('*').eq('tenant_id', tenant_id).in_('linha_id', linha_ids).execute()
     vinculos = vinculos_res.data or []
 
-    # Para cada laudo vinculado, pega o status mais recente (revisão mais recente)
+    if not vinculos:
+        return _sem_vinculos(linhas)
+
+    # IDs de todos os laudos vinculados
     laudo_ids = list({v['laudo_id'] for v in vinculos})
-    laudos_mais_recentes: dict[str, dict] = {}
 
-    for laudo_id in laudo_ids:
-        # Busca todas as revisões do laudo, ordenadas por revision desc
-        revs = sb.table('reports').select('id, status, server_status, revision, submitted_at, approved_at, issued_at').eq('id', laudo_id).eq('tenant_id', tenant_id).order('revision', desc=True).execute()
-        if revs.data and len(revs.data) > 0:
-            laudos_mais_recentes[laudo_id] = revs.data[0]
+    # Busca TODOS os reports de uma vez (elimina N+1)
+    reports_res = sb.table('reports').select('id, document_id, revision, status, issued_at').eq('tenant_id', tenant_id).in_('id', laudo_ids).execute()
+    reports = reports_res.data or []
 
-    # Agrega por linha de escopo, considerando apenas laudos emitidos (aprovado + sincronizado)
+    # Agrupa reports por document_id
+    reports_por_documento: dict[str, list[dict]] = {}
+    for r in reports:
+        reports_por_documento.setdefault(r['document_id'], []).append(r)
+
+    # Para cada document_id, pega a revisão mais recente com status issued
+    reports_emitidos: dict[str, dict] = {}  # laudo_id -> report
+    for doc_id, revs in reports_por_documento.items():
+        revs_issued = [r for r in revs if r.get('status') == 'issued']
+        if not revs_issued:
+            continue
+        mais_recente = max(revs_issued, key=lambda r: r.get('revision', 0))
+        laudos_mais_recentes[mais_recente['id']] = mais_recente
+
+    # Mapeia laudo_id -> vinculo
+    vinculo_por_laudo: dict[str, dict] = {}
+    for v in vinculos:
+        vinculo_por_laudo[v['laudo_id']] = v
+
+    # Para cada documento emitido, encontra o vínculo (se não tiver, usa da revisão anterior)
+    vinculos_emitidos: list[dict] = []
+    for laudo_id, laudo in laudos_mais_recentes.items():
+        v = vinculo_por_laudo.get(laudo_id)
+        if v:
+            vinculos_emitidos.append(v)
+            continue
+        # Não tem vínculo direto: busca a revisão anterior do mesmo document_id
+        doc_id = laudo['document_id']
+        revs = reports_por_documento.get(doc_id, [])
+        revs_ordenadas = sorted(revs, key=lambda r: r.get('revision', 0), reverse=True)
+        for r in revs_ordenadas:
+            if r['id'] == laudo_id:
+                continue  # pula a própria revisão atual
+            v_ant = vinculo_por_laudo.get(r['id'])
+            if v_ant:
+                vinculos_emitidos.append(v_ant)
+                break
+
+    # Agrega por linha de escopo
     agregado: dict[str, dict] = {}
     for l in linhas:
         agregado[l['id']] = {
@@ -191,13 +200,10 @@ async def avanco_obra(
             'quantidade_reprovada': 0.0,
         }
 
-    for v in vinculos:
+    for v in vinculos_emitidos:
         laudo_id = v['laudo_id']
         laudo = laudos_mais_recentes.get(laudo_id)
         if not laudo:
-            continue
-        # Regra 1: só conta laudo emitido (aprovado e sincronizado)
-        if laudo.get('status') != 'approved' or laudo.get('server_status') != 'sincronizado':
             continue
 
         linha_id = v['linha_id']
@@ -210,18 +216,9 @@ async def avanco_obra(
 
         a = agregado[linha_id]
 
-        # Regra 4 (reinspeção): se tem laudo_origem, a reprovação anterior já foi contada
-        # como inspecionada lá. Aqui só somamos o que este laudo traz de novo.
-        # Se há laudo_origem, a quantidade reprovada deste laudo não soma novamente como inspecionada
-        # (já foi contada no laudo original). Somos conservadores: somamos aprovado e inspecionado
-        # normalmente, mas a regra 4 diz que não conta de novo como inspecionado.
-        # Implementação prática: aprovado soma, inspecionado soma apenas se não houver laudo_origem
-        # para a parte reprovada. Simplificação aceitável: aprovado sempre soma; inspecionado soma
-        # somente a parte que não vem de reinspeção de reprovado.
         if laudo.get('laudo_origem_id'):
-            # Reinspeção: aprovado conta como aprovado; reprovado não soma inspecionado de novo
+            # Reinspeção: aprovado soma como aprovado; inspecionado só a parte aprovada
             a['quantidade_aprovada'] += qtd_aprov
-            # inspecionado: só a parte aprovada nova (reprovado já foi contado antes)
             a['quantidade_inspecionada'] += qtd_aprov
         else:
             a['quantidade_inspecionada'] += qtd_insp
@@ -272,14 +269,11 @@ async def avanco_obra(
     dt_inicial, dt_final = _ultimas_4_semanas()
     semanas = _semanas_entre(dt_inicial, dt_final)
 
-    # Quantidade aprovada nas últimas 4 semanas
     aprovado_4semanas = 0.0
-    for v in vinculos:
+    for v in vinculos_emitidos:
         laudo_id = v['laudo_id']
         laudo = laudos_mais_recentes.get(laudo_id)
         if not laudo:
-            continue
-        if laudo.get('status') != 'approved' or laudo.get('server_status') != 'sincronizado':
             continue
         issued_at = laudo.get('issued_at')
         if not issued_at:
@@ -316,12 +310,81 @@ async def avanco_obra(
             metodo=metodo,
         ),
         linhas=linhas_avanco,
-        previsao=Previsão(
+        previsão=Previsão(
             obra_id=obra_id,
             saldo_restante=saldo_restante,
             ritmo_medio_semanal=round(ritmo_medio_semanal, 2) if ritmo_medio_semanal else None,
             semanas_estimadas=round(semanas_estimadas, 1) if semanas_estimadas else None,
             dados_insuficientes=dados_insuficientes,
             data_estimada=data_estimada,
+        ),
+    )
+
+
+def _vazio(obra_id: str, obra_nome: str, metodo: str | None) -> AvanceObraResponse:
+    return AvanceObraResponse(
+        resumo=ResumoObra(
+            obra_id=obra_id,
+            obra_nome=obra_nome,
+            total_previsto=0,
+            total_inspecionado=0,
+            total_aprovado=0,
+            total_reprovado=0,
+            avancao_aprovado_pct=0,
+            avancao_inspecionado_pct=0,
+            excesso_escopo=False,
+            data_atualizacao=datetime.utcnow().isoformat(),
+            metodo=metodo,
+        ),
+        linhas=[],
+        previsão=Previsão(
+            obra_id=obra_id,
+            saldo_restante=0,
+            ritmo_medio_semanal=None,
+            semanas_estimadas=None,
+            dados_insuficientes=True,
+        ),
+    )
+
+
+def _sem_vinculos(linhas: list[dict]) -> AvanceObraResponse:
+    linhas_avanco: list[LinhaAvanço] = []
+    total_previsto = 0.0
+    for l in linhas:
+        previsto = float(l['quantidade_prevista'])
+        linhas_avanco.append(LinhaAvanço(
+            linha_id=l['id'],
+            metodo=l['method'],
+            unidade=l['unidade'],
+            quantidade_prevista=previsto,
+            quantidade_inspecionada=0.0,
+            quantidade_aprovada=0.0,
+            quantidade_reprovada=0.0,
+            avancao_aprovado_pct=0.0,
+            avancao_inspecionado_pct=0.0,
+            excesso_escopo=False,
+        ))
+        total_previsto += previsto
+    return AvanceObraResponse(
+        resumo=ResumoObra(
+            obra_id=linhas[0].get('site_id', ''),
+            obra_nome='',
+            total_previsto=total_previsto,
+            total_inspecionado=0,
+            total_aprovado=0,
+            total_reprovado=0,
+            avancao_aprovado_pct=0,
+            avancao_inspecionado_pct=0,
+            excesso_escopo=False,
+            data_atualizacao=datetime.utcnow().isoformat(),
+            metodo=None,
+        ),
+        linhas=linhas_avanco,
+        previsão=Previsão(
+            obra_id=linhas[0].get('site_id', ''),
+            saldo_restante=total_previsto,
+            ritmo_medio_semanal=None,
+            semanas_estimadas=None,
+            dados_insuficientes=True,
         ),
     )
