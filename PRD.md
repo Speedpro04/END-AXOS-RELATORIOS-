@@ -363,6 +363,53 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 
 ---
 
+## 15. Módulo de Obras / Escopo / Avanço (Plano Empresas)
+
+**Objetivo:** A empresa informa a quantidade de serviço contratada por obra e acompanha, por gráficos, o andamento medido pelos laudos emitidos. Público: gerente. Exclusivo do plano Empresas.
+
+**Modelo de dados:**
+- `obra_escopo_linha`: id, tenant_id, site_id, method (um dos 16 métodos END), unidade (junta/ponto_medicao/peca/metro_linear/m2/filme/equipamento), quantidade_prevista, referencia_tag (opcional), ativo, created_by, created_at, updated_at. RLS por tenant.
+- `obra_escopo_revisao`: id, tenant_id, linha_id, quantidade_anterior, quantidade_nova, motivo (obrigatório), created_by, created_at. Append-only: todo aditivo/supressão gera registro; nunca editar linha sem gravar histórico.
+- `laudo_escopo_vinculo`: id, tenant_id, laudo_id, linha_id, quantidade_inspecionada, quantidade_aprovada, quantidade_reprovada (aprovada + reprovada = inspecionada), laudo_origem_id (reinspeção), created_by, created_at. Tabela separada: laudos já emitidos podem receber vínculo depois, sem alterar `reports`. RLS por tenant.
+
+**Regras de cálculo (servidor):**
+1. Só contam laudos emitidos (aprovado + sincronizado). Rascunho/en avaliação/provisório não entram.
+2. Revisão: conta apenas a revisão mais recente. Nunca somar original e revisão.
+3. Laudo reprovado conta como inspecionado, não como aprovado.
+4. Reinspeção: reprovado virado aprovado conta como aprovado, sem contar de novo como inspecionado.
+5. Avanço aprovado % = aprovado / previsto. Avanço inspecionado % = inspecionado / previsto.
+6. Se aprovado ou inspecionado passar de 100% do previsto → excesso de escopo (sugerir aditivo, não bloquear).
+7. Previsão de término: ritmo médio das últimas 4 semanas aplicado ao saldo restante. Menos de 4 semanas → "dados insuficientes".
+
+**Campos no formulário do laudo:**
+- Seletor de linha de escopo e campos quantidade inspecionada, aprovada e reprovada. Opcionais para quem não usa o módulo.
+
+**Endpoint:**
+- `GET /api/avanco/{obra_id}`: cálculo no servidor, retorna resumo, linhas, previsão.
+
+**Permissões:**
+- Gerente e administrador: veem e configuram.
+- Inspetor: vê apenas "Minha produção" (próprio medidor).
+- Plano Individual: aba bloqueada com descrição curta e chamada para upgrade.
+
+**Telas:**
+- Escopo: cadastro de linhas e histórico de aditivos/supressões.
+- Avanço: filtros por período/método/inspetor; Curva S; rosca (aprovado / reprovado / saldo); barras por método; produção por inspetor (colunas verticais, sem ranking); pendências; previsão de término. Exportar PDF do painel.
+
+**Validação:** `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` e `py_compile` passam.
+
+---
+
+## 16. Hexa, Hepta e Outras Melhorias Pendentes
+
+**Não implementado nesta fase:**
+- Boletim de medição por período e método (faturamento ao contratante) — previsto como recurso futuro.
+- Link somente leitura do avanço para o contratante — fora do escopo desta fase.
+- Valor de X para pendências e janela do ritmo médio — usar padrões até nova orientação.
+- Quantidade padrão de unidade por método — confirmar com o dono do produto.
+
+---
+
 **Arquitetura:**
 - Gravação síncrona na requisição `POST /api/sync/reports`, com JWT do usuário repassado ao Supabase (RLS e triggers enxergam o usuário real). Sem `service_role` para gravar laudos.
 - Lote de até 20 itens por requisição, cada item em sua própria transação (um erro não bloqueia os outros).

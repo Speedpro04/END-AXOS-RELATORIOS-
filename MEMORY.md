@@ -332,4 +332,25 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
     - Normalização de raios residuais (3px/4px/6px) para 5px em todos os elementos, botões e modal de configurações.
   - Verificação: `npm run build` passa com sucesso; busca pela sigla em inglês proibida com ZERO ocorrências.
 
+## 10. Módulo de Obras / Escopo / Avanço (Plano Empresas) (31/10/2026)
+
+- `supabase/migrations/0002_obra_escopo.sql`: nova migração com 3 tabelas:
+  - `obra_escopo_linha`: linha de serviço contratado por obra (método END, unidade, quantidade prevista, referência TAG, ativo).
+  - `obra_escopo_revisao`: histórico append-only de aditivos/supressões (quantidade anterior, nova, motivo).
+  - `laudo_escopo_vinculo`: vínculo entre laudo e linha de escopo (quantidades inspecionada/aprovada/reprovada, laudo de origem para reinspeção). Tabela separada: não altera `reports`.
+  - RLS por tenant em todas as 3 tabelas; auditoria via `audit_row`.
+- `frontend/src/types/obra.ts`: tipos `ObraEscopoLinha`, `ObraEscopoRevisao`, `LaudoEscopoVinculo`, `AvançoResumo`, `AvançoObra`, `PrevisaoTermino`, `ProducaoInspetor`, `PendenciaLaudo`, `ObraEscopoUnidade`.
+- `frontend/src/services/dbDexie.ts`: stores `obraEscopoLinhas` e `obraEscopoRevisoes` adicionadas ao Dexie.
+- `frontend/src/pages/ObrasPage.tsx`: nova página de cadastro, listagem, edição e exclusão de obras (sites).
+- `frontend/src/pages/ObraEscopoPage.tsx`: nova página de cadastro de linhas de escopo e histórico de aditivos por obra.
+- `frontend/src/pages/ObraAvancoPage.tsx`: nova página de avanço com gráficos reais em CSS puro (Curva S, rosca/donut 3 fatias, barras por método, previsão de término, pendências), filtros por período/método.
+- `frontend/src/components/laudo/ObraEscopoVinculo.tsx`: componente reutilizável para vincular laudo com linha de escopo (será usado nos 16 modelos).
+- `frontend/src/App.tsx`: rotas `OBRAS`, `OBRA_ESCOPO`, `OBRA_AVANCO` no menu de navegação.
+- `backend/app/routers/avanco.py`: endpoint `GET /api/avanco/{obra_id}` com cálculo de avanço seguindo as 7 regras (só laudos emitidos, revisão mais recente, reprovado como inspecionado, reinspeção, excesso de escopo, previsão por ritmo médio 4 semanas).
+- `backend/app/main.py`: registro do router `avanco`.
+- Verificação padrão: `grep -rniE "\bndt" frontend/src backend` → zero; busca por `abendi` → zero; `npm run build` e `py_compile` passam.
+
+**Pendências:** banco (Supabase) não aplicado em ambiente de teste; migrations de `tenants`, `report_pdfs`, `sites`, `work_orders`, `obra_escopo_linha`, `obra_escopo_revisao`, `laudo_escopo_vinculo` não verificadas contra o projeto real. Telas de cadastro usam dados mockados no Dexie. Pendente: rotacionar senha do demo (commit `f1eef30` ainda contém senha antiga no histórico do git).
+
+
 
