@@ -24,6 +24,7 @@ from app.core.redis import close_redis, ping_redis
 
 # Routers
 from app.routers.sync import router as sync_router
+from app.routers.avanco import router as avanco_router
 
 logger = logging.getLogger(__name__)
 
@@ -86,6 +87,7 @@ app.add_middleware(
 # ─────────────────────────────────────────────────────────
 
 app.include_router(sync_router)
+app.include_router(avanco_router)
 
 # ─────────────────────────────────────────────────────────
 # Health-check

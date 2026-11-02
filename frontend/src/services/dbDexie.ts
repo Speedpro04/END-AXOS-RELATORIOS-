@@ -3,6 +3,7 @@ import Dexie, { type Table } from 'dexie';
 import type { AnexoMeta } from './anexos';
 import type { LocalReport, OutboxItem, TenantConfig } from '../types/sync';
 import type { Client, Site, WorkOrder } from '../types/os';
+import type { ObraEscopoLinha, ObraEscopoRevisao } from '../types/obra';
 
 /** Registro completo armazenado no IndexedDB para anexos */
 export interface AnexoRecord {
@@ -31,6 +32,8 @@ export class AxosDB extends Dexie {
   qualifications!: Table<any, string>;
   instruments!: Table<any, string>;
   tenantConfig!: Table<TenantConfig, string>;
+  obraEscopoLinhas!: Table<ObraEscopoLinha, string>;
+  obraEscopoRevisoes!: Table<ObraEscopoRevisao, string>;
 
   constructor() {
     super('axos');
@@ -44,6 +47,8 @@ export class AxosDB extends Dexie {
       qualifications: 'id, tenantId, userId',
       instruments: 'id, tenantId, calibrationValidUntil',
       tenantConfig: 'id',
+      obraEscopoLinhas: 'id, tenantId, siteId, method, ativo',
+      obraEscopoRevisoes: 'id, tenantId, linhaId, createdAt',
     });
   }
 
