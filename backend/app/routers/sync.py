@@ -693,3 +693,133 @@ async def list_dlq(
 @router.get("/healthz", summary="Health-check da rota de sincronização")
 async def sync_healthz() -> dict[str, str]:
     return {"status": "ok", "service": "sync"}
+
+
+# ─────────────────────────────────────────────────────────
+# Emissão de laudo – gera PDF e marca como emitido (imutável)
+# ─────────────────────────────────────────────────────────
+
+class EmitResponse(BaseModel):
+    ok: bool
+    report_id: str
+    report_number: str | None = None
+    pdf_path: str | None = None
+    message: str
+
+
+@router.post(
+    "/emitir/{report_id}",
+    summary="Emite um laudo (draft → issued) e gera o PDF",
+)
+async def emitir_laudo(
+    report_id: str,
+    current_user: CurrentUserDep,
+    sb: Any = Depends(lambda: create_client(settings.supabase_url, settings.supabase_key)),
+) -> EmitResponse:
+    """Marca o laudo como emitido (aprovado → issued), gera o PDF e armazena no bucket report-pdfs."""
+    # Busca o laudo
+    res = sb.table("reports").select("*").eq("id", report_id).eq("tenant_id", current_user.tenant_id).execute()
+    if not res.data or len(res.data) == 0:
+        raise HTTPException(status_code=404, detail="Laudo não encontrado")
+    report = res.data[0]
+
+    if report["status"] not in ("approved",):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Só é possível emitir laudos aprovados. Status atual: {report['status']}",
+        )
+
+    # Gera número do laudo se ainda não tiver
+    report_number = report.get("report_number")
+    if not report_number:
+        from app.routers.sync import _process_report  # noqa: F401
+        # Chama a função de número via RPC
+        rpc = sb.rpc("next_report_number", {
+            "p_tenant": current_user.tenant_id,
+            "p_method": report["method"],
+            "p_year": int(report["created_at"][:4]),
+        }).execute()
+        report_number = rpc.data
+
+        sb.table("reports").update({"report_number": report_number}).eq("id", report_id).execute()
+
+    # Gera PDF simples (placeholder)
+    pdf_content = f"""%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R >>
+endobj
+4 0 obj
+<< /Length 200 >>
+stream
+BT
+/F1 12 Tf
+50 800 Td
+(AXOS RELATORIOS - Laudo Tecnico END) Tj
+50 780 Td
+(Numero: {report_number}) Tj
+50 760 Td
+(Metodo: {report['method']}) Tj
+50 740 Td
+(Status: EMITIDO) Tj
+ET
+endstream
+endobj
+xref
+0 5
+0000000000 65535 f
+0000000009 00000 n
+0000000058 00000 n
+0000000115 00000 n
+0000000206 00000 n
+trailer
+<< /Size 5 /Root 1 0 R >>
+startxref
+300
+%%EOF
+""".encode("latin-1")
+
+    import hashlib
+    pdf_sha256 = hashlib.sha256(pdf_content).hexdigest()
+
+    # Salva no storage (bucket report-pdfs)
+    storage_path = f"{current_user.tenant_id}/{report_id}.pdf"
+    try:
+        sb.storage.from_("report-pdfs").upload(
+            path=storage_path,
+            file=pdf_content,
+            file_options={"content-type": "application/pdf", "upsert": "false"},
+        )
+    except Exception as exc:
+        # Se já existe, ignora (não sobrescrever)
+        if "already exists" not in str(exc).lower() and "409" not in str(exc):
+            raise
+
+    # Registra em report_pdfs
+    sb.table("report_pdfs").insert({
+        "report_id": report_id,
+        "tenant_id": current_user.tenant_id,
+        "storage_path": storage_path,
+        "sha256": pdf_sha256,
+    }).execute()
+
+    # Atualiza o laudo para emitido
+    sb.table("reports").update({
+        "status": "issued",
+        "issued_at": "now()",
+        "issued_by": current_user.user_id,
+        "data_hash": pdf_sha256,
+    }).eq("id", report_id).execute()
+
+    return EmitResponse(
+        ok=True,
+        report_id=report_id,
+        report_number=report_number,
+        pdf_path=storage_path,
+        message="Laudo emitido com sucesso",
+    )
