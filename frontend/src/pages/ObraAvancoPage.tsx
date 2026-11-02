@@ -19,6 +19,7 @@ export const ObraAvancoPage: React.FC<ObraAvancoPageProps> = ({ onBack, siteId, 
   const [periodo, setPeriodo] = useState<'semana' | 'mes' | 'trimestre'>('mes')
   const [filtroMetodo, setFiltroMetodo] = useState<string | null>(null)
   const [carregando, setCarregando] = useState(true)
+  const [telaCheia, setTelaCheia] = useState(false)
 
   const metodos = [
     { codigo: 'VT', label: 'Ensaio Visual' },
@@ -41,7 +42,6 @@ export const ObraAvancoPage: React.FC<ObraAvancoPageProps> = ({ onBack, siteId, 
   useEffect(() => {
     const carregar = async () => {
       try {
-        // Carrega dados do servidor (cálculo de avanço)
         try {
           const url = `http://localhost:8000/api/avanco/${siteId}${
             filtroMetodo ? `?metodo=${filtroMetodo}` : ''
@@ -68,6 +68,15 @@ export const ObraAvancoPage: React.FC<ObraAvancoPageProps> = ({ onBack, siteId, 
   }, [siteId, filtroMetodo, profile?.tenant_id])
 
   const formatarPct = (v: number) => v.toFixed(1) + '%'
+
+  const saldoDeg = resumo
+    ? ((resumo.avancao_aprovado_pct +
+        ((resumo.total_previsto - resumo.total_aprovado - (resumo.total_previsto - resumo.total_inspecionado)) /
+          resumo.total_previsto) *
+        100) /
+        resumo.total_previsto) *
+      100
+    : 0
 
   return (
     <div
@@ -127,8 +136,19 @@ export const ObraAvancoPage: React.FC<ObraAvancoPageProps> = ({ onBack, siteId, 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: 'auto' }}>
           <button
             type="button"
+            onClick={() => setTelaCheia(!telaCheia)}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 14px', borderRadius: '5px', border: '1px solid var(--border)',
+              background: 'var(--bg-surface)', color: 'var(--text-primary)',
+              fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+            }}
+          >
+            <Maximize size={14} strokeWidth={1.75} /> Tela cheia
+          </button>
+          <button
+            type="button"
             onClick={() => {
-              // Exportar PDF do painel (servidor)
               alert('Exportar PDF do painel – servidor em integração')
             }}
             style={{
@@ -154,20 +174,124 @@ export const ObraAvancoPage: React.FC<ObraAvancoPageProps> = ({ onBack, siteId, 
         <>
           {/* Linha de resumo: Curva S (larga) + Rosca (estreita) */}
           <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px', marginBottom: '24px' }}>
+            {/* Curva S - Gráfico de linha real em CSS */}
             <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
               <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 16px' }}>
                 Curva S — “Estamos no prazo?”
               </h2>
-              <div style={{ flex: 1, minHeight: '260px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-                Curva S – previsto vs realizado ao longo do tempo
+              <div style={{ flex: 1, minHeight: '280px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '5px', position: 'relative', overflow: 'hidden' }}>
+                {/* Eixo Y */}
+                <div style={{ position: 'absolute', left: '40px', top: '20px', bottom: '40px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontFamily: FONT }}>
+                  <span>100%</span>
+                  <span>75%</span>
+                  <span>50%</span>
+                  <span>25%</span>
+                  <span>0%</span>
+                </div>
+                {/* Eixo X */}
+                <div style={{ position: 'absolute', left: '40px', right: '20px', bottom: '20px', display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: 'var(--text-muted)', fontFamily: FONT }}>
+                  <span>Sem 1</span><span>Sem 2</span><span>Sem 3</span><span>Sem 4</span>
+                </div>
+                {/* Linha prevista (cinza) */}
+                <div style={{ position: 'absolute', left: '40px', top: '100px', bottom: '60px', width: '1px', background: 'var(--border)', zIndex: 1 }} />
+                {/* Linha realizada (azul) - simulada com progresso */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: '40px',
+                    bottom: '60px',
+                    height: '4px',
+                    background: 'var(--card-met-azul, #2FB8D6)',
+                    borderRadius: '2px',
+                    width: resumo ? Math.min(100, resumo.avancao_inspecionado_pct) * 3.4 + 'px' : '100px',
+                    zIndex: 2,
+                    transition: 'width 0.8s ease',
+                  }}
+                />
+                <div style={{ position: 'absolute', top: '20px', right: '20px', fontSize: '11px', color: 'var(--text-muted)', fontFamily: FONT, textAlign: 'right' }}>
+                  <div>Previsto: 100%</div>
+                  <div style={{ color: 'var(--card-met-azul, #2FB8D6)', fontWeight: 600 }}>Realizado: {resumo ? formatarPct(resumo.avancao_inspecionado_pct) : '0%'}</div>
+                </div>
+                <div style={{ position: 'absolute', bottom: '10px', left: '50%', transform: 'translateX(-50%)', fontSize: '11px', color: 'var(--text-muted)', fontFamily: FONT }}>
+                  Semanas do período
+                </div>
               </div>
             </section>
+
+            {/* Rosca - composição do escopo */}
             <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column' }}>
               <h2 style={{ fontSize: '15px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 16px' }}>
                 Escopo — “Quanto está aprovado, em retrabalho e a executar?”
               </h2>
-              <div style={{ flex: 1, minHeight: '260px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-                Rosca – composição do escopo (aprovado / reprovado / saldo)
+              <div style={{ flex: 1, minHeight: '280px', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <div style={{ position: 'relative', width: '180px', height: '180px' }}>
+                  {/* Centro com total */}
+                  <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', textAlign: 'center' }}>
+                    <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text-primary)', fontFamily: FONT }}>
+                      {resumo?.total_previsto ?? 0}
+                    </div>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: FONT }}>total previsto</div>
+                  </div>
+                  {/* Fatia Aprovado (azul) */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '0',
+                      left: '0',
+                      width: '100%',
+                      height: '100%',
+                      border: '20px solid',
+                      borderColor: 'transparent transparent transparent var(--card-met-azul, #2FB8D6)',
+                      borderRadius: '50%',
+                      clip: 'rect(0px, 90px, 180px, 0px)',
+                      transform: `rotate(${resumo ? (resumo.avancao_aprovado_pct / 100) * 360 : 0}deg)`,
+                    }}
+                  />
+                  {/* Fatia Reprovado (vermelho) */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '0',
+                      left: '0',
+                      width: '100%',
+                      height: '100%',
+                      border: '20px solid',
+                      borderColor: 'transparent transparent var(--danger, #FF6B6B) transparent',
+                      borderRadius: '50%',
+                      clip: 'rect(0px, 180px, 180px, 90px)',
+                      transform: `rotate(${resumo ? (resumo.avancao_aprovado_pct / 100) * 360 : 0}deg)`,
+                    }}
+                  />
+                  {/* Fatia Saldo (cinza) */}
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: '0',
+                      left: '0',
+                      width: '100%',
+                      height: '100%',
+                      border: '20px solid',
+                      borderColor: 'transparent var(--border) transparent transparent',
+                      borderRadius: '50%',
+                      clip: 'rect(0px, 180px, 180px, 90px)',
+                      transform: `rotate(${saldoDeg}deg)`,
+                    }}
+                  />
+                </div>
+                <div style={{ marginTop: '16px', display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px', fontFamily: FONT }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '12px', height: '12px', background: 'var(--card-met-azul, #2FB8D6)', borderRadius: '50%' }} />
+                    <span>Aprovado: {resumo ? formatarPct(resumo.avancao_aprovado_pct) : '0%'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '12px', height: '12px', background: 'var(--danger, #FF6B6B)', borderRadius: '50%' }} />
+                    <span>Reprovado: {resumo ? formatarPct(((resumo.total_reprovado / resumo.total_previsto) * 100)) : '0%'}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div style={{ width: '12px', height: '12px', background: 'var(--border)', borderRadius: '50%' }} />
+                    <span>Saldo: {resumo ? formatarPct(((resumo.total_previsto - resumo.total_inspecionado) / resumo.total_previsto * 100)) : '0%'}</span>
+                  </div>
+                </div>
               </div>
             </section>
           </div>

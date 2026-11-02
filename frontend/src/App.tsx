@@ -28,6 +28,10 @@ import { IRTPage } from './pages/IRTPage'
 import { ACFMPage } from './pages/ACFMPage'
 import { TFMPage } from './pages/TFMPage'
 import { LoginPage } from './pages/LoginPage'
+import { HistoricoPage } from './pages/HistoricoPage'
+import { ObraEscopoPage } from './pages/ObraEscopoPage'
+import { ObraAvancoPage } from './pages/ObraAvancoPage'
+import { ObrasPage } from './pages/ObrasPage'
 
 // Relatório inicial padrão (apenas se não houver nada no Dexie)
 const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 'updatedAt'> = {
@@ -123,6 +127,7 @@ function AppContent() {
   // Navegação entre páginas de modelos
   // 'HUB' | 'LP' | 'ME' | 'EVS' | 'NR13' | 'PM' | 'US' | 'PINTURA'
   const [currentPage, setCurrentPage] = useState<string>('HUB')
+  const [obraSelecionada, setObraSelecionada] = useState<{ id: string; nome: string } | null>(null)
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
   const [offlineQueueCount] = useState<number>(0)
@@ -227,6 +232,7 @@ function AppContent() {
   // Lista de Abas de Modelos Técnicos — Convencional (8)
   const navItems = [
     { id: 'HUB', label: 'Catálogo Geral', tag: 'HUB' },
+    { id: 'HISTORICO', label: 'Histórico de Laudos', tag: 'HIST' },
     { id: 'VT', label: 'Ensaio Visual (VT)', tag: 'VT' },
     { id: 'PT', label: 'Líquidos Penetrantes (PT)', tag: 'PT' },
     { id: 'MT', label: 'Partículas Magnéticas (MT)', tag: 'MT' },
@@ -244,6 +250,10 @@ function AppContent() {
     { id: 'IRT', label: 'Termografia (IRT)', tag: 'IRT' },
     { id: 'ACFM', label: 'ACFM', tag: 'ACFM' },
     { id: 'TFM', label: 'TFM / FMC', tag: 'TFM' },
+    // Módulo de Obras (Plano Empresas)
+    { id: 'OBRA_ESCOPO', label: 'Escopo da Obra', tag: 'ESC' },
+    { id: 'OBRA_AVANCO', label: 'Avanço da Obra', tag: 'AV' },
+    { id: 'OBRAS', label: 'Obras', tag: 'OBR' },
   ]
 
   const navRef = useRef<HTMLElement>(null)
@@ -413,6 +423,34 @@ function AppContent() {
             }}
             onDeleteReport={handleDeleteReport}
           />
+        )}
+
+        {currentPage === 'HISTORICO' && (
+          <HistoricoPage
+            onBack={() => setCurrentPage('HUB')}
+            tenant={tenant}
+            tenantName={tenant.tradeName}
+          />
+        )}
+
+        {currentPage === 'OBRA_ESCOPO' && (
+          <ObraEscopoPage
+            onBack={() => setCurrentPage('HUB')}
+            siteId={obraSelecionada?.id || ''}
+            siteName={obraSelecionada?.nome || ''}
+          />
+        )}
+
+        {currentPage === 'OBRA_AVANCO' && (
+          <ObraAvancoPage
+            onBack={() => setCurrentPage('HUB')}
+            siteId={obraSelecionada?.id || ''}
+            siteName={obraSelecionada?.nome || ''}
+          />
+        )}
+
+        {currentPage === 'OBRAS' && (
+          <ObrasPage onBack={() => setCurrentPage('HUB')} />
         )}
 
         {currentPage === 'VT' && (
