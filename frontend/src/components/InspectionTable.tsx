@@ -13,6 +13,16 @@ interface InspectionTableProps {
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
+function escapeHtml(text: string | null | undefined): string {
+  if (!text) return ''
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
 function useIsMobile(): boolean {
   const [isMobile, setIsMobile] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches
@@ -123,13 +133,16 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
     }
   }
 
-  const estaEmitido = (status: ReportStatus) => status === 'aprovado'
+  const estaEmitido = (report: InspectionReport) =>
+    report.status === 'aprovado' && (report as any).serverStatus === 'sincronizado'
 
   const gerarPdf = async (report: InspectionReport) => {
     setPdfGeneratingId(report.id)
     setPdfError(null)
     try {
-      const emitido = estaEmitido(report.status)
+      const emitido = estaEmitido(report)
+      // TODO: Integrar com pdf_worker existente (backend) quando o endpoint de emissão estiver disponível.
+      // Por enquanto, gera HTML em nova aba e aciona window.print() para impressão/PDF do navegador.
       const conteudo = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -158,23 +171,23 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
 <div class="conteudo">
   <h1>Laudo Técnico END</h1>
   <div class="sub">
-    <strong>Número:</strong> ${report.code || '—'} &nbsp;|&nbsp;
-    <strong>Método:</strong> ${report.method} &nbsp;|&nbsp;
-    <strong>Status:</strong> ${report.status} &nbsp;|&nbsp;
-    <strong>Revisão:</strong> ${report.technicalData?.revisao || '0'}
+    <strong>Número:</strong> ${escapeHtml(report.code)} &nbsp;|&nbsp;
+    <strong>Método:</strong> ${escapeHtml(report.method)} &nbsp;|&nbsp;
+    <strong>Status:</strong> ${escapeHtml(report.status)} &nbsp;|&nbsp;
+    <strong>Revisão:</strong> ${escapeHtml(String(report.technicalData?.revisao)) || '0'}
   </div>
   <table>
     <tr><th style="width:30%">Campo</th><th>Valor</th></tr>
-    <tr><td>Código / Laudo</td><td>${report.code}</td></tr>
-    <tr><td>TAG / Equipamento</td><td>${report.equipmentTag}</td></tr>
-    <tr><td>Unidade / Área</td><td>${report.unitArea}</td></tr>
-    <tr><td>Data de Emissão</td><td>${report.date}</td></tr>
-    <tr><td>Inspetor</td><td>${report.inspectorName}</td></tr>
-    <tr><td>SNQC</td><td>${report.inspectorSNQC}</td></tr>
-    <tr><td>Norma / Procedimento</td><td>${report.normProcedure}</td></tr>
-    <tr><td>Critério de Aceitação</td><td>${report.acceptanceCriteria}</td></tr>
-    <tr><td>Título</td><td>${report.title}</td></tr>
-    <tr><td>Resumo</td><td>${report.summary || '—'}</td></tr>
+    <tr><td>Código / Laudo</td><td>${escapeHtml(report.code)}</td></tr>
+    <tr><td>TAG / Equipamento</td><td>${escapeHtml(report.equipmentTag)}</td></tr>
+    <tr><td>Unidade / Área</td><td>${escapeHtml(report.unitArea)}</td></tr>
+    <tr><td>Data de Emissão</td><td>${escapeHtml(report.date)}</td></tr>
+    <tr><td>Inspetor</td><td>${escapeHtml(report.inspectorName)}</td></tr>
+    <tr><td>SNQC</td><td>${escapeHtml(report.inspectorSNQC)}</td></tr>
+    <tr><td>Norma / Procedimento</td><td>${escapeHtml(report.normProcedure)}</td></tr>
+    <tr><td>Critério de Aceitação</td><td>${escapeHtml(report.acceptanceCriteria)}</td></tr>
+    <tr><td>Título</td><td>${escapeHtml(report.title)}</td></tr>
+    <tr><td>Resumo</td><td>${escapeHtml(report.summary) || '—'}</td></tr>
   </table>
   <div style="margin-top:20px; font-size:10px; color:#666;">
     ${emitido ? 'PDF oficial emitido pelo sistema AXOS Relatórios.' : 'PDF gerado a partir de laudo PROVISÓRIO. Sem valor oficial.'}
@@ -183,10 +196,15 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
 </body>
 </html>
       `
-      const blob = new Blob([conteudo], { type: 'application/pdf' })
-      // Abre em nova aba para impressão/visualização (PDF simples via HTML renderizado pelo navegador)
+      const blob = new Blob([conteudo], { type: 'text/html' })
+      // Abre em nova aba e aciona impressão do navegador (gera PDF via Ctrl+P / comando de impressão)
       const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
+      const win = window.open(url, '_blank')
+      if (win) {
+        win.onload = () => {
+          win.print()
+        }
+      }
     } catch (err: any) {
       setPdfError({ id: report.id, message: err?.message || 'Falha ao gerar PDF.' })
     } finally {
@@ -198,7 +216,7 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
     setPdfGeneratingId('todos')
     setPdfError(null)
     try {
-      const emitidos = filteredReports.filter((r) => r.status === 'aprovado').length
+      const emitidos = filteredReports.filter((r) => estaEmitido(r)).length
       const conteudo = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -242,13 +260,13 @@ th { background: #f2f2f2; }
     </tr>
     ${filteredReports.map((r) => `
     <tr>
-      <td>${r.code}</td>
-      <td>${r.method}</td>
-      <td>${r.equipmentTag}</td>
-      <td>${r.unitArea}</td>
-      <td>${r.date}</td>
-      <td>${r.inspectorName}</td>
-      <td>${r.status}</td>
+      <td>${escapeHtml(r.code)}</td>
+      <td>${escapeHtml(r.method)}</td>
+      <td>${escapeHtml(r.equipmentTag)}</td>
+      <td>${escapeHtml(r.unitArea)}</td>
+      <td>${escapeHtml(r.date)}</td>
+      <td>${escapeHtml(r.inspectorName)}</td>
+      <td>${escapeHtml(r.status)}</td>
     </tr>
     `).join('')}
   </table>
@@ -259,9 +277,14 @@ th { background: #f2f2f2; }
 </body>
 </html>
       `
-      const blob = new Blob([conteudo], { type: 'application/pdf' })
+      const blob = new Blob([conteudo], { type: 'text/html' })
       const url = URL.createObjectURL(blob)
-      window.open(url, '_blank')
+      const win = window.open(url, '_blank')
+      if (win) {
+        win.onload = () => {
+          win.print()
+        }
+      }
     } catch (err: any) {
       setPdfError({ id: 'todos', message: err?.message || 'Falha ao gerar PDF.' })
     } finally {
@@ -270,6 +293,7 @@ th { background: #f2f2f2; }
   }
 
   const handleDelete = (report: InspectionReport) => {
+    if (report.status !== 'rascunho') return
     if (confirm(`Remover permanentemente o laudo ${report.code}?`)) {
       onDeleteReport(report.id)
     }
@@ -457,9 +481,9 @@ th { background: #f2f2f2; }
     </div>
   )
 
-  // Limpa erro de PDF quando mudar de laudo
+  // Exibe erro de PDF na tela (não apaga enquanto ainda está gerando para esse laudo)
   useEffect(() => {
-    if (pdfError && pdfError.id !== pdfGeneratingId) {
+    if (pdfError && pdfError.id !== pdfGeneratingId && pdfGeneratingId !== null) {
       setPdfError(null)
     }
   }, [pdfError, pdfGeneratingId])
@@ -719,14 +743,14 @@ th { background: #f2f2f2; }
       <div>
         <table className="w-full text-left border-collapse" style={{ tableLayout: 'fixed', fontFamily: FONT }}>
           <colgroup>
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '8%' }} />
             <col style={{ width: '13%' }} />
-            <col style={{ width: '18%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '15%' }} />
+            <col style={{ width: '7%' }} />
             <col style={{ width: '12%' }} />
-            <col style={{ width: '10%' }} />
+            <col style={{ width: '16%' }} />
+            <col style={{ width: '9%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '18%' }} />
           </colgroup>
           <thead>
             <tr style={{ background: 'var(--bg-surface-alt)', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)' }}>
@@ -817,12 +841,45 @@ th { background: #f2f2f2; }
                   {/* Veredito */}
                   <td className="py-3 px-4 whitespace-nowrap">{renderStatusBadge(report.status)}</td>
 
-                  {/* Ações: Abrir (secundário) + menu "..." (ações secundárias) */}
+                  {/* Ações: Gerar PDF (principal) + Abrir (secundário) + menu "..." */}
                   <td
                     className="py-3 px-2 whitespace-nowrap overflow-visible"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          gerarPdf(report)
+                        }}
+                        disabled={pdfGeneratingId === report.id}
+                        className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
+                        style={{
+                          fontFamily: FONT,
+                          borderRadius: '5px',
+                          background: pdfGeneratingId === report.id ? 'var(--bg-surface-alt)' : AZUL_DESTAQUE,
+                          border: pdfGeneratingId === report.id ? '1px solid var(--border)' : `1px solid ${AZUL_DESTAQUE}`,
+                          color: pdfGeneratingId === report.id ? 'var(--text-muted)' : '#06222B',
+                          cursor: pdfGeneratingId === report.id ? 'not-allowed' : 'pointer',
+                          opacity: pdfGeneratingId === report.id ? 0.6 : 1,
+                        }}
+                      >
+                        {pdfGeneratingId === report.id ? (
+                          <>
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '4px', animation: 'spin 1s linear infinite' }}>
+                              <circle cx="12" cy="12" r="10" />
+                              <path d="M12 6v6l4 2" />
+                            </svg>
+                            Gerando…
+                          </>
+                        ) : (
+                          <>
+                            <FileText size={13} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
+                            Gerar PDF
+                          </>
+                        )}
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
@@ -945,15 +1002,23 @@ th { background: #f2f2f2; }
                               type="button"
                               onClick={(e) => {
                                 e.stopPropagation()
-                                handleDelete(report)
                                 closeMenu()
                               }}
                               className="w-full text-left px-3 py-2 text-[13px] font-medium transition-colors cursor-pointer"
-                              style={{ fontFamily: FONT, color: 'var(--danger, #FF6B6B)', background: 'transparent' }}
+                              style={{ fontFamily: FONT, color: 'var(--text-primary)', background: 'transparent' }}
                               onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = 'var(--bg-surface-alt)' }}
                               onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent' }}
                             >
-                              Remover laudo
+                              {report.status !== 'rascunho' ? (
+                                <>
+                                  <span style={{ opacity: 0.5 }}>Remover laudo</span>
+                                  <span style={{ fontSize: '10px', marginLeft: '6px', color: 'var(--text-muted)' }}>somente rascunho</span>
+                                </>
+                              ) : (
+                                <>
+                                  <span style={{ color: 'var(--danger, #FF6B6B)' }}>Remover laudo</span>
+                                </>
+                              )}
                             </button>
                           </div>
                         </>
@@ -972,6 +1037,11 @@ th { background: #f2f2f2; }
         <span>Mostrando {filteredReports.length} de {reports.length} laudos auditados</span>
         <span>Ambiente Seguro • Registro Rastreável</span>
       </div>
+      {pdfError && (
+        <div style={{ padding: '8px 12px', color: 'var(--danger, #FF6B6B)', fontSize: '12px', fontFamily: FONT, background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', margin: '0 12px 8px 12px' }}>
+          ⚠ {pdfError.message}
+        </div>
+      )}
     </div>
   )
 }

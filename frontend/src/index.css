@@ -294,6 +294,10 @@ button, input, select, textarea,
   to { width: var(--bar-width, 60%); }
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 .animate-pulse-dot {
   animation: pulse-dot 2s ease-in-out infinite;
 }

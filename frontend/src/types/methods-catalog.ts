@@ -1,6 +1,6 @@
 // =====================================================================
 // AXOS RELATÓRIOS — Catálogo de métodos END
-// Fonte: métodos END listados pela ABENDI.
+// Fonte: catálogo de métodos END do produto.
 // Conformidade: ISO 27001 (segurança da informação), ISO 9001 (qualidade),
 // ABNT (normas técnicas brasileiras).
 // Controle de mudança: todo ajuste deve ser revisado por profissional
