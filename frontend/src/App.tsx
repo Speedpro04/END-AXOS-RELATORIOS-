@@ -32,6 +32,7 @@ import { HistoricoPage } from './pages/HistoricoPage'
 import { ObraEscopoPage } from './pages/ObraEscopoPage'
 import { ObraAvancoPage } from './pages/ObraAvancoPage'
 import { ObrasPage } from './pages/ObrasPage'
+import { NovaObraPage } from './pages/NovaObraPage'
 
 // Relatório inicial padrão (apenas se não houver nada no Dexie)
 const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 'updatedAt'> = {
@@ -122,6 +123,16 @@ function AppContent() {
       }
     }
     loadReports()
+  }, [])
+
+  // Navega para o escopo da obra selecionada na listagem de Obras
+  useEffect(() => {
+    const handler = (e: CustomEvent<{ id: string; nome: string }>) => {
+      setObraSelecionada({ id: e.detail.id, nome: e.detail.nome })
+      setCurrentPage('OBRA_ESCOPO')
+    }
+    window.addEventListener('obra-selecionada', handler as EventListener)
+    return () => window.removeEventListener('obra-selecionada', handler as EventListener)
   }, [])
 
   // Navegação entre páginas de modelos
@@ -254,6 +265,7 @@ function AppContent() {
     { id: 'OBRA_ESCOPO', label: 'Escopo da Obra', tag: 'ESC' },
     { id: 'OBRA_AVANCO', label: 'Avanço da Obra', tag: 'AV' },
     { id: 'OBRAS', label: 'Obras', tag: 'OBR' },
+    { id: 'OBRA_NOVO', label: 'Nova Obra', tag: 'NOVO' },
   ]
 
   const navRef = useRef<HTMLElement>(null)
@@ -450,7 +462,14 @@ function AppContent() {
         )}
 
         {currentPage === 'OBRAS' && (
-          <ObrasPage onBack={() => setCurrentPage('HUB')} />
+          <ObrasPage
+            onBack={() => setCurrentPage('HUB')}
+            onNovaObra={() => setCurrentPage('OBRA_NOVO')}
+          />
+        )}
+
+        {currentPage === 'OBRA_NOVO' && (
+          <NovaObraPage onBack={() => setCurrentPage('OBRAS')} />
         )}
 
         {currentPage === 'VT' && (

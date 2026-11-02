@@ -1,25 +1,19 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowLeft, Plus, Search, Edit2, Trash2, RefreshCw } from 'lucide-react'
+import { ArrowLeft, Plus, Search, Edit2, Trash2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
 interface ObrasPageProps {
   onBack: () => void
+  onNovaObra: () => void
 }
 
-export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
+export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
   const { profile } = useAuth()
   const [obras, setObras] = useState<any[]>([])
   const [carregando, setCarregando] = useState(true)
-  const [editando, setEditando] = useState<any | null>(null)
-  const [salvando, setSalvando] = useState(false)
   const [termoBusca, setTermoBusca] = useState('')
-  const [editNome, setEditNome] = useState('')
-  const [editEndereco, setEditEndereco] = useState('')
-  const [editCidade, setEditCidade] = useState('')
-  const [editUF, setEditUF] = useState('')
-  const [editContrato, setEditContrato] = useState('')
 
   const carregar = async () => {
     setCarregando(true)
@@ -43,56 +37,9 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
     (o.address || '').toLowerCase().includes(termoBusca.toLowerCase())
   )
 
-  const handleSalvarObra = async () => {
-    if (!editNome) return
-    setSalvando(true)
-    try {
-      const { db } = await import('../services/dbDexie')
-      const agora = new Date().toISOString()
-      const tenantId = profile?.tenant_id || ''
-      const obra: any = {
-        id: editando?.id || crypto.randomUUID(),
-        tenant_id: tenantId,
-        client_id: '', // será preenchido quando houver tela de contratantes
-        name: editNome,
-        address: editEndereco || null,
-        city: editCidade || null,
-        uf: editUF || null,
-        contract_ref: editContrato || null,
-        situation: 'active',
-        created_by: agora,
-        created_in_field: false,
-        needs_review: true,
-        created_at: editando?.created_at || agora,
-        updated_at: agora,
-      }
-      await db.sites.put(obra)
-      await carregar()
-      setEditando(null)
-      setEditNome('')
-      setEditEndereco('')
-      setEditCidade('')
-      setEditUF('')
-      setEditContrato('')
-    } catch (err) {
-      console.error('[Obras] Falha ao salvar:', err)
-    } finally {
-      setSalvando(false)
-    }
-  }
-
-  const handleEditar = (obra: any) => {
-    setEditando(obra)
-    setEditNome(obra.name)
-    setEditEndereco(obra.address || '')
-    setEditCidade(obra.city || '')
-    setEditUF(obra.uf || '')
-    setEditContrato(obra.contract_ref || '')
-  }
-
   const handleExcluir = async (id: string) => {
     if (!confirm('Excluir esta obra?')) return
-    setSalvando(true)
+    setCarregando(true)
     try {
       const { db } = await import('../services/dbDexie')
       await db.sites.delete(id)
@@ -100,7 +47,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
     } catch (err) {
       console.error('[Obras] Falha ao excluir:', err)
     } finally {
-      setSalvando(false)
+      setCarregando(false)
     }
   }
 
@@ -155,7 +102,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
           </div>
           <button
             type="button"
-            onClick={() => setEditando(null)}
+            onClick={onNovaObra}
             style={{
               display: 'inline-flex', alignItems: 'center', gap: '6px',
               padding: '8px 16px', borderRadius: '5px', border: '1px solid var(--border)',
@@ -163,7 +110,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
               fontSize: '14px', fontWeight: 500, cursor: 'pointer',
             }}
           >
-            <Plus size={16} strokeWidth={1.75} /> Nova obra
+            <Plus size={16} strokeWidth={1.75} /> Nova Obra
           </button>
         </div>
       </div>
@@ -173,7 +120,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
         {obrasFiltradas.length === 0 ? (
           <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
             <p style={{ fontSize: '14px', fontWeight: 500 }}>Nenhuma obra cadastrada.</p>
-            <p style={{ fontSize: '12.5px', marginTop: '4px' }}>Clique em "Nova obra" para adicionar.</p>
+            <p style={{ fontSize: '12.5px', marginTop: '4px' }}>Clique em "Nova Obra" para adicionar.</p>
           </div>
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -187,131 +134,29 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
               </tr>
             </thead>
             <tbody>
-              {obrasFiltradas.map((obra) => {
-                const estaEditando = editando?.id === obra.id
-                return (
-                  <tr key={obra.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    {estaEditando ? (
-                      <>
-                        <td style={{ padding: '10px 16px' }}>
-                          <input
-                            type="text"
-                            value={editNome}
-                            onChange={(e) => setEditNome(e.target.value)}
-                            style={{ width: '100%', padding: '6px 8px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
-                          />
-                        </td>
-                        <td style={{ padding: '10px 16px' }}>
-                          <input
-                            type="text"
-                            value={editEndereco}
-                            onChange={(e) => setEditEndereco(e.target.value)}
-                            placeholder="Endereço"
-                            style={{ width: '100%', padding: '6px 8px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
-                          />
-                        </td>
-                        <td style={{ padding: '10px 16px', display: 'flex', gap: '6px' }}>
-                          <input
-                            type="text"
-                            value={editCidade}
-                            onChange={(e) => setEditCidade(e.target.value)}
-                            placeholder="Cidade"
-                            style={{ flex: 1, padding: '6px 8px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
-                          />
-                          <input
-                            type="text"
-                            value={editUF}
-                            onChange={(e) => setEditUF(e.target.value.toUpperCase())}
-                            placeholder="UF"
-                            style={{ width: '60px', padding: '6px 8px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px', textTransform: 'uppercase' }}
-                          />
-                          <input
-                            type="text"
-                            value={editContrato}
-                            onChange={(e) => setEditContrato(e.target.value)}
-                            placeholder="Contrato"
-                            style={{ width: '100%', padding: '6px 8px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
-                          />
-                        </td>
-                        <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            onClick={handleSalvarObra}
-                            disabled={salvando}
-                            style={{
-                              padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border)',
-                              background: salvando ? 'var(--bg-surface-alt)' : 'var(--card-met-azul, #2FB8D6)',
-                              color: salvando ? 'var(--text-muted)' : '#FFFFFF',
-                              fontSize: '12px', fontWeight: 600,
-                              cursor: salvando ? 'not-allowed' : 'pointer',
-                            }}
-                          >
-                            {salvando ? 'Salvando…' : 'Salvar'}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setEditando(null)}
-                            style={{
-                              marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border)',
-                              background: 'var(--bg-surface)', color: 'var(--text-muted)',
-                              fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-                            }}
-                          >
-                            Cancelar
-                          </button>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)' }}>{obra.name}</td>
-                        <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.address || '—'}</td>
-                        <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.city || '—'} / {obra.uf || '—'}</td>
-                        <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.contract_ref || '—'}</td>
-                        <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                          <button
-                            type="button"
-                            onClick={() => handleEditar(obra)}
-                            style={{
-                              padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border)',
-                              background: 'var(--bg-surface)', color: 'var(--text-primary)',
-                              fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-                            }}
-                          >
-                            <Edit2 size={14} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
-                            Editar
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleExcluir(obra.id)}
-                            style={{
-                              marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border)',
-                              background: 'var(--bg-surface)', color: 'var(--danger, #FF6B6B)',
-                              fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-                            }}
-                          >
-                            <Trash2 size={14} strokeWidth={1.75} style={{ marginRight: '4px' }} aria-hidden='true' />
-                            Excluir
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              // Navega para o escopo desta obra
-                              window.dispatchEvent(new CustomEvent('obra-selecionada', { detail: { id: obra.id, nome: obra.name } }))
-                            }}
-                            style={{
-                              marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--card-met-azul, #2FB8D6)',
-                              background: 'transparent', color: 'var(--card-met-azul, #2FB8D6)',
-                              fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-                            }}
-                          >
-                            Escopo
-                          </button>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                )
-              })}
+              {obrasFiltradas.map((obra) => (
+                <tr key={obra.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)' }}>{obra.name}</td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.address || '—'}</td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.city || '—'} / {obra.uf || '—'}</td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.contract_ref || '—'}</td>
+                  <td style={{ padding: '10px 16px', textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        window.dispatchEvent(new CustomEvent('obra-selecionada', { detail: { id: obra.id, nome: obra.name } }))
+                      }}
+                      style={{
+                        marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--card-met-azul, #2FB8D6)',
+                        background: 'transparent', color: 'var(--card-met-azul, #2FB8D6)',
+                        fontSize: '12px', fontWeight: 500, cursor: 'pointer',
+                      }}
+                    >
+                      Escopo
+                    </button>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         )}
