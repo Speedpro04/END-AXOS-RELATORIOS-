@@ -6,6 +6,7 @@ import { DEFAULT_TENANT, type TenantProfile } from './types/tenant'
 import type { InspectionReport } from './types/inspection'
 import { buildReportCode } from './utils/buildReportCode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { ObraProvider, useObra } from './contexts/ObraContext'
 import { db } from './services/dbDexie'
 import type { LocalReport } from './types/sync'
 
@@ -32,6 +33,7 @@ import { ObraEscopoPage } from './pages/ObraEscopoPage'
 import { ObraAvancoPage } from './pages/ObraAvancoPage'
 import { ObrasPage } from './pages/ObrasPage'
 import { NovaObraPage } from './pages/NovaObraPage'
+import { ObraContextoPage } from './pages/ObraContextoPage'
 
 // Relatório inicial padrão (apenas se não houver nada no Dexie)
 const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 'updatedAt'> = {
@@ -47,6 +49,7 @@ const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 
 
 function AppContent() {
   const { user, profile, tenant: authTenant, selectedUnit, isLoading, signOut } = useAuth()
+  const { obraAtual: obraSelecionada, selecionarObra } = useObra()
 
   const [tenant, setTenant] = useState<TenantProfile>(() => {
     const saved = localStorage.getItem('axos_tenant_profile')
@@ -124,20 +127,9 @@ function AppContent() {
     loadReports()
   }, [])
 
-  // Navega para o escopo da obra selecionada na listagem de Obras
-  useEffect(() => {
-    const handler = (e: CustomEvent<{ id: string; nome: string }>) => {
-      setObraSelecionada({ id: e.detail.id, nome: e.detail.nome })
-      setCurrentPage('OBRA_ESCOPO')
-    }
-    window.addEventListener('obra-selecionada', handler as EventListener)
-    return () => window.removeEventListener('obra-selecionada', handler as EventListener)
-  }, [])
-
   // Navegação entre páginas de modelos
   // 'HUB' | 'LP' | 'ME' | 'EVS' | 'NR13' | 'PM' | 'US' | 'PINTURA'
-  const [currentPage, setCurrentPage] = useState<string>('HUB')
-  const [obraSelecionada, setObraSelecionada] = useState<{ id: string; nome: string } | null>(null)
+  const [currentPage, setCurrentPage] = useState<string>('OBRAS')
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
   const [offlineQueueCount] = useState<number>(0)
@@ -158,6 +150,13 @@ function AppContent() {
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
+  }, [])
+
+  // Navega para a tela Nova Obra quando disparado da tela de Obras
+  useEffect(() => {
+    const handlerNovaObra = () => setCurrentPage('OBRA_NOVO')
+    window.addEventListener('nova-obra', handlerNovaObra as EventListener)
+    return () => window.removeEventListener('nova-obra', handlerNovaObra as EventListener)
   }, [])
 
   const handleUpdateTenant = (updated: TenantProfile) => {
@@ -259,11 +258,8 @@ function AppContent() {
     { id: 'IRT', label: 'Termografia (IRT)', tag: 'IRT' },
     { id: 'ACFM', label: 'ACFM', tag: 'ACFM' },
     { id: 'TFM', label: 'TFM / FMC', tag: 'TFM' },
-    // Módulo de Obras (Plano Empresas)
-    { id: 'OBRA_ESCOPO', label: 'Escopo da Obra', tag: 'ESC' },
-    { id: 'OBRA_AVANCO', label: 'Avanço da Obra', tag: 'AV' },
-    { id: 'OBRAS', label: 'Obras', tag: 'OBR' },
-    { id: 'OBRA_NOVO', label: 'Nova Obra', tag: 'NOVO' },
+    // Módulo de Obras (Plano Empresas) - acessível apenas dentro de uma obra selecionada
+    { id: 'OBRA_CONTEXTO', label: 'Obra Atual', tag: 'OBR' },
   ]
 
   const navRef = useRef<HTMLElement>(null)
@@ -435,31 +431,16 @@ function AppContent() {
           />
         )}
 
-        {currentPage === 'OBRA_ESCOPO' && (
-          <ObraEscopoPage
-            onBack={() => setCurrentPage('HUB')}
-            siteId={obraSelecionada?.id || ''}
-            siteName={obraSelecionada?.nome || ''}
-          />
-        )}
-
-        {currentPage === 'OBRA_AVANCO' && (
-          <ObraAvancoPage
-            onBack={() => setCurrentPage('HUB')}
-            siteId={obraSelecionada?.id || ''}
-            siteName={obraSelecionada?.nome || ''}
-          />
-        )}
-
         {currentPage === 'OBRAS' && (
-          <ObrasPage
-            onBack={() => setCurrentPage('HUB')}
-            onNovaObra={() => setCurrentPage('OBRA_NOVO')}
-          />
+          <ObrasPage onBack={() => setCurrentPage('OBRAS')} />
         )}
 
         {currentPage === 'OBRA_NOVO' && (
           <NovaObraPage onBack={() => setCurrentPage('OBRAS')} />
+        )}
+
+        {currentPage === 'OBRA_CONTEXTO' && (
+          <ObraContextoPage onBack={() => setCurrentPage('OBRAS')} />
         )}
 
         {currentPage === 'VT' && (
@@ -532,7 +513,9 @@ function AppContent() {
 export function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <ObraProvider>
+        <AppContent />
+      </ObraProvider>
     </AuthProvider>
   )
 }

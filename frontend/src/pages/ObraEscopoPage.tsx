@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from 'react'
-import { ArrowLeft, FileText, Plus, RefreshCw, Save, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, RefreshCw, Save, Trash2 } from 'lucide-react'
 import type { ObraEscopoLinha, ObraEscopoRevisao, ObraEscopoUnidade } from '../types/obra'
 import { useAuth } from '../contexts/AuthContext'
+import { useObra } from '../contexts/ObraContext'
+
+const FONT = 'Arial, Helvetica, sans-serif'
 
 interface ObraEscopoPageProps {
   onBack: () => void
-  siteId: string
-  siteName: string
 }
 
-export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, siteName }) => {
+export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
   const { user, profile } = useAuth()
+  const { obraAtual } = useObra()
   const [linhas, setLinhas] = useState<ObraEscopoLinha[]>([])
   const [revisoes, setRevisoes] = useState<ObraEscopoRevisao[]>([])
   const [linhaEditando, setLinhaEditando] = useState<ObraEscopoLinha | null>(null)
@@ -36,7 +38,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
     try {
       const { db } = await import('../services/dbDexie')
       const todas = await db.obraEscopoLinhas.toArray()
-      setLinhas(todas.filter((l: any) => l.site_id === siteId && l.ativo))
+      setLinhas(todas.filter((l: any) => l.site_id === obraAtual?.id && l.ativo))
       const todasRev = await db.obraEscopoRevisoes.toArray()
       setRevisoes(todasRev.filter((r: any) => r.tenant_id === (profile?.tenant_id || '')))
     } catch (err) {
@@ -48,7 +50,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
 
   useEffect(() => {
     carregar()
-  }, [siteId, profile?.tenant_id])
+  }, [obraAtual?.id, profile?.tenant_id])
 
   const handleSalvarLinha = async () => {
     if (!editMethod || !editQtdPrevista) return
@@ -60,7 +62,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
       const linha: any = {
         id: linhaEditando?.id || crypto.randomUUID(),
         tenant_id: tenantId,
-        site_id: siteId,
+        site_id: obraAtual?.id,
         method: editMethod,
         unidade: editUnidade,
         quantidade_prevista: parseFloat(editQtdPrevista),
@@ -154,8 +156,29 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
     )
   }
 
+  if (!obraAtual) {
+    return (
+      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
+        <div style={{ padding: '60px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <h2 style={{ fontSize: '18px', fontWeight: 600, marginBottom: '8px' }}>Selecione uma obra</h2>
+          <p style={{ fontSize: '14px' }}>Selecione uma obra na listagem de Obras para visualizar o catálogo.</p>
+          <button
+            type="button"
+            onClick={onBack}
+            style={{
+              marginTop: '16px', padding: '8px 16px', borderRadius: '5px', border: '1px solid var(--border)',
+              background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '14px', fontWeight: 500, cursor: 'pointer',
+            }}
+          >
+            Voltar às Obras
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Arial, sans-serif' }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           type="button"
@@ -167,10 +190,10 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
             fontSize: '14px', fontWeight: 500, cursor: 'pointer',
           }}
         >
-          <ArrowLeft size={16} strokeWidth={1.75} /> Voltar
+          <ArrowLeft size={16} strokeWidth={1.75} /> Voltar às Obras
         </button>
         <h1 style={{ fontSize: '22px', fontWeight: 600, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-          Escopo da Obra: {siteName}
+          Escopo da Obra: {obraAtual.name}
         </h1>
       </div>
 
@@ -338,7 +361,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
                 <select
                   value={editMethod}
                   onChange={(e) => setEditMethod(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
                 >
                   <option value="">Selecione</option>
                   {metodosEnd.map((m) => <option key={m} value={m}>{m}</option>)}
@@ -349,7 +372,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
                 <select
                   value={editUnidade}
                   onChange={(e) => setEditUnidade(e.target.value as ObraEscopoUnidade)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
                 >
                   {unidades.map((u) => <option key={u.valor} value={u.valor}>{u.label}</option>)}
                 </select>
@@ -362,7 +385,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
                   value={editQtdPrevista}
                   onChange={(e) => setEditQtdPrevista(e.target.value)}
                   placeholder="0"
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
                 />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -372,7 +395,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack, siteId, 
                   value={editReferencia}
                   onChange={(e) => setEditReferencia(e.target.value)}
                   placeholder="TAG ou área"
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
+                  style={{ width: '100%', padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
                 />
               </div>
               <div style={{ display: 'flex', alignItems: 'end', gap: '8px' }}>

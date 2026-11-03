@@ -1,26 +1,33 @@
-import React, { useEffect, useState } from 'react'
-import { ArrowLeft, Plus, Search, Edit2, Trash2 } from 'lucide-react'
+import React, { useEffect, useMemo, useState } from 'react'
+import { ArrowLeft, Plus, Search, Filter, Edit2, Trash2 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
+import { useObra } from '../contexts/ObraContext'
+import type { Site } from '../types/os'
+import { db } from '../services/dbDexie'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
 interface ObrasPageProps {
   onBack: () => void
-  onNovaObra: () => void
 }
 
-export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
+export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
   const { profile } = useAuth()
-  const [obras, setObras] = useState<any[]>([])
+  const { obraAtual, selecionarObra } = useObra()
+  const [obras, setObras] = useState<Site[]>([])
+  const [clientes, setClientes] = useState<any[]>([])
   const [carregando, setCarregando] = useState(true)
   const [termoBusca, setTermoBusca] = useState('')
+  const [filtroContratante, setFiltroContratante] = useState<string | null>(null)
+  const [filtroSituacao, setFiltroSituacao] = useState<string | null>(null)
 
   const carregar = async () => {
     setCarregando(true)
     try {
-      const { db } = await import('../services/dbDexie')
       const todas = await db.sites.toArray()
-      setObras(todas.filter((s: any) => s.tenant_id === (profile?.tenant_id || '')))
+      const todosClientes = await db.clients.toArray()
+      setClientes(todosClientes)
+      setObras(todas)
     } catch (err) {
       console.error('[Obras] Falha ao carregar:', err)
     } finally {
@@ -30,25 +37,45 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
 
   useEffect(() => {
     carregar()
-  }, [profile?.tenant_id])
+  }, [])
 
-  const obrasFiltradas = obras.filter((o) =>
-    o.name.toLowerCase().includes(termoBusca.toLowerCase()) ||
-    (o.address || '').toLowerCase().includes(termoBusca.toLowerCase())
-  )
+  const obrasFiltradas = useMemo(() => {
+    return obras.filter((o: Site) => {
+      if (o.tenant_id !== (profile?.tenant_id || '')) return false
+      const q = termoBusca.toLowerCase()
+      const cliente = clientes.find((c) => c.id === o.client_id)
+      const nomeContratante = cliente ? cliente.legal_name : ''
+      const haystack = `${o.name} ${o.address ?? ''} ${cliente?.legal_name ?? ''} ${o.contract_ref ?? ''}`
+      if (q && !haystack.toLowerCase().includes(q)) return false
+      if (filtroContratante && o.client_id !== filtroContratante) return false
+      if (filtroSituacao && o.situation !== filtroSituacao) return false
+      return true
+    })
+  }, [obras, termoBusca, filtroContratante, filtroSituacao, profile?.tenant_id])
 
-  const handleExcluir = async (id: string) => {
-    if (!confirm('Excluir esta obra?')) return
-    setCarregando(true)
-    try {
-      const { db } = await import('../services/dbDexie')
-      await db.sites.delete(id)
-      await carregar()
-    } catch (err) {
-      console.error('[Obras] Falha ao excluir:', err)
-    } finally {
-      setCarregando(false)
+  // Obras com OS atribuídas para inspetor
+  const obrasComOS = new Set<string>()
+  useEffect(() => {
+    const carregarObrasComOS = async () => {
+      const orders = await db.workOrders.toArray()
+      orders.forEach((o) => { if (o.site_id) obrasComOS.add(o.site_id) })
     }
+    carregarObrasComOS()
+  }, [])
+
+  const obrasVisiveis = obrasFiltradas.filter((o: Site) => {
+    if (profile?.role === 'inspector' && profile.can_inspect && !obrasComOS.has(o.id)) return false
+    return true
+  })
+
+  const clienteNome = (id: string) => {
+    const c = clientes.find((cl) => cl.id === id)
+    return c ? c.legal_name : '—'
+  }
+
+  const contarLaudosObra = async (siteId: string) => {
+    const reports = await db.reports.toArray()
+    return reports.filter((r: any) => r.work_order_id === siteId).length
   }
 
   if (carregando) {
@@ -62,6 +89,8 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
       </div>
     )
   }
+
+  const ultimaObra = obraAtual ? obras.find((o) => o.id === obraAtual.id) : null
 
   return (
     <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
@@ -83,6 +112,31 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
         </h1>
       </div>
 
+      {/* Última obra em destaque */}
+      {obraAtual && (
+        <div style={{ background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '5px', padding: '16px 20px', display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '24px' }}>
+          <div style={{ width: '48px', height: '48px', borderRadius: '50%', background: 'var(--card-met-azul, #2FB8D6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#06222B', fontWeight: 700, fontFamily: FONT }}>
+            {obraAtual.name.charAt(0)}
+          </div>
+          <div>
+            <h2 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>{obraAtual.name}</h2>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
+              {clienteNome(obraAtual.client_id)} · {obraAtual.city || '—'} / {obraAtual.uf || '—'}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => selecionarObra(null)}
+            style={{
+              padding: '8px 16px', borderRadius: '5px', border: '1px solid var(--border)',
+              background: 'transparent', color: 'var(--text-muted)', fontSize: '13px', fontWeight: 500, cursor: 'pointer',
+            }}
+          >
+            Trocar obra
+          </button>
+        </div>
+      )}
+
       {/* Barra de ações */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -90,7 +144,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
             <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} aria-hidden='true' />
             <input
               type="text"
-              placeholder="Buscar por nome da obra..."
+              placeholder="Buscar por nome, contratante, local ou OS..."
               value={termoBusca}
               onChange={(e) => setTermoBusca(e.target.value)}
               className="w-full px-3.5 py-2 text-[14px] transition-all"
@@ -100,24 +154,49 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
               }}
             />
           </div>
-          <button
-            type="button"
-            onClick={onNovaObra}
-            style={{
-              display: 'inline-flex', alignItems: 'center', gap: '6px',
-              padding: '8px 16px', borderRadius: '5px', border: '1px solid var(--border)',
-              background: 'var(--bg-surface)', color: 'var(--text-primary)',
-              fontSize: '14px', fontWeight: 500, cursor: 'pointer',
-            }}
-          >
-            <Plus size={16} strokeWidth={1.75} /> Nova Obra
-          </button>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <select
+              value={filtroContratante || ''}
+              onChange={(e) => setFiltroContratante(e.target.value || null)}
+              style={{ padding: '8px 12px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface-alt)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: FONT }}
+            >
+              <option value="">Todos os contratantes</option>
+              {clientes.map((c) => (
+                <option key={c.id} value={c.id}>{c.legal_name}</option>
+              ))}
+            </select>
+            <select
+              value={filtroSituacao || ''}
+              onChange={(e) => setFiltroSituacao(e.target.value || null)}
+              style={{ padding: '8px 12px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface-alt)', color: 'var(--text-primary)', fontSize: '13px', fontFamily: FONT }}
+            >
+              <option value="">Todos os status</option>
+              <option value="active">Ativa</option>
+              <option value="concluded">Concluída</option>
+            </select>
+          </div>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== 'undefined') {
+              window.dispatchEvent(new CustomEvent('nova-obra', {}))
+            }
+          }}
+          style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            padding: '10px 20px', borderRadius: '5px', border: 'none',
+            background: 'var(--card-met-azul, #2FB8D6)', color: '#FFFFFF',
+            fontSize: '14px', fontWeight: 600, cursor: 'pointer',
+          }}
+        >
+          <Plus size={16} strokeWidth={1.75} /> Nova Obra
+        </button>
       </div>
 
       {/* Lista de obras */}
       <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px' }}>
-        {obrasFiltradas.length === 0 ? (
+        {obrasVisiveis.length === 0 ? (
           <div style={{ padding: '32px 24px', textAlign: 'center', color: 'var(--text-muted)' }}>
             <p style={{ fontSize: '14px', fontWeight: 500 }}>Nenhuma obra cadastrada.</p>
             <p style={{ fontSize: '12.5px', marginTop: '4px' }}>Clique em "Nova Obra" para adicionar.</p>
@@ -127,32 +206,69 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onNovaObra }) => {
             <thead>
               <tr style={{ background: 'var(--bg-surface-alt)', borderBottom: '1px solid var(--border)' }}>
                 <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Nome da Obra</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Endereço</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Cidade / UF</th>
-                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Contrato</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Contratante</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Local</th>
+                <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Status</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Laudos</th>
+                <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Última atividade</th>
                 <th style={{ textAlign: 'right', padding: '12px 16px', fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Ações</th>
               </tr>
             </thead>
             <tbody>
-              {obrasFiltradas.map((obra) => (
+              {obrasVisiveis.map((obra) => (
                 <tr key={obra.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)' }}>{obra.name}</td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)', fontWeight: 600 }}>{obra.name}</td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-secondary)' }}>{clienteNome(obra.client_id)}</td>
                   <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.address || '—'}</td>
-                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.city || '—'} / {obra.uf || '—'}</td>
-                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.contract_ref || '—'}</td>
+                  <td style={{ padding: '10px 16px' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '2px 8px',
+                        borderRadius: '4px',
+                        fontSize: '11px',
+                        fontWeight: 600,
+                        background: obra.situation === 'active' ? '#dcfce7' : '#fecaca',
+                        color: obra.situation === 'active' ? '#166534' : '#991b1b',
+                      }}
+                    >
+                      {obra.situation === 'active' ? 'Ativa' : 'Concluída'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-primary)', fontVariantNumeric: 'tabular-nums' }}>{'—'}</td>
+                  <td style={{ padding: '10px 16px', fontSize: '13px', color: 'var(--text-muted)' }}>{obra.updated_at ? new Date(obra.updated_at).toLocaleDateString('pt-BR') : '—'}</td>
                   <td style={{ padding: '10px 16px', textAlign: 'right' }}>
                     <button
                       type="button"
-                      onClick={() => {
-                        window.dispatchEvent(new CustomEvent('obra-selecionada', { detail: { id: obra.id, nome: obra.name } }))
-                      }}
+                      onClick={() => selecionarObra(obra)}
                       style={{
-                        marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--card-met-azul, #2FB8D6)',
-                        background: 'transparent', color: 'var(--card-met-azul, #2FB8D6)',
+                        padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--card-met-azul, #2FB8D6)',
+                        background: obraAtual?.id === obra.id ? 'var(--card-met-azul, #2FB8D6)' : 'var(--bg-surface)',
+                        color: obraAtual?.id === obra.id ? '#FFFFFF' : 'var(--card-met-azul, #2FB8D6)',
                         fontSize: '12px', fontWeight: 500, cursor: 'pointer',
                       }}
                     >
-                      Escopo
+                      {obraAtual?.id === obra.id ? 'Selecionada' : 'Selecionar'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!confirm(`Marcar "${obra.name}" como concluída?`)) return
+                        setCarregando(true)
+                        try {
+                          await db.sites.update(obra.id, { situation: 'concluded', updated_at: new Date().toISOString() })
+                          await carregar()
+                        } finally {
+                          setCarregando(false)
+                        }
+                      }}
+                      style={{
+                        marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border)',
+                        background: 'var(--bg-surface)', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 500, cursor: 'pointer',
+                        opacity: obra.situation === 'concluded' ? 0.5 : 1,
+                      }}
+                    >
+                      {obra.situation === 'concluded' ? 'Concluída' : 'Concluir'}
                     </button>
                   </td>
                 </tr>
