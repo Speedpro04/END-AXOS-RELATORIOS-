@@ -22,6 +22,11 @@ export interface InspectionReport {
   technicalData: Record<string, any>
   createdAt: string
   updatedAt: string
+  // Vínculo com escopo de obra (opcional)
+  linhaId?: string | null
+  quantidadeInspecionada?: number
+  quantidadeAprovada?: number
+  quantidadeReprovada?: number
 }
 
 export const METHOD_LABELS: Record<ENDMethod, { label: string; full: string; code: string }> = {

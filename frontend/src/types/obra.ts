@@ -113,3 +113,43 @@ export interface PrevisaoTermino {
   dados_insuficientes: boolean
   data_estimada?: string | null
 }
+
+export interface PontoCurvaS {
+  semana: string
+  previsto: number
+  realizado: number
+}
+
+export interface CurvaS {
+  pontos: PontoCurvaS[]
+}
+
+export interface FatiaRosca {
+  categoria: string
+  valor: number
+  percentual: number
+}
+
+export interface Rosca {
+  fatias: FatiaRosca[]
+  total: number
+}
+
+export interface RetrabalhoMetodo {
+  metodo: string
+  total_laudos: number
+  devolvidos: number
+  percentual_retrabalho: number
+  prazo_medio_dias: number | null
+}
+
+export interface RespostaAvancoObra {
+  resumo: AvançoResumo
+  linhas: AvançoObra[]
+  curva_s: CurvaS
+  rosca: Rosca
+  retrabalho_por_metodo: RetrabalhoMetodo[]
+  producao_por_inspetor: ProducaoInspetor[]
+  pendencias: PendenciaLaudo[]
+  previsao: PrevisaoTermino
+}

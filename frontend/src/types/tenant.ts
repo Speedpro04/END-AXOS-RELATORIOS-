@@ -25,6 +25,8 @@ export interface TenantProfile {
   // Responsável técnico
   responsibleName?: string
   responsibleRegister?: string
+  // Oculta a produção de colegas para inspetores (somente administrador altera)
+  ocultarProducaoColegas?: boolean
 }
 
 export const DEFAULT_TENANT: TenantProfile = {

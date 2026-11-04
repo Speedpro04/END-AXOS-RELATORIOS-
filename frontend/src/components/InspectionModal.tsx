@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react'
 import { X, Check, ShieldAlert, FileSpreadsheet, Eye, Gauge, Layers, Wrench, HardHat, HardDrive, Thermometer, ScanEye, Wand2, Barcode, Wifi } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type ENDMethod, type ReportStatus } from '../types/inspection'
+import { ObraEscopoVinculo } from './laudo/ObraEscopoVinculo'
 
 interface InspectionModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (report: Partial<InspectionReport>) => void
   initialReport?: InspectionReport | null
+  siteId?: string | null
 }
 
 export const InspectionModal: React.FC<InspectionModalProps> = ({
@@ -14,6 +16,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   onClose,
   onSave,
   initialReport,
+  siteId,
 }) => {
   const [method, setMethod] = useState<ENDMethod>('VT')
   const [equipmentTag, setEquipmentTag] = useState('')
@@ -48,7 +51,91 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     meshPoints: '',
   })
 
-  // Sincroniza campos quando o modal abre: se for novo laudo, deixa TUDO EM BRANCO; se for edição, preenche com os dados existentes
+  const [techRT, setTechRT] = useState({
+    sourceTypeRT: '',
+    sourceStrengthRT: '',
+    filmTypeRT: '',
+    screenTypeRT: '',
+    exposureTimeRT: '',
+    sourceDistanceRT: '',
+    iqisRT: '',
+  })
+
+  const [techET, setTechET] = useState({
+    probeTypeET: '',
+    frequencyET: '',
+    conductivityET: '',
+    thicknessET: '',
+    liftOffET: '',
+  })
+
+  const [techLT, setTechLT] = useState({
+    testMethodLT: '',
+    testPressureLT: '',
+    testFluidLT: '',
+    testTempLT: '',
+    leakRateLT: '',
+  })
+
+  const [techUS_PhasedArray, setTechUS_PhasedArray] = useState({
+    probeModelPA: '',
+    numElementsPA: '',
+    pitchPA: '',
+    frequencyPA: '',
+    focalLawPA: '',
+    scanTypePA: '',
+  })
+
+  const [techET_Array, setTechET_Array] = useState({
+    probeArrayTypeEA: '',
+    numElementsEA: '',
+    pitchEA: '',
+    frequencyEA: '',
+    coverageEA: '',
+  })
+
+  const [techEA, setTechEA] = useState({
+    numChannelsEA: '',
+    sensorTypeEA: '',
+    samplingRateEA: '',
+    thresholdEA: '',
+  })
+
+  const [techIRT, setTechIRT] = useState({
+    cameraModelIR: '',
+    resolutionIR: '',
+    emissivityIR: '',
+    ambientTempIR: '',
+    objectTempIR: '',
+  })
+
+  const [techACFM, setTechACFM] = useState({
+    probeACFM: '',
+    frequencyACFM: '',
+    coatingThicknessACFM: '',
+    bxSignalACFM: '',
+    bzSignalACFM: '',
+  })
+
+  const [techTFM, setTechTFM] = useState({
+    captureConfigTFM: '',
+    apertureTFM: '',
+    pixelSizeTFM: '',
+    propagationModeTFM: '',
+  })
+
+  const [techUS_IMAGING, setTechUS_IMAGING] = useState({
+    probeModelUS: '',
+    freqUS_IMAGING: '',
+    probeTypeUS_IMAGING: '',
+    dimensionsUS_IMAGING: '',
+  })
+
+  const [linhaId, setLinhaId] = useState<string | null>(null)
+  const [quantidadeInspecionada, setQuantidadeInspecionada] = useState(0)
+  const [quantidadeAprovada, setQuantidadeAprovada] = useState(0)
+  const [quantidadeReprovada, setQuantidadeReprovada] = useState(0)
+
   useEffect(() => {
     if (isOpen) {
       if (initialReport) {
@@ -83,8 +170,81 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
           allowableMinThickness: tech.allowableMinThickness || '',
           meshPoints: tech.meshPoints || '',
         })
+        setTechRT({
+          sourceTypeRT: tech.sourceTypeRT || '',
+          sourceStrengthRT: tech.sourceStrengthRT || '',
+          filmTypeRT: tech.filmTypeRT || '',
+          screenTypeRT: tech.screenTypeRT || '',
+          exposureTimeRT: tech.exposureTimeRT || '',
+          sourceDistanceRT: tech.sourceDistanceRT || '',
+          iqisRT: tech.iqisRT || '',
+        })
+        setTechET({
+          probeTypeET: tech.probeTypeET || '',
+          frequencyET: tech.frequencyET || '',
+          conductivityET: tech.conductivityET || '',
+          thicknessET: tech.thicknessET || '',
+          liftOffET: tech.liftOffET || '',
+        })
+        setTechLT({
+          testMethodLT: tech.testMethodLT || '',
+          testPressureLT: tech.testPressureLT || '',
+          testFluidLT: tech.testFluidLT || '',
+          testTempLT: tech.testTempLT || '',
+          leakRateLT: tech.leakRateLT || '',
+        })
+        setTechUS_PhasedArray({
+          probeModelPA: tech.probeModelPA || '',
+          numElementsPA: tech.numElementsPA || '',
+          pitchPA: tech.pitchPA || '',
+          frequencyPA: tech.frequencyPA || '',
+          focalLawPA: tech.focalLawPA || '',
+          scanTypePA: tech.scanTypePA || '',
+        })
+        setTechET_Array({
+          probeArrayTypeEA: tech.probeArrayTypeEA || '',
+          numElementsEA: tech.numElementsEA || '',
+          pitchEA: tech.pitchEA || '',
+          frequencyEA: tech.frequencyEA || '',
+          coverageEA: tech.coverageEA || '',
+        })
+        setTechEA({
+          numChannelsEA: tech.numChannelsEA || '',
+          sensorTypeEA: tech.sensorTypeEA || '',
+          samplingRateEA: tech.samplingRateEA || '',
+          thresholdEA: tech.thresholdEA || '',
+        })
+        setTechIRT({
+          cameraModelIR: tech.cameraModelIR || '',
+          resolutionIR: tech.resolutionIR || '',
+          emissivityIR: tech.emissivityIR || '',
+          ambientTempIR: tech.ambientTempIR || '',
+          objectTempIR: tech.objectTempIR || '',
+        })
+        setTechACFM({
+          probeACFM: tech.probeACFM || '',
+          frequencyACFM: tech.frequencyACFM || '',
+          coatingThicknessACFM: tech.coatingThicknessACFM || '',
+          bxSignalACFM: tech.bxSignalACFM || '',
+          bzSignalACFM: tech.bzSignalACFM || '',
+        })
+        setTechTFM({
+          captureConfigTFM: tech.captureConfigTFM || '',
+          apertureTFM: tech.apertureTFM || '',
+          pixelSizeTFM: tech.pixelSizeTFM || '',
+          propagationModeTFM: tech.propagationModeTFM || '',
+        })
+        setTechUS_IMAGING({
+          probeModelUS: tech.probeModelUS || '',
+          freqUS_IMAGING: tech.freqUS_IMAGING || '',
+          probeTypeUS_IMAGING: tech.probeTypeUS_IMAGING || '',
+          dimensionsUS_IMAGING: tech.dimensionsUS_IMAGING || '',
+        })
+        setLinhaId(initialReport.linhaId || null)
+        setQuantidadeInspecionada(initialReport.quantidadeInspecionada || 0)
+        setQuantidadeAprovada(initialReport.quantidadeAprovada || 0)
+        setQuantidadeReprovada(initialReport.quantidadeReprovada || 0)
       } else {
-        // NOVO LAUDO: Tudo 100% em branco para preenchimento de campo
         setMethod('VT')
         setEquipmentTag('')
         setTitle('')
@@ -115,11 +275,83 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
           allowableMinThickness: '',
           meshPoints: '',
         })
+        setTechRT({
+          sourceTypeRT: '',
+          sourceStrengthRT: '',
+          filmTypeRT: '',
+          screenTypeRT: '',
+          exposureTimeRT: '',
+          sourceDistanceRT: '',
+          iqisRT: '',
+        })
+        setTechET({
+          probeTypeET: '',
+          frequencyET: '',
+          conductivityET: '',
+          thicknessET: '',
+          liftOffET: '',
+        })
+        setTechLT({
+          testMethodLT: '',
+          testPressureLT: '',
+          testFluidLT: '',
+          testTempLT: '',
+          leakRateLT: '',
+        })
+        setTechUS_PhasedArray({
+          probeModelPA: '',
+          numElementsPA: '',
+          pitchPA: '',
+          frequencyPA: '',
+          focalLawPA: '',
+          scanTypePA: '',
+        })
+        setTechET_Array({
+          probeArrayTypeEA: '',
+          numElementsEA: '',
+          pitchEA: '',
+          frequencyEA: '',
+          coverageEA: '',
+        })
+        setTechEA({
+          numChannelsEA: '',
+          sensorTypeEA: '',
+          samplingRateEA: '',
+          thresholdEA: '',
+        })
+        setTechIRT({
+          cameraModelIR: '',
+          resolutionIR: '',
+          emissivityIR: '',
+          ambientTempIR: '',
+          objectTempIR: '',
+        })
+        setTechACFM({
+          probeACFM: '',
+          frequencyACFM: '',
+          coatingThicknessACFM: '',
+          bxSignalACFM: '',
+          bzSignalACFM: '',
+        })
+        setTechTFM({
+          captureConfigTFM: '',
+          apertureTFM: '',
+          pixelSizeTFM: '',
+          propagationModeTFM: '',
+        })
+        setTechUS_IMAGING({
+          probeModelUS: '',
+          freqUS_IMAGING: '',
+          probeTypeUS_IMAGING: '',
+          dimensionsUS_IMAGING: '',
+        })
+        setLinhaId(null)
+        setQuantidadeInspecionada(0)
+        setQuantidadeAprovada(0)
+        setQuantidadeReprovada(0)
       }
     }
   }, [isOpen, initialReport])
-
-  if (!isOpen) return null
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -137,6 +369,10 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
       summary: summary || '',
       date: initialReport?.date || new Date().toISOString().split('T')[0],
       technicalData: method === 'PT' ? techPT : method === 'UT' ? techUT : {},
+      linhaId,
+      quantidadeInspecionada,
+      quantidadeAprovada,
+      quantidadeReprovada,
     }
     onSave(reportData)
     onClose()
@@ -167,7 +403,6 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         className="bg-white dark:bg-[#1C1E21] text-[#0F172A] dark:text-[#E6E8EA] w-full max-w-[1210px] border border-[#CBD5E1] dark:border-[#34383D] shadow-2xl my-6 overflow-hidden flex flex-col"
         style={{ maxWidth: '1210px', width: '100%', borderRadius: '3px' }}
       >
-        {/* Cabeçalho do Modal no padrão Suíço */}
         <div className="bg-[#0B0F17] dark:bg-[#0B0C0D] text-white px-6 py-4 flex items-center justify-between border-b border-[#1E293B] dark:border-[#34383D]">
           <div className="flex items-center gap-3">
             <span
@@ -177,7 +412,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
               {initialReport ? 'REVISÃO TÉCNICA' : 'NOVO LAUDO'}
             </span>
             <h2 className="text-sm font-bold tracking-wide uppercase text-slate-100 dark:text-[#E6E8EA]">
-              {initialReport ? initialReport.code : 'Registro de Ensaio Não Destrutivo (END)'}
+              {initialReport ? initialReport.code : 'Registro de Laudo END'}
             </h2>
           </div>
           <button
@@ -190,8 +425,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto max-h-[82vh] space-y-5">
-          
-          {/* Seletor de Método END */}
+          {/* SEÇÃO 1: Método e Procedimento Qualificado */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-bold text-[#0F172A] dark:text-[#E6E8EA] uppercase tracking-wider">
@@ -225,8 +459,8 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                       {METHOD_LABELS[m].full}
                     </span>
                   </button>
-                )
-              })}
+                )}
+              )}
             </div>
           </div>
 
@@ -250,7 +484,6 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   style={{ borderRadius: '3px' }}
                 />
               </div>
-
               <div>
                 <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
                   Área / Unidade Operacional
@@ -265,7 +498,6 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   style={{ borderRadius: '3px' }}
                 />
               </div>
-
               <div>
                 <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
                   Título da Inspeção
@@ -279,7 +511,6 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   style={{ borderRadius: '3px' }}
                 />
               </div>
-
               <div>
                 <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
                   Inspetor Executor
@@ -294,7 +525,6 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   style={{ borderRadius: '3px' }}
                 />
               </div>
-
               <div>
                 <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
                   Certificação / Registro SNQC
@@ -309,7 +539,6 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                   style={{ borderRadius: '3px' }}
                 />
               </div>
-
               <div className="sm:col-span-3">
                 <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
                   Critério de Aceitação
@@ -449,7 +678,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
                 </div>
                 <div className="sm:col-span-4">
                   <label className="block text-[11px] font-bold text-[#475569] dark:text-[#9AA0A6] uppercase tracking-wider mb-1">
-                    Malha de Pontos & Quadrantes
+                    Malha de Pontos &amp; Quadrantes
                   </label>
                   <input
                     type="text"
@@ -473,7 +702,27 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
             )}
           </div>
 
-          {/* Veredito & Parecer Técnico - Alinhamento Perfeito das Bases */}
+          {/* Vínculo de Escopo de Obra */}
+          <div className="p-4 bg-[#F8FAFC] dark:bg-[#1C1E21] border border-[#E2E8F0] dark:border-[#34383D]" style={{ borderRadius: '3px' }}>
+            <span className="block text-xs font-bold text-[#0F172A] dark:text-[#E6E8EA] uppercase tracking-wider mb-3">
+              4. Vínculo com Escopo de Obra
+            </span>
+            <ObraEscopoVinculo
+              linhaId={linhaId}
+              quantidadeInspecionada={quantidadeInspecionada}
+              quantidadeAprovada={quantidadeAprovada}
+              quantidadeReprovada={quantidadeReprovada}
+              onChange={({ linhaId, quantidadeInspecionada, quantidadeAprovada, quantidadeReprovada }) => {
+                setLinhaId(linhaId)
+                setQuantidadeInspecionada(quantidadeInspecionada)
+                setQuantidadeAprovada(quantidadeAprovada)
+                setQuantidadeReprovada(quantidadeReprovada)
+              }}
+              siteId={siteId}
+            />
+          </div>
+
+          {/* Veredito & Parecer Técnico */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 items-stretch">
             <div className="sm:col-span-2 flex flex-col">
               <label className="block text-xs font-bold text-[#0F172A] dark:text-[#E6E8EA] uppercase tracking-wider mb-1">

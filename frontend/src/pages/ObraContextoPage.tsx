@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { ArrowLeft, Home, List, Plus, Edit2, Layout } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useObra } from '../contexts/ObraContext'
+import { ObraResumoAvanco } from '../components/obra/ObraResumoAvanco'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
@@ -125,12 +126,7 @@ export const ObraContextoPage: React.FC<ObraContextoPageProps> = ({ onBack }) =>
             <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
               Resumo e avanço da obra
             </h3>
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '24px' }}>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>Curva S — "Estamos no prazo?"</p>
-              <div style={{ height: '200px', background: 'var(--bg-base)', border: '1px solid var(--border)', borderRadius: '5px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
-                Gráfico de curva S — previsto vs realizado ao longo do tempo
-              </div>
-            </div>
+            <ObraResumoAvanco siteId={obraAtual.id} />
           </div>
         )}
         {painelAtivo === 'laudos' && (

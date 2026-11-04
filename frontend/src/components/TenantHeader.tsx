@@ -683,6 +683,27 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
                 ))}
               </div>
 
+              {/* Visibilidade da produção (somente administrador) */}
+              {userRole === 'admin' && (
+                <div style={{ padding: '16px', background: 'var(--bg-surface-alt)', border: '1px solid var(--border)', borderRadius: '5px', display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+                  <input
+                    type="checkbox"
+                    id="ocultar-producao-colegas"
+                    checked={formData.ocultarProducaoColegas ?? false}
+                    onChange={(e) => setFormData((p) => ({ ...p, ocultarProducaoColegas: e.target.checked }))}
+                    style={{ width: '16px', height: '16px', marginTop: '2px', cursor: 'pointer', accentColor: 'var(--accent)' }}
+                  />
+                  <label htmlFor="ocultar-producao-colegas" style={{ cursor: 'pointer', fontFamily: 'Arial, Helvetica, sans-serif' }}>
+                    <span style={{ display: 'block', fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>
+                      Ocultar produção dos colegas
+                    </span>
+                    <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)' }}>
+                      Quando ativado, inspetores veem apenas a própria produção no painel de avanço. Gerentes e administradores continuam vendo tudo.
+                    </span>
+                  </label>
+                </div>
+              )}
+
               {/* Ações */}
               <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button

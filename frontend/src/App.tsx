@@ -209,6 +209,10 @@ function AppContent() {
         technicalData: reportData.technicalData || {},
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
+        linhaId: reportData.linhaId || null,
+        quantidadeInspecionada: reportData.quantidadeInspecionada || 0,
+        quantidadeAprovada: reportData.quantidadeAprovada || 0,
+        quantidadeReprovada: reportData.quantidadeReprovada || 0,
       }
       const localReport: LocalReport = {
         id: newReport.id,
@@ -418,7 +422,14 @@ function AppContent() {
         {currentPage === 'HUB' && (
           <HubPage
             reports={reports}
-            onSelectModel={(modelId) => setCurrentPage(modelId)}
+            onSelectModel={(modelId) => {
+              if (obraSelecionada) {
+                setIsModalOpen(true)
+                setEditingReport(null)
+              } else {
+                setCurrentPage(modelId)
+              }
+            }}
             onNewReport={() => {
               setEditingReport(null)
               setIsModalOpen(true)
@@ -502,6 +513,7 @@ function AppContent() {
         }}
         onSave={handleSaveReport}
         initialReport={editingReport}
+        siteId={obraSelecionada?.id}
       />
 
       {/* FOOTER DISCRETO DA AXOS */}
