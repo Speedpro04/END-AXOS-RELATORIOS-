@@ -422,6 +422,7 @@ function AppContent() {
         {currentPage === 'HUB' && (
           <HubPage
             reports={reports}
+            onVoltarObras={() => setCurrentPage('OBRAS')}
             onSelectModel={(modelId) => {
               if (obraSelecionada) {
                 setIsModalOpen(true)
@@ -443,7 +444,7 @@ function AppContent() {
         )}
 
         {currentPage === 'OBRAS' && (
-          <ObrasPage onBack={() => setCurrentPage('OBRAS')} />
+          <ObrasPage onBack={() => setCurrentPage('OBRAS')} onAbrirPainel={() => setCurrentPage('HUB')} />
         )}
 
         {currentPage === 'OBRA_NOVO' && (

@@ -340,6 +340,9 @@ th { background: #f2f2f2; }
         disabled={pdfGeneratingId === report.id}
         className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
         style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           fontFamily: FONT,
           borderRadius: '5px',
           background: pdfGeneratingId === report.id ? 'var(--bg-surface-alt)' : AZUL_DESTAQUE,
@@ -855,11 +858,14 @@ th { background: #f2f2f2; }
                         disabled={pdfGeneratingId === report.id}
                         className="px-3 py-1 text-[13px] font-medium transition-colors cursor-pointer"
                         style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
                           fontFamily: FONT,
                           borderRadius: '5px',
                           background: pdfGeneratingId === report.id ? 'var(--bg-surface-alt)' : AZUL_DESTAQUE,
                           border: pdfGeneratingId === report.id ? '1px solid var(--border)' : `1px solid ${AZUL_DESTAQUE}`,
-                          color: pdfGeneratingId === report.id ? 'var(--text-muted)' : '#06222B',
+                          color: pdfGeneratingId === report.id ? 'var(--text-muted)' : '#FFFFFF',
                           cursor: pdfGeneratingId === report.id ? 'not-allowed' : 'pointer',
                           opacity: pdfGeneratingId === report.id ? 0.6 : 1,
                         }}

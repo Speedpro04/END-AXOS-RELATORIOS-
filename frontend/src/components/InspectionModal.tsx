@@ -353,6 +353,9 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
     }
   }, [isOpen, initialReport])
 
+  // Não renderiza nada quando fechado; todos os hooks acima já foram chamados
+  if (!isOpen) return null
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     const reportData: Partial<InspectionReport> = {

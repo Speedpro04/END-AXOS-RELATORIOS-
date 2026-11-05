@@ -438,3 +438,24 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 - `287dda9` (feat(sync): rota síncrona POST /api/sync/reports com transações por item)
 - `5e1c62f` (docs: contrato de sincronização)
 
+
+---
+
+## 16. Fluxo Operacional — Três Páginas (04/11/2026)
+
+**Encadeamento:** Login → Obras → Painel Operacional, uma página abrindo a outra.
+
+1. **Login:** ao entrar, cai na página de Obras.
+2. **Obras (`frontend/src/pages/ObrasPage.tsx`):** lista de obras do tenant gravadas no Dexie (`sites`, `clients`). Botão "Selecionar"/"Abrir Painel" na linha marca a obra como obra atual (ObraContext, `localStorage axos_obra_atual`) e abre o Painel Operacional. Botão secundário alterna o status da obra: "Concluir" → `situation = concluded` com confirmação; obra concluída mostra "Reativar" → volta para `active`.
+3. **Painel Operacional (`frontend/src/pages/HubPage.tsx`):** catálogo com os 16 métodos. Com obra selecionada, clique em método abre o modal "Registro de Laudo END" com vínculo à obra (seção Vínculo com Escopo); sem obra, abre a página dedicada do método. Botão "Voltar às Obras" no topo retorna à página de Obras.
+
+**Correção de bug (modal condicional):** o `InspectionModal` não verificava a prop `isOpen` no JSX e aparecia aberto sobre qualquer página logo após o login. Corrigido com retorno antecipado `if (!isOpen) return null` (após todos os hooks de estado).
+
+**Uniformidade de cabeçalhos (padrão de hierarquia nas duas páginas):**
+- Título principal `h1` 29px peso 600 (HUB: "Painel Operacional"; Obras: "Obras").
+- Na linha do botão de volta, `h2` 24px (HUB: "Catálogo de modelos" + botão "Voltar às Obras"; Obras: "Obras e Escopo" + botão "Voltar ao Catálogo").
+- Contêiner com padding 32px; espaçamento título → caixa de voltar de 32px em ambas.
+
+**Botão Gerar PDF (`frontend/src/components/InspectionTable.tsx`):** ícone e texto na mesma linha (`inline-flex`, `align-items: center`) nas ocorrências de linha e cabeçalho; texto e ícone brancos sobre o fundo azul.
+
+**Verificação:** `npx tsc -b` passa; fluxo testado com Enter no login; busca pela sigla inglesa proibida → ZERO ocorrências.

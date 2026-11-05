@@ -9,9 +9,10 @@ const FONT = 'Arial, Helvetica, sans-serif'
 
 interface ObrasPageProps {
   onBack: () => void
+  onAbrirPainel: () => void
 }
 
-export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
+export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onAbrirPainel }) => {
   const { profile } = useAuth()
   const { obraAtual, selecionarObra } = useObra()
   const [obras, setObras] = useState<Site[]>([])
@@ -93,7 +94,11 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
   const ultimaObra = obraAtual ? obras.find((o) => o.id === obraAtual.id) : null
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '32px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
+      {/* ── Cabeçalho padrão do app (mesmas medidas do Painel Operacional) ── */}
+      <h1 style={{ fontSize: '29px', fontWeight: 600, margin: '0 0 32px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+        Obras
+      </h1>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           type="button"
@@ -107,9 +112,9 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
         >
           <ArrowLeft size={16} strokeWidth={1.75} /> Voltar ao Catálogo
         </button>
-        <h1 style={{ fontSize: '22px', fontWeight: 600, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 600, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
           Obras e Escopo
-        </h1>
+        </h2>
       </div>
 
       {/* Última obra em destaque */}
@@ -240,7 +245,10 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
                   <td style={{ padding: '10px 16px', textAlign: 'right' }}>
                     <button
                       type="button"
-                      onClick={() => selecionarObra(obra)}
+                      onClick={() => {
+                        selecionarObra(obra)
+                        onAbrirPainel()
+                      }}
                       style={{
                         padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--card-met-azul, #2FB8D6)',
                         background: obraAtual?.id === obra.id ? 'var(--card-met-azul, #2FB8D6)' : 'var(--bg-surface)',
@@ -248,15 +256,19 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
                         fontSize: '12px', fontWeight: 500, cursor: 'pointer',
                       }}
                     >
-                      {obraAtual?.id === obra.id ? 'Selecionada' : 'Selecionar'}
+                      {obraAtual?.id === obra.id ? 'Abrir Painel' : 'Selecionar'}
                     </button>
                     <button
                       type="button"
                       onClick={async () => {
-                        if (!confirm(`Marcar "${obra.name}" como concluída?`)) return
+                        const reativar = obra.situation === 'concluded'
+                        const msg = reativar
+                          ? `Reativar "${obra.name}"?`
+                          : `Marcar "${obra.name}" como concluída?`
+                        if (!confirm(msg)) return
                         setCarregando(true)
                         try {
-                          await db.sites.update(obra.id, { situation: 'concluded', updated_at: new Date().toISOString() })
+                          await db.sites.update(obra.id, { situation: reativar ? 'active' : 'concluded', updated_at: new Date().toISOString() })
                           await carregar()
                         } finally {
                           setCarregando(false)
@@ -265,10 +277,9 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack }) => {
                       style={{
                         marginLeft: '6px', padding: '6px 12px', borderRadius: '5px', border: '1px solid var(--border)',
                         background: 'var(--bg-surface)', color: 'var(--text-muted)', fontSize: '12px', fontWeight: 500, cursor: 'pointer',
-                        opacity: obra.situation === 'concluded' ? 0.5 : 1,
                       }}
                     >
-                      {obra.situation === 'concluded' ? 'Concluída' : 'Concluir'}
+                      {obra.situation === 'concluded' ? 'Reativar' : 'Concluir'}
                     </button>
                   </td>
                 </tr>

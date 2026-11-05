@@ -352,5 +352,29 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
 
 **Pendências:** banco (Supabase) não aplicado em ambiente de teste; migrations de `tenants`, `report_pdfs`, `sites`, `work_orders`, `obra_escopo_linha`, `obra_escopo_revisao`, `laudo_escopo_vinculo` não verificadas contra o projeto real. Telas de cadastro usam dados mockados no Dexie. Pendente: rotacionar senha do demo (commit `f1eef30` ainda contém senha antiga no histórico do git). Regra de visibilidade: inspetor vê o painel completo da obra (incluindo colunas dos colegas), com ocultador nas configurações da empresa (ligado por padrão); gerente e administrador veem também metas, preços e painel de todas as obras.
 
+## 11. Fluxo de Três Páginas, Correção do Modal e Uniformidade de Cabeçalhos (04/11/2026)
+
+**Bug corrigido — modal abrindo após o login:** o `InspectionModal` (`frontend/src/components/InspectionModal.tsx`) não verificava a prop `isOpen` no JSX — o overlay "NOVO LAUDO / REGISTRO DE LAUDO END" era renderizado sempre que o App montava (após o login), sobre qualquer página. Corrigido com `if (!isOpen) return null` após os hooks. Reproduzido e verificado no navegador (login com Enter → página Obras sem modal; HUB íntegro).
+
+**Fluxo de 3 páginas — Login → Obras → Painel Operacional:**
+- Login (com Enter) abre a página de Obras.
+- `ObrasPage.tsx`: prop nova `onAbrirPainel`; botão "Selecionar"/"Abrir Painel" marca a obra atual (ObraContext, `localStorage axos_obra_atual`) e vai direto ao HUB (catálogo dos 16 métodos). Guard do HUB mantida: com obra selecionada, clique em método abre o modal de laudo (vínculo com escopo); sem obra, abre a página dedicada do método.
+- `HubPage.tsx`: prop nova `onVoltarObras` — botão "Voltar às Obras" no topo do catálogo (seta Lucide, traço 1.75).
+- Flexo de teste no Dexie local do navegador de testes: obra "Plataforma Virtual PC-77" (contratante "Construtora Alvorada Ltda", Macau/RN, CT-ALV-2026/0412).
+
+**Status da obra — Reativar:** `ObrasPage.tsx` — o botão anteriormente só marcava "concluded"; agora alterna: "Concluir" (confirm) e, na obra concluída, "Reativar" (volta para `status ativo`).
+
+**Uniformidade de cabeçalhos (igualdade medida nas duas páginas):**
+- HUB: `h1` "Painel Operacional" 29px peso 600; linha do botão com `h2` "Catálogo de modelos" 24px; contêiner padding `32px 32px`.
+- Obras: `h1` "Obras" 29px; linha do botão com `h2` "Obras e Escopo" 24px + botão "Voltar ao Catálogo"; padding `32px 32px`; espaçamento título → caixa de voltar de 32px nas duas (verificado por `getBoundingClientRect`).
+
+**Botão Gerar PDF (`InspectionTable.tsx`):** nas duas ocorrências de linha, adicionado `display: inline-flex; align-items/justify-content: center` (ícone e texto na mesma linha) e cor de texto/ícone `#FFFFFF` (antes `#06222B` sobre fundo azul).
+
+**Arquivos alterados:** `frontend/src/components/InspectionModal.tsx`, `frontend/src/pages/ObrasPage.tsx`, `frontend/src/pages/HubPage.tsx`, `frontend/src/components/InspectionTable.tsx`, `frontend/src/App.tsx`.
+
+**Verificação padrão:** `npx tsc -b` OK; busca pela sigla inglesa proibida → ZERO ocorrências; fluxo completo testado no navegador (login Enter → Obras → Selecionar → HUB 16 métodos → Voltar às Obras).
+
+**Pendências permanecem:** migrações 0001/0002/0003 não executadas no banco; enum do método antigo na 0001 (6 métodos, com termo proibido) a tratar em migração própria; telas de cadastro em Dexie local; integrar backend de avanço novamente quando o servidor FastAPI estiver em execução na máquina do usuário.
+
 
 

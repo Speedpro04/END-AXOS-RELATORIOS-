@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react'
+import { ArrowLeft } from 'lucide-react'
 import { DashboardMetrics } from '../components/DashboardMetrics'
 import { InspectionTable } from '../components/InspectionTable'
 import type { InspectionReport } from '../types/inspection'
@@ -14,6 +15,7 @@ interface HubPageProps {
   onNewReport: () => void
   onEditReport: (report: InspectionReport) => void
   onDeleteReport: (id: string) => void
+  onVoltarObras: () => void
 }
 
 function normalize(text: string): string {
@@ -30,6 +32,7 @@ export const HubPage: React.FC<HubPageProps> = ({
   onNewReport,
   onEditReport,
   onDeleteReport,
+  onVoltarObras,
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
   const [error, setError] = useState<string | null>(null)
@@ -132,9 +135,33 @@ export const HubPage: React.FC<HubPageProps> = ({
         margin: '0 auto',
       }}
     >
+      {/* ── Título da página ── */}
+      <h1 style={{
+        fontSize: '29px',
+        fontWeight: 600,
+        color: 'var(--text)',
+        margin: '0',
+        letterSpacing: '-0.01em',
+      }}>
+        Painel Operacional
+      </h1>
+
       {/* ── SEÇÃO 1: Catálogo de Modelos ── */}
       <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={onVoltarObras}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: '6px',
+              padding: '8px 16px', borderRadius: '5px', border: '1px solid var(--border)',
+              background: 'var(--surface)', color: 'var(--text)',
+              fontFamily: 'Arial, Helvetica, sans-serif', fontSize: '14px', fontWeight: 500,
+              cursor: 'pointer',
+            }}
+          >
+            <ArrowLeft size={16} strokeWidth={1.75} /> Voltar às Obras
+          </button>
           <h2 style={{
             fontSize: '24px',
             fontWeight: 600,
