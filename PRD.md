@@ -459,3 +459,22 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 **Botão Gerar PDF (`frontend/src/components/InspectionTable.tsx`):** ícone e texto na mesma linha (`inline-flex`, `align-items: center`) nas ocorrências de linha e cabeçalho; texto e ícone brancos sobre o fundo azul.
 
 **Verificação:** `npx tsc -b` passa; fluxo testado com Enter no login; busca pela sigla inglesa proibida → ZERO ocorrências.
+
+---
+
+## 17. Painel de Avanço de Obra — Fonte de Dados e Ocultador (04/11/2026)
+
+**Dados do painel (`ObraResumoAvanco` + endpoint `/api/avanco/{obra_id}`):**
+- Avanço conta apenas laudos **emitidos** (`issued`), pela revisão de maior `revision` de cada documento (`document_id`); a busca cobre todas as revisões dos laudos vinculados à obra, mesmo as sem vínculo — nessas, vale o vínculo da revisão anterior.
+- Colunas reais de `reports`: data = `inspection_date`; inspetor = `inspector_id` (nome em `profiles.full_name`); método via `template_id` → `report_templates.method`.
+- Estados de laudo usados no painel seguem o enum do banco: `submitted` (enviado, gera pendência após 3 dias) e `returned` (devolvido, gera retrabalho).
+
+**Ocultador de produção de colegas (`tenants.ocultar_producao_colegas`, migração 0003):**
+- Ligado e usuário do papel inspetor: as listas **Produção por Inspetor** e **Pendências** mostram apenas o próprio trabalho.
+- Gerente e administrador sempre veem a produção de todos.
+- O painel da obra (resumo, Curva S, rosca, linhas de avanço) permanece **completo** para o inspetor — o ocultador esconde nome e produção dos colegas, não o progresso da obra.
+- A coluna só pode ser alterada por administrador (política `tenants_update` da 0001 + `GRANT UPDATE` na migração 0003).
+
+**Fila de sincronização (item do painel de cadastro):**
+- Toda obra e contratante criados em "Nova Obra" entram no `db.outbox` (entidade `site`/`client`, operação `create`) e sobem ao servidor pelo fluxo padrão do `sync.ts`, na ordem: clientes → sites → ordens de serviço → laudos.
+- URL da API backend centralizada em `frontend/src/config.ts` (`API_BASE_URL`).

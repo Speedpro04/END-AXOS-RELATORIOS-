@@ -9,9 +9,9 @@ import type {
 } from '../../types/obra'
 import { METHOD_LABELS, type ENDMethod } from '../../types/inspection'
 import { supabase } from '../../lib/supabase'
+import { API_BASE_URL } from '../../config'
 
 const FONT = 'Arial, Helvetica, sans-serif'
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000'
 const AZUL = '#2FB8D6'
 const CINZA = '#94A3B8'
 const ESCURO = '#0B0F17'

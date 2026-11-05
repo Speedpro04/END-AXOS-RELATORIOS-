@@ -3,9 +3,29 @@ import { ArrowLeft, Plus, Save, Search } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useObra } from '../contexts/ObraContext'
 import type { Client } from '../types/os'
+import type { OutboxItem } from '../types/sync'
 import { db } from '../services/dbDexie'
 
 const FONT = 'Arial, Helvetica, sans-serif'
+
+/**
+ * Enfileira um cadastro local para sincronização com o servidor.
+ * Usa a mesma fila (outbox) e o mesmo processamento do sync.ts —
+ * ordem de envio garantida pelo EntityPriority: clients → sites → work_orders → reports.
+ */
+const enfileirarSync = async (entity: OutboxItem['entity'], entityId: string): Promise<void> => {
+  const item: OutboxItem = {
+    id: crypto.randomUUID(),
+    entity,
+    entityId,
+    op: 'create',
+    createdAt: new Date().toISOString(),
+    attempts: 0,
+    lastError: null,
+    backoffUntil: null,
+  }
+  await db.outbox.add(item)
+}
 
 interface NovaObraPageProps {
   onBack: () => void
@@ -44,8 +64,9 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
       const { db } = await import('../services/dbDexie')
       const agora = new Date().toISOString()
       const tenantId = profile?.tenant_id || ''
+      const obraId = crypto.randomUUID()
       await db.sites.put({
-        id: crypto.randomUUID(),
+        id: obraId,
         tenant_id: tenantId,
         client_id: clienteId,
         name: nome,
@@ -60,6 +81,7 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
         created_at: agora,
         updated_at: agora,
       })
+      await enfileirarSync('site', obraId)
       onBack()
     } catch (err) {
       console.error('[NovaObraPage] Falha ao salvar:', err)
@@ -97,6 +119,7 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
         updated_at: agora,
       })
       setClientes([...clientes, { id, tenant_id: tenantId, legal_name: novoClienteNome, cnpj: novoClienteCnpj || null, active: true, created_in_field: true, needs_review: true, created_at: agora, updated_at: agora }])
+      await enfileirarSync('client', id)
       setClienteId(id)
       setNovoCliente(false)
       setNovoClienteNome('')

@@ -204,9 +204,57 @@ async def avanco_obra(
     # IDs de todos os laudos vinculados
     laudo_ids = list({v["laudo_id"] for v in vinculos})
 
-    # Busca TODOS os reports de uma vez (elimina N+1)
-    reports_res = sb.table("reports").select("id, document_id, revision, status, method, date, issued_at, inspector_name").eq("tenant_id", tenant_id).in_("id", laudo_ids).execute()
+    # Colunas reais de reports (conteúdo: 0001_initial_schema.sql)
+    report_fields = (
+        "id, document_id, revision, status, template_id, inspector_id, "
+        "inspection_date, issued_at, created_at, report_number"
+    )
+
+    # 1ª consulta: document_id de todos os laudos vinculados
+    vinculados_res = (
+        sb.table("reports")
+        .select("id, document_id")
+        .eq("tenant_id", tenant_id)
+        .in_("id", laudo_ids)
+        .execute()
+    )
+    documentos_vinculados = list({r["document_id"] for r in (vinculados_res.data or [])})
+    if not documentos_vinculados:
+        return _sem_vinculos(linhas)
+
+    # 2ª consulta: TODAS as revisões desses documentos (com ou sem vínculo)
+    reports_res = (
+        sb.table("reports")
+        .select(report_fields)
+        .eq("tenant_id", tenant_id)
+        .in_("document_id", documentos_vinculados)
+        .execute()
+    )
     reports = reports_res.data or []
+
+    # Método do laudo vem do modelo (reports.template_id → report_templates.method)
+    template_ids = list({r["template_id"] for r in reports if r.get("template_id")})
+    metodo_por_template: dict[str, str | None] = {}
+    if template_ids:
+        tpl_res = (
+            sb.table("report_templates")
+            .select("id, method")
+            .in_("id", template_ids)
+            .execute()
+        )
+        metodo_por_template = {t["id"]: t.get("method") for t in (tpl_res.data or [])}
+
+    # Nome do inspetor fica em profiles.full_name (reports guarda só inspector_id)
+    inspetor_ids = list({r["inspector_id"] for r in reports if r.get("inspector_id")})
+    nome_por_inspetor: dict[str, str] = {}
+    if inspetor_ids:
+        perfis_res = (
+            sb.table("profiles")
+            .select("id, full_name")
+            .in_("id", inspetor_ids)
+            .execute()
+        )
+        nome_por_inspetor = {p["id"]: p.get("full_name") or "" for p in (perfis_res.data or [])}
 
     # Agrupa reports por document_id
     reports_por_documento: dict[str, list[dict]] = {}
@@ -275,7 +323,7 @@ async def avanco_obra(
 
         a = agregado[linha_id]
 
-        if laudo.get("laudo_origem_id"):
+        if v.get("laudo_origem_id"):
             # Reinspeção: aprovado soma como aprovado; inspecionado só a parte aprovada
             a["quantidade_aprovada"] += qtd_aprov
             a["quantidade_inspecionada"] += qtd_aprov
@@ -391,19 +439,19 @@ async def avanco_obra(
         linha = next((l for l in linhas if l["id"] == linha_id), None)
         if not linha:
             continue
-        metodo = laudo.get("method") or linha["method"]
+        metodo = metodo_por_template.get(laudo.get("template_id")) or linha["method"]
         if metodo not in metodos_dict:
             metodos_dict[metodo] = {"total": 0, "devolvidos": 0, "dias_prazo": [], "count_prazo": 0}
         metodos_dict[metodo]["total"] += 1
-        if laudo.get("status") == "reprovado":
+        if laudo.get("status") == "returned":  # devolvido (enum report_status)
             metodos_dict[metodo]["devolvidos"] += 1
         issued_at = laudo.get("issued_at")
-        date_emissao = laudo.get("date")
-        if issued_at and date_emissao:
+        data_inspecao = laudo.get("inspection_date")
+        if issued_at and data_inspecao:
             try:
                 dt_issued = datetime.fromisoformat(issued_at.replace("Z", "+00:00")).replace(tzinfo=None)
-                dt_date = datetime.fromisoformat(date_emissao)
-                dias = (dt_issued - dt_date).days
+                dt_inspecao = datetime.fromisoformat(data_inspecao)
+                dias = (dt_issued - dt_inspecao).days
                 metodos_dict[metodo]["dias_prazo"].append(dias)
                 metodos_dict[metodo]["count_prazo"] += 1
             except Exception:
@@ -430,8 +478,8 @@ async def avanco_obra(
         laudo = laudos_mais_recentes.get(laudo_id)
         if not laudo:
             continue
-        inspetor_id = laudo.get("inspector_id") or laudo.get("inspector_name") or "desconhecido"
-        inspetor_nome = laudo.get("inspector_name") or inspetor_id
+        inspetor_id = laudo.get("inspector_id") or "desconhecido"
+        inspetor_nome = nome_por_inspetor.get(inspetor_id) or inspetor_id
         if inspetor_id not in producao_por_inspetor_dict:
             producao_por_inspetor_dict[inspetor_id] = {
                 "inspetor_id": inspetor_id,
@@ -466,7 +514,7 @@ async def avanco_obra(
         laudo = laudos_mais_recentes.get(laudo_id)
         if not laudo:
             continue
-        if laudo.get("status") != "enviado":
+        if laudo.get("status") != "submitted":  # enviado (enum report_status)
             continue
         created_at = laudo.get("created_at")
         if not created_at:
@@ -479,14 +527,42 @@ async def avanco_obra(
         if dias_parado > 3:
             pendencias.append(PendenciaLaudo(
                 laudo_id=laudo_id,
-                laudo_codigo=laudo.get("code", laudo_id),
-                metodo=laudo.get("method", ""),
-                inspetor_nome=laudo.get("inspector_name", "—"),
+                laudo_codigo=laudo.get("report_number") or laudo_id,
+                metodo=metodo_por_template.get(laudo.get("template_id")) or "",
+                inspetor_nome=nome_por_inspetor.get(laudo.get("inspector_id"), "—"),
                 dias_parado=dias_parado,
                 status=laudo.get("status", ""),
             ))
 
     pendencias.sort(key=lambda p: p.dias_parado, reverse=True)
+
+    # ---------- Ocultar produção de colegas (tenants.ocultar_producao_colegas) ----------
+    # Quando ligado e o usuário é inspector: produção por inspetor e pendências
+    # mostram apenas o próprio trabalho. O painel da obra (totais, curva S, rosca
+    # e linhas de avanço) permanece completo.
+    ocultar_colegas = False
+    try:
+        tenant_res = (
+            sb.table("tenants")
+            .select("ocultar_producao_colegas")
+            .eq("id", tenant_id)
+            .limit(1)
+            .execute()
+        )
+        if tenant_res.data:
+            ocultar_colegas = bool(tenant_res.data[0].get("ocultar_producao_colegas") or False)
+    except Exception:
+        ocultar_colegas = False  # coluna ainda não aplicada no banco (migração 0003)
+
+    if ocultar_colegas and current_user.role == "inspector":
+        producao_por_inspetor_list = [
+            p for p in producao_por_inspetor_list
+            if p.inspetor_id == current_user.user_id
+        ]
+        pendencias = [
+            pe for pe in pendencias
+            if (laudos_mais_recentes.get(pe.laudo_id) or {}).get("inspector_id") == current_user.user_id
+        ]
 
     # ---------- Previsão de término ----------
     aprovado_4semanas = 0.0

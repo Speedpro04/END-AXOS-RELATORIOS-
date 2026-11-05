@@ -5,6 +5,30 @@ O **AXOS Relatórios** é uma solução de software para o segmento de Integrida
 
 ---
 
+## 1.a Correções do Painel de Avanço, Fila de Sync e Ocultador (04/11/2026)
+
+**Backend `backend/app/routers/avanco.py` — função `avanco_obra` corrigida:**
+- Consulta a `reports` usava colunas inexistentes (`method`, `date`, `inspector_name`); corrigida para as colunas reais da 0001: `inspection_date`, `inspector_id` (nome em `profiles.full_name`), método via `template_id` → `report_templates.method` (duas consultas de mapa: templates e perfis).
+- Revisões: busca por `document_id` de todos os laudos vinculados (2 consultas encadeadas), não só pelos ids ligados; conta a revisão `issued` de maior `revision` por documento, herdando vínculo da revisão anterior quando a atual não tem.
+- Bugs adicionais fechados no mesmo trecho: `laudo.get("code")` → `report_number`; `laudo_origem_id` lido do **vínculo** (coluna da `laudo_escopo_vinculo`, 0002) e não do laudo; status em português (`enviado`/`reprovado`) → enum real (`submitted`/`returned`).
+- **Ocultador:** quando `tenants.ocultar_producao_colegas=true` e o usuário é `inspector`, a lista Produção por Inspetor e as Pendências mostram só o próprio trabalho; o painel da obra (totais, Curva S, rosca, linhas) permanece completo. Consulta a `tenants` com fallback tolerante caso a migração 0003 ainda não tenha sido executada no banco.
+
+**Migração `supabase/migrations/0003_obra_ocultar_producao.sql` reescrita:**
+- Índice removido (referenciava coluna `tenant_id` inexistente em `tenants` — a chave é `id`).
+- Bug de sintaxe corrigido: faltava ponto e vírgula no fim do `COMMENT`.
+- Proteção da coluna: `GRANT UPDATE (ocultar_producao_colegas) ... TO authenticated` — combinado com a política `tenants_update` da 0001 (que exige papel `admin`), só o administrador altera a coluna. 0001 e 0002 não foram alteradas.
+
+**Frontend:**
+- `NovaObraPage.tsx`: obra e contratante agora enfileirados no `db.outbox` (entidades `site` e `client`, `op: create`) — antes nada no app inteiro gravava na fila (o `sync.ts` consumia um outbox sem produtores). Helper local `enfileirarSync` com a forma `OutboxItem` exata; ordem de envio já garantida pela prioridade do sync.ts (clients → sites → work_orders → reports). Sem caminho paralelo novo.
+- `pages/ObraAvancoPage.tsx` removido e seu import tirado do `App.tsx` (tela substituída por `components/obra/ObraResumoAvanco.tsx`).
+- Nova constante centralizada: `frontend/src/config.ts` (`API_BASE_URL`); `ObraResumoAvanco.tsx` importa de lá (antes a URL estava repetida nos dois arquivos).
+- `ObraResumoAvanco.tsx` não precisou mudar para o ocultador: exibe o que o endpoint devolve já filtrado.
+- `.gitignore`: confirmado já cobrir `*.egg-info/` e `__pycache__/` — sem alteração.
+
+**Verificação:** `python -m py_compile app/routers/avanco.py` OK; `npx tsc -b` OK; busca pela sigla inglesa proibida → ZERO ocorrências. Pendente: migrações 0001/0002/0003 ainda não executadas no banco Supabase real; backend não rodando na máquina do usuário (falha do endpoint é tratada silenciosamente pelo frontend).
+
+---
+
 ## 2. Decisões Recentes de Arquitetura e Implementação
 
 ### 2.1. Fila de Espera Redis + FastAPI + ARQ
