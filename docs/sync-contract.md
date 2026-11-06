@@ -18,7 +18,8 @@ Authorization: Bearer <JWT do usuário>
 1. clients (contratantes)
 2. sites (obras)
 3. work_orders (ordens de serviço)
-4. reports (laudos)
+4. obra_escopo_linha e obra_escopo_revisao (escopo da obra)
+5. reports (laudos)
 
 Cada item deve conter `client_id` (UUID gerado pelo cliente) e `client_revision` (inteiro crescente).
 
@@ -42,7 +43,8 @@ Cada item deve conter `client_id` (UUID gerado pelo cliente) e `client_revision`
 ### Site (obra)
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| client_id | UUID | Sim | Identidade do contratante (mesmo UUID usado ao criar) |
+| client_id | UUID | Sim | Identidade da obra |
+| contratante_id | UUID | Sim | UUID do contratante da obra |
 | client_revision | int | Sim | Revisão crescente |
 | name | string | Sim | Nome da obra |
 | address | string | Não | Logradouro |
@@ -54,7 +56,8 @@ Cada item deve conter `client_id` (UUID gerado pelo cliente) e `client_revision`
 ### Work Order (ordem de serviço)
 | Campo | Tipo | Obrigatório | Descrição |
 |-------|------|-------------|-----------|
-| client_id | UUID | Sim | Identidade do contratante |
+| client_id | UUID | Sim | Identidade da OS |
+| contratante_id | UUID | Sim | UUID do contratante da OS |
 | client_revision | int | Sim | Revisão crescente |
 | code | string | Sim | Número da OS (único por tenant) |
 | site_id | UUID | Não | ID da obra (referência) |
@@ -68,13 +71,39 @@ Cada item deve conter `client_id` (UUID gerado pelo cliente) e `client_revision`
 |-------|------|-------------|-----------|
 | client_id | UUID | Sim | Identidade do laudo (virou o id no servidor) |
 | client_revision | int | Sim | Revisão crescente |
-| method | string | Sim | Código do método (LP, PM, EVS, ME, US, PINTURA, VASO_PRESSAO) |
+| method | string | Sim | Um dos 16 códigos: VT, PT, MT, UT, RT, ET, LT, LT_VACUO, PAUT, TOFD, CRDR, ECA, EA, IRT, ACFM, TFM |
 | work_order_id | UUID | Sim | ID da OS vinculada |
 | equipment_tag | string | Sim | TAG do equipamento |
 | inspection_date | date | Sim | Data da inspeção |
 | technical_data | object | Não | Dados técnicos do formulário (inclui veredito A/R/NEC/AC) |
 | administrative_data | object | Não | Dados administrativos |
 | submit | bool | Não | Se true, transição draft → submitted |
+| vinculo | object | Não | linha_id, quantidade_inspecionada, quantidade_aprovada, quantidade_reprovada (grava em laudo_escopo_vinculo) |
+| deleted | bool | Não | Se true, apaga o laudo no servidor (só rascunho); os demais campos são dispensados |
+
+`administrative_data.laudo` guarda os campos do formulário para o laudo ser restaurado em outro aparelho.
+
+### Linha de escopo (gerente ou administrador)
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| client_id | UUID | Sim | Identidade da linha |
+| client_revision | int | Sim | Revisão crescente |
+| site_id | UUID | Sim | Obra |
+| method | string | Sim | Um dos 16 códigos |
+| unidade | string | Sim | junta, ponto_medicao, peca, metro_linear, m2, filme, equipamento |
+| quantidade_prevista | number | Sim | Quantidade contratada |
+| referencia_tag | string | Não | Área ou TAG |
+| ativo | bool | Não | false desativa a linha (padrão true) |
+
+### Revisão de escopo (gerente ou administrador)
+| Campo | Tipo | Obrigatório | Descrição |
+|-------|------|-------------|-----------|
+| client_id | UUID | Sim | Identidade do registro (reenvio não duplica) |
+| client_revision | int | Sim | Revisão crescente |
+| linha_id | UUID | Sim | Linha de escopo |
+| quantidade_anterior | number | Não | Quantidade antes da mudança |
+| quantidade_nova | number | Sim | Quantidade após a mudança |
+| motivo | string | Sim | Motivo do aditivo ou supressão |
 
 ---
 
@@ -88,6 +117,8 @@ Cada item deve conter `client_id` (UUID gerado pelo cliente) e `client_revision`
 | server_revision | int | Revisão gravada no servidor |
 | error_code | string | Código de erro (quando falha) |
 | message | string | Mensagem legível |
+| workflow_status | string | Laudos: status no servidor (draft, submitted, ...) |
+| report_number | string | Laudos: número definitivo, depois da emissão |
 
 ---
 

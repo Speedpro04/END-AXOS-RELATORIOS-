@@ -3,6 +3,7 @@ import { ArrowLeft, Home, List, Plus, Edit2, Layout } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useObra } from '../contexts/ObraContext'
 import { ObraResumoAvanco } from '../components/obra/ObraResumoAvanco'
+import { ObraEscopoPage } from './ObraEscopoPage'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
@@ -151,18 +152,7 @@ export const ObraContextoPage: React.FC<ObraContextoPageProps> = ({ onBack }) =>
             </div>
           </div>
         )}
-        {painelAtivo === 'escopo' && (
-          <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>
-              Escopo da Obra
-            </h3>
-            <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '24px' }}>
-              <p style={{ color: 'var(--text-muted)', fontSize: '14px' }}>
-                Gerencie as linhas de escopo e métodos desta obra.
-              </p>
-            </div>
-          </div>
-        )}
+        {painelAtivo === 'escopo' && <ObraEscopoPage />}
         {painelAtivo === 'ordens' && (
           <div>
             <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '16px' }}>

@@ -142,6 +142,8 @@ Em ambiente de desenvolvimento, um bloco de login direto pode estar ativo apenas
 
 ## 8. Hub — Catálogo de Métodos (6 grupos, busca)
 
+**Decisão vigente (05/11/2026): o produto trabalha com 16 métodos** (ver seção 18). A lista de 6 grupos abaixo é histórica.
+
 O Hub exibe todos os modelos técnicos em uma **grade única de botões**, todos visíveis de uma vez, um clique para entrar e trabalhar naquele método.
 
 1. Superfície: LP (Líquido Penetrante), PM (Partícula Magnética)
@@ -400,47 +402,6 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 
 ---
 
-**Arquitetura:**
-- Gravação síncrona na requisição `POST /api/sync/reports`, com JWT do usuário repassado ao Supabase (RLS e triggers enxergam o usuário real). Sem `service_role` para gravar laudos.
-- Lote de até 20 itens por requisição, cada item em sua própria transação (um erro não bloqueia os outros).
-- Itens processados nesta ordem: clients, sites, work_orders, reports.
-
-**Contrato de sincronização (docs/sync-contract.md):**
-- Tipos de item: clients, sites, work_orders, reports.
-- Cada item tem `client_id` (UUID gerado pelo cliente) e `client_revision` (inteiro crescente para idempotência).
-- Campos controlados pelo servidor (ignorados/sobrescritos se enviados pelo cliente): `tenant_id`, `inspector_id`, `created_by`, `created_in_field`, `needs_review`, `id`, `created_at`, `updated_at`, `report_number`, `data_hash`, `header_snapshot`, status além de `draft`/`submitted`.
-
-**Regras de gravação:**
-- Idempotente por `client_id`: se `client_revision` <= revisão gravada, responder `ok` sem alterar.
-- Criar laudo: status `draft`; `tenant_id` e `inspector_id` do token; `work_order_id` validado pelo tenant; `template_id` resolvido pelo servidor (template ativo do tenant para o método); `TEMPLATE_NOT_FOUND` se não houver.
-- Atualizar: só quando `draft` ou `returned` e pertence ao inspetor. Caso contrário → `LOCKED`.
-- `submit=true`: transição `draft → submitted` pelo caminho normal (gatilhos do banco rodam).
-- Veredito do inspetor (A, R, NEC, AC) NÃO é status de workflow. `approved` e `issued` só o servidor define.
-
-**Códigos de erro de laudo:**
-- `QUALIFICATION_EXPIRED`, `INSTRUMENT_EXPIRED`, `MISSING_REQUIRED`, `LOCKED`, `WORK_ORDER_NOT_FOUND`, `TEMPLATE_NOT_FOUND`, `FORBIDDEN`, `VALIDATION_ERROR`, `UNKNOWN`.
-- Códigos de obras/OS: `CLIENT_NOT_FOUND`, `SITE_NOT_FOUND`, `DUPLICATE_NUMBER`, `FIELD_CREATION_DISABLED`, `DEPENDENCY_FAILED`.
-
-**Segurança:**
-- `/api/sync/dlq` e `/api/sync/status/{job_id}` exigem papel supervisor ou admin.
-- JWT valida audiência (verificar_aud habilitado).
-- CORS com origens da configuração.
-- Pool ARQ criado uma vez por processo (lifespan).
-- Erros ao cliente com mensagem genérica; detalhes só no log.
-
-**Schema SQL:**
-- Tabela `reports` ganha coluna `report_number text` (número definitivo do laudo, atribuído pelo servidor).
-- Tabela `report_number_counters` (tenant_id, method, year, seq) para sequência atômica.
-- Função `public.next_report_number(p_tenant, p_method, p_year)` retorna `{PREFIXO}-{MÉTODO}-{ANO}-{SEQ(3 dígitos)}`.
-
-**Commits da tarefa:**
-- `891792b` (db: reports ganha coluna report_number e índice)
-- `287dda9` (feat(sync): rota síncrona POST /api/sync/reports com transações por item)
-- `5e1c62f` (docs: contrato de sincronização)
-
-
----
-
 ## 16. Fluxo Operacional — Três Páginas (04/11/2026)
 
 **Encadeamento:** Login → Obras → Painel Operacional, uma página abrindo a outra.
@@ -478,3 +439,20 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 **Fila de sincronização (item do painel de cadastro):**
 - Toda obra e contratante criados em "Nova Obra" entram no `db.outbox` (entidade `site`/`client`, operação `create`) e sobem ao servidor pelo fluxo padrão do `sync.ts`, na ordem: clientes → sites → ordens de serviço → laudos.
 - URL da API backend centralizada em `frontend/src/config.ts` (`API_BASE_URL`).
+
+---
+
+## 18. Os 16 Métodos END e a Fundação de Dados (05/11/2026)
+
+**Métodos (decisão do dono do produto):** VT, PT, MT, UT, RT, ET, LT, LT_VACUO, PAUT, TOFD, CRDR, ECA, EA, IRT, ACFM, TFM. São os mesmos códigos no app, no tipo `public.end_method` do banco, no contrato de sincronização e nos modelos globais (`0004_modelos_metodos.sql`). Os formulários de cada método serão refinados em etapa própria.
+
+**Salvamento:** as 16 telas e o formulário rápido gravam pelo mesmo caminho (`handleSaveReport` em `App.tsx`). Veredito do inspetor fica em `verdict`, nunca no status de workflow.
+
+**Obra e OS:** todo laudo no servidor pertence a uma OS. Com obra selecionada, `ensureObraWorkOrder` cria uma OS por inspetor e obra na primeira gravação. Sem obra, o laudo fica no aparelho e não sobe.
+
+**Sincronização:** `services/sync.ts` envia a fila para `POST /api/sync/reports`, na ordem contratantes, obras, OS, escopo e laudos, e depois atualiza o cache local pelo Supabase. Erros de dependência e falhas temporárias tentam de novo com backoff; os demais esperam o usuário editar o item.
+
+**Número do laudo:** gerado pelo gatilho do banco na transição `approved → issued`. Revisão mantém o número do documento. `reports.client_revision` é o contador do aparelho; `reports.revision` é a revisão do documento.
+
+**Emissão:** `POST /api/sync/emitir/{id}` usa o JWT do revisor e enfileira o PDF real no `pdf_worker`.
+

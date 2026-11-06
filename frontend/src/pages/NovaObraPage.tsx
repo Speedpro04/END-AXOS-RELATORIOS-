@@ -3,29 +3,10 @@ import { ArrowLeft, Plus, Save, Search } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { useObra } from '../contexts/ObraContext'
 import type { Client } from '../types/os'
-import type { OutboxItem } from '../types/sync'
 import { db } from '../services/dbDexie'
+import { enqueueSync } from '../services/sync'
 
 const FONT = 'Arial, Helvetica, sans-serif'
-
-/**
- * Enfileira um cadastro local para sincronização com o servidor.
- * Usa a mesma fila (outbox) e o mesmo processamento do sync.ts —
- * ordem de envio garantida pelo EntityPriority: clients → sites → work_orders → reports.
- */
-const enfileirarSync = async (entity: OutboxItem['entity'], entityId: string): Promise<void> => {
-  const item: OutboxItem = {
-    id: crypto.randomUUID(),
-    entity,
-    entityId,
-    op: 'create',
-    createdAt: new Date().toISOString(),
-    attempts: 0,
-    lastError: null,
-    backoffUntil: null,
-  }
-  await db.outbox.add(item)
-}
 
 interface NovaObraPageProps {
   onBack: () => void
@@ -75,13 +56,13 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
         uf: uf || null,
         contract_ref: contrato || null,
         situation: 'active',
-        created_by: agora,
+        created_by: profile?.id || '',
         created_in_field: false,
         needs_review: true,
         created_at: agora,
         updated_at: agora,
       })
-      await enfileirarSync('site', obraId)
+      await enqueueSync('site', obraId)
       onBack()
     } catch (err) {
       console.error('[NovaObraPage] Falha ao salvar:', err)
@@ -112,14 +93,14 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
         contact_email: null,
         contact_phone: null,
         active: true,
-        created_by: agora,
+        created_by: profile?.id || '',
         created_in_field: true,
         needs_review: true,
         created_at: agora,
         updated_at: agora,
       })
       setClientes([...clientes, { id, tenant_id: tenantId, legal_name: novoClienteNome, cnpj: novoClienteCnpj || null, active: true, created_in_field: true, needs_review: true, created_at: agora, updated_at: agora }])
-      await enfileirarSync('client', id)
+      await enqueueSync('client', id)
       setClienteId(id)
       setNovoCliente(false)
       setNovoClienteNome('')

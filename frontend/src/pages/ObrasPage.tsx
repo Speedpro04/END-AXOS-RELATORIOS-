@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useObra } from '../contexts/ObraContext'
 import type { Site } from '../types/os'
 import { db } from '../services/dbDexie'
+import { enqueueSync } from '../services/sync'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
@@ -269,6 +270,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onAbrirPainel }) =
                         setCarregando(true)
                         try {
                           await db.sites.update(obra.id, { situation: reativar ? 'active' : 'concluded', updated_at: new Date().toISOString() })
+                          await enqueueSync('site', obra.id, 'update')
                           await carregar()
                         } finally {
                           setCarregando(false)

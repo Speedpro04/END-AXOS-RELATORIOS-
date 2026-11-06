@@ -20,11 +20,12 @@ async function run() {
   await db.exec(bootstrapSql);
   console.log('      Bootstrap aplicado com sucesso.');
 
-  console.log('\n[2/3] Aplicando migração 0001_initial_schema.sql...');
-  const schemaPath = path.resolve(__dirname, '../migrations/0001_initial_schema.sql');
-  const schemaSql = fs.readFileSync(schemaPath, 'utf8');
-  await db.exec(schemaSql);
-  console.log('      0001_initial_schema.sql executado sem erros estruturais.');
+  console.log('\n[2/3] Aplicando migrações em ordem...');
+  const migrationsDir = path.resolve(__dirname, '../migrations');
+  for (const file of fs.readdirSync(migrationsDir).filter((f) => f.endsWith('.sql')).sort()) {
+    await db.exec(fs.readFileSync(path.join(migrationsDir, file), 'utf8'));
+    console.log(`      ${file} executado sem erros estruturais.`);
+  }
 
   console.log('\n[3/3] Executando suite de testes de isolamento e regras de negócio...');
   const testsPath = path.resolve(__dirname, '01_isolation_and_rules.test.sql');

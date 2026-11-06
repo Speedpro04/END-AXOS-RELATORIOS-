@@ -3,11 +3,12 @@ import { ArrowLeft, Plus, RefreshCw, Save, Trash2 } from 'lucide-react'
 import type { ObraEscopoLinha, ObraEscopoRevisao, ObraEscopoUnidade } from '../types/obra'
 import { useAuth } from '../contexts/AuthContext'
 import { useObra } from '../contexts/ObraContext'
+import { enqueueSync } from '../services/sync'
 
 const FONT = 'Arial, Helvetica, sans-serif'
 
 interface ObraEscopoPageProps {
-  onBack: () => void
+  onBack?: () => void // sem onBack a tela está embutida no painel da obra
 }
 
 export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
@@ -73,10 +74,12 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
         updated_at: agora,
       }
       await db.obraEscopoLinhas.put(linha)
+      await enqueueSync('escopo_linha', linha.id, linhaEditando ? 'update' : 'create')
 
       if (linhaEditando && Math.abs((linhaEditando.quantidade_prevista || 0) - linha.quantidade_prevista) > 0.0001) {
+        const revisaoId = crypto.randomUUID()
         await db.obraEscopoRevisoes.put({
-          id: crypto.randomUUID(),
+          id: revisaoId,
           tenant_id: tenantId,
           linha_id: linha.id,
           quantidade_anterior: linhaEditando.quantidade_prevista,
@@ -85,6 +88,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
           created_by: user?.id || '',
           created_at: agora,
         })
+        await enqueueSync('escopo_revisao', revisaoId)
       }
 
       await carregar()
@@ -137,7 +141,9 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
     setSalvando(true)
     try {
       const { db } = await import('../services/dbDexie')
-      await db.obraEscopoLinhas.delete(id)
+      // Laudos podem estar vinculados à linha: desativa em vez de apagar
+      await db.obraEscopoLinhas.update(id, { ativo: false, updated_at: new Date().toISOString() })
+      await enqueueSync('escopo_linha', id, 'update')
       await carregar()
     } finally {
       setSalvando(false)
@@ -178,8 +184,8 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
   }
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: onBack ? '24px 32px' : 0, minHeight: onBack ? 'calc(100vh - 200px)' : undefined, background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
+      {onBack && <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           type="button"
           onClick={onBack}
@@ -195,7 +201,7 @@ export const ObraEscopoPage: React.FC<ObraEscopoPageProps> = ({ onBack }) => {
         <h1 style={{ fontSize: '22px', fontWeight: 600, margin: 0, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
           Escopo da Obra: {obraAtual.name}
         </h1>
-      </div>
+      </div>}
 
       <section style={{ marginBottom: '32px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

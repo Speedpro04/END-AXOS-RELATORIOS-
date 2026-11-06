@@ -8,11 +8,12 @@ const METHOD: ENDMethod = 'MT'
 
 interface LaudoPageProps {
   onBack: () => void
+  onSave: (report: Partial<InspectionReport>) => Promise<void>
   tenant: { tradeName?: string | null; reportPrefix?: string | null; logoPath?: string | null }
   tenantName: string | null
 }
 
-export const MTPage: React.FC<LaudoPageProps> = ({ onBack, tenant, tenantName }) => {
+export const MTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, tenant, tenantName }) => {
   const { user, profile } = useAuth()
   const [equipmentTag, setEquipmentTag] = useState('')
   const [title, setTitle] = useState('')
@@ -61,9 +62,8 @@ export const MTPage: React.FC<LaudoPageProps> = ({ onBack, tenant, tenantName })
           checklist,
         },
       }
-      console.log('[Laudo VT] Salvando:', report)
-      // TODO: integrar com handleSaveReport do App
-      alert('Laudo salvo como rascunho (integração com Dexie em desenvolvimento)')
+      await onSave(report)
+      onBack()
     } finally {
       setSaving(false)
     }

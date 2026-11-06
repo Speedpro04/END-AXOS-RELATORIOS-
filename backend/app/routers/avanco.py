@@ -172,7 +172,7 @@ async def avanco_obra(
     obra_id: str,
     current_user: CurrentUserDep,
     metodo: str | None = None,
-    sb: Any = Depends(lambda: create_client(settings.supabase_url, settings.supabase_key)),
+    sb: Any = Depends(lambda: create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)),
 ) -> AvanceObraResponse:
     tenant_id = current_user.tenant_id
 

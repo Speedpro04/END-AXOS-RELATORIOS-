@@ -21,7 +21,7 @@ export type LocalStatus = 'rascunho' | 'pronto' | 'enviando' | 'sincronizado' | 
  * draft → submitted → (returned → submitted)* → approved → issued → superseded
  * O cliente nunca envia approved nem issued.
  */
-export type ServerStatus = ReportStatus | 'enviando' | 'sincronizado' | 'erro'
+export type ServerStatus = ReportStatus | 'enviando' | 'sincronizado' | 'erro' | 'returned' | 'superseded'
 
 /**
  * Registro local de um laudo no Dexie (tabela reports).
@@ -50,7 +50,7 @@ export interface LocalReport {
  */
 export interface OutboxItem {
   id: string             // UUID gerado no cliente
-  entity: 'client' | 'site' | 'work_order' | 'report'
+  entity: 'client' | 'site' | 'work_order' | 'escopo_linha' | 'escopo_revisao' | 'report'
   entityId: string       // UUID da entidade (mesmo do id para reports, UUID próprio para outras)
   op: 'create' | 'update' | 'delete'
   createdAt: string      // ISO 8601
@@ -78,7 +78,7 @@ export interface TenantConfig {
  * Resultado de sincronização de um item.
  */
 export interface SyncItemResult {
-  entity: 'client' | 'site' | 'work_order' | 'report'
+  entity: OutboxItem['entity']
   entityId: string
   ok: boolean
   serverId?: string

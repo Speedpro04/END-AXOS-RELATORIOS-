@@ -148,7 +148,7 @@ async def enqueue_generate_pdf(
         task_generate_pdf.__name__,
         laudo_id=str(laudo_id),
         tenant_id=str(tenant_id),
-        _queue_name=settings.QUEUE_PDF,
+        _queue_name=settings.QUEUE_SYNC_LAUDO,  # fila consumida pelo worker (WorkerSettings.queue_name)
         _defer_by=defer_by,
         _job_id=idem_key,
     )
@@ -179,7 +179,7 @@ async def enqueue_send_email(
         to=to,
         subject=subject,
         body=body,
-        _queue_name=settings.QUEUE_EMAIL,
+        _queue_name=settings.QUEUE_SYNC_LAUDO,  # fila consumida pelo worker (WorkerSettings.queue_name)
         _defer_by=defer_by,
         _job_id=idem_key,
     )

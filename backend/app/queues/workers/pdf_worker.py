@@ -296,7 +296,7 @@ async def task_generate_pdf(ctx: dict, *, laudo_id: str, tenant_id: str) -> dict
 
     # QR code apontando para verificação pública em axosrelatorios.com
     qr_base = settings.QR_BASE_URL.rstrip("/")
-    qr_url = f"{qr_base}/verificar/{document_id}/{revision}"
+    qr_url = f"{qr_base}/{document_id}/{revision}"
     qr_png = _make_qr_png(qr_url)
     import base64 as _b64
     qr_data_url = "data:image/png;base64," + _b64.b64encode(qr_png).decode("ascii")
@@ -325,7 +325,7 @@ async def task_generate_pdf(ctx: dict, *, laudo_id: str, tenant_id: str) -> dict
     pdf_sha256 = _sha256_file(pdf_bytes)
 
     # 7. Upload para o Supabase Storage (bucket: report-pdfs)
-    storage_path = f"report-pdfs/{tenant_id}/{laudo_id}.pdf"
+    storage_path = f"{tenant_id}/{laudo_id}.pdf"
     try:
         sb.storage.from_("report-pdfs").upload(
             storage_path,

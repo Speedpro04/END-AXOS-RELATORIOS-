@@ -176,7 +176,7 @@ def make_mock_supabase():
             {
                 "id": "template-uuid-lp",
                 "tenant_id": "tenant-uuid-5678",
-                "method": "LP",
+                "method": "PT",
                 "name": "Líquido Penetrante",
                 "version": 1,
                 "published": True,
@@ -249,7 +249,7 @@ async def test_payload_cannot_set_server_fields(http_client, client, inspector_t
     items = [{
         "client_id": "client-uuid-001",
         "client_revision": 1,
-        "method": "LP",
+        "method": "PT",
         "work_order_id": "work-order-uuid-001",
         "equipment_tag": "TAG-001",
         "inspection_date": "2026-10-21",
@@ -297,7 +297,7 @@ async def test_idempotent_resend(http_client, client, inspector_token):
     items = [{
         "client_id": "client-uuid-002",
         "client_revision": 1,
-        "method": "LP",
+        "method": "PT",
         "work_order_id": "work-order-uuid-002",
         "equipment_tag": "TAG-002",
         "inspection_date": "2026-10-21",
@@ -344,13 +344,13 @@ async def test_locked_when_not_draft(http_client, client, inspector_token):
         "inspection_date": "2026-10-21",
         "technical_data": {},
         "administrative_data": {},
-        "revision": 5,
+        "client_revision": 5,
     })
 
     items = [{
         "client_id": "client-uuid-003",
         "client_revision": 6,
-        "method": "LP",
+        "method": "PT",
         "work_order_id": "work-order-uuid-003",
         "equipment_tag": "TAG-003-ALTERADO",
         "inspection_date": "2026-10-22",
@@ -403,7 +403,7 @@ async def test_submit_blocked_by_qualification(http_client, mock_supabase, inspe
     items = [{
         "client_id": "client-uuid-004",
         "client_revision": 1,
-        "method": "LP",
+        "method": "PT",
         "work_order_id": "work-order-uuid-004",
         "equipment_tag": "TAG-004",
         "inspection_date": "2026-10-21",
@@ -440,7 +440,7 @@ async def test_partial_success_batch(http_client, client, inspector_token):
         {
             "client_id": "client-uuid-005",
             "client_revision": 1,
-            "method": "LP",
+            "method": "PT",
             "work_order_id": "work-order-uuid-005",
             "equipment_tag": "TAG-005",
             "inspection_date": "2026-10-21",
@@ -451,7 +451,7 @@ async def test_partial_success_batch(http_client, client, inspector_token):
         {
             "client_id": "client-uuid-006",
             "client_revision": 1,
-            "method": "LP",
+            "method": "PT",
             "work_order_id": "work-order-inexistente",
             "equipment_tag": "TAG-006",
             "inspection_date": "2026-10-21",
@@ -505,7 +505,7 @@ async def test_duplicate_os_number(http_client, client, inspector_token):
         "client_id": "client-uuid-011",
         "client_revision": 1,
         "code": "OS-010",  # Código duplicado!
-        "client_id": "client-uuid-010",
+        "contratante_id": "client-uuid-010",
         "site_id": "site-uuid-001",
     }]
 
@@ -557,7 +557,7 @@ async def test_dependency_failed_when_client_missing(http_client, client, inspec
     items = [{
         "client_id": "client-uuid-site-001",
         "client_revision": 1,
-        "client_id": "client-uuid-inexistente",
+        "contratante_id": "client-uuid-inexistente",
         "name": "Obra Fantasma",
         "situation": "active",
     }]
@@ -572,3 +572,77 @@ async def test_dependency_failed_when_client_missing(http_client, client, inspec
     data = response.json()
     assert data["items"][0]["ok"] is False
     assert data["items"][0]["error_code"] == "CLIENT_NOT_FOUND"
+
+
+# ---------------------------------------------------------------------------
+# Obra guarda o contratante separado da própria identidade; reenvio atualiza
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_site_keeps_contractor_and_updates_situation(http_client, client, inspector_token):
+    client["clients"].append({"id": "contratante-1", "tenant_id": "tenant-uuid-5678", "legal_name": "C"})
+    item = {
+        "client_id": "obra-1", "client_revision": 1, "contratante_id": "contratante-1",
+        "name": "Obra", "situation": "active",
+    }
+    headers = {"Authorization": f"Bearer {inspector_token}"}
+
+    r1 = await http_client.post("/api/sync/reports", headers=headers, json={"items": [item]})
+    assert r1.json()["items"][0]["ok"] is True
+    assert client["sites"][0]["client_id"] == "contratante-1"
+    assert client["sites"][0]["id"] == "obra-1"
+
+    r2 = await http_client.post("/api/sync/reports", headers=headers, json={"items": [{**item, "situation": "concluded"}]})
+    assert r2.json()["items"][0]["ok"] is True
+    assert len(client["sites"]) == 1
+    assert client["sites"][0]["situation"] == "concluded"
+
+
+# ---------------------------------------------------------------------------
+# Laudo: edição sobe, reenvio não duplica, medição de escopo é gravada
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_report_revision_and_scope_link(http_client, client, inspector_token):
+    client["work_orders"].append({"id": "os-1", "tenant_id": "tenant-uuid-5678", "client_id": "c", "code": "OS"})
+    item = {
+        "client_id": "laudo-1", "client_revision": 1, "method": "PT", "work_order_id": "os-1",
+        "equipment_tag": "TAG", "inspection_date": "2026-11-05", "technical_data": {}, "administrative_data": {},
+        "vinculo": {"linha_id": "linha-1", "quantidade_inspecionada": 10, "quantidade_aprovada": 9, "quantidade_reprovada": 1},
+    }
+    headers = {"Authorization": f"Bearer {inspector_token}"}
+
+    r1 = await http_client.post("/api/sync/reports", headers=headers, json={"items": [item]})
+    assert r1.json()["items"][0]["workflow_status"] == "draft"
+    assert "revision" not in client["reports"][0]  # revisão do documento é do banco, não do aparelho
+
+    await http_client.post("/api/sync/reports", headers=headers, json={"items": [{**item, "equipment_tag": "ANTIGA"}]})
+    assert client["reports"][0]["equipment_tag"] == "TAG"
+
+    await http_client.post("/api/sync/reports", headers=headers, json={"items": [{**item, "client_revision": 2, "equipment_tag": "NOVA"}]})
+    assert client["reports"][0]["equipment_tag"] == "NOVA"
+    assert len(client["laudo_escopo_vinculo"]) == 1
+
+
+# ---------------------------------------------------------------------------
+# Métodos fora dos 16 e escopo por inspetor são recusados
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_invalid_method_and_scope_permission(http_client, inspector_token):
+    headers = {"Authorization": f"Bearer {inspector_token}"}
+    items = [
+        {"client_id": "l", "client_revision": 1, "method": "XX", "work_order_id": "o", "equipment_tag": "T", "inspection_date": "2026-11-05"},
+        {"client_id": "e", "client_revision": 1, "site_id": "s", "method": "UT", "unidade": "junta", "quantidade_prevista": 5},
+    ]
+    data = (await http_client.post("/api/sync/reports", headers=headers, json={"items": items})).json()
+    assert data["items"][0]["error_code"] == "VALIDATION_ERROR"
+    assert data["items"][1]["error_code"] == "FORBIDDEN"
+
+
+# ---------------------------------------------------------------------------
+# Cliente real do Supabase carrega o JWT do usuário
+# ---------------------------------------------------------------------------
+def test_user_client_uses_user_token():
+    import importlib
+    from app.routers import sync as sync_mod
+    real = importlib.reload(sync_mod)._supabase_user_client
+    sb = real("token-do-usuario")
+    assert sb.options.headers["Authorization"] == "Bearer token-do-usuario"

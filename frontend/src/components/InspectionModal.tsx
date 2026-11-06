@@ -8,6 +8,7 @@ interface InspectionModalProps {
   onClose: () => void
   onSave: (report: Partial<InspectionReport>) => void
   initialReport?: InspectionReport | null
+  initialMethod?: ENDMethod
   siteId?: string | null
 }
 
@@ -16,6 +17,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
   onClose,
   onSave,
   initialReport,
+  initialMethod,
   siteId,
 }) => {
   const [method, setMethod] = useState<ENDMethod>('VT')
@@ -245,7 +247,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         setQuantidadeAprovada(initialReport.quantidadeAprovada || 0)
         setQuantidadeReprovada(initialReport.quantidadeReprovada || 0)
       } else {
-        setMethod('VT')
+        setMethod(initialMethod ?? 'VT')
         setEquipmentTag('')
         setTitle('')
         setUnitArea('')
@@ -351,7 +353,7 @@ export const InspectionModal: React.FC<InspectionModalProps> = ({
         setQuantidadeReprovada(0)
       }
     }
-  }, [isOpen, initialReport])
+  }, [isOpen, initialReport, initialMethod])
 
   // Não renderiza nada quando fechado; todos os hooks acima já foram chamados
   if (!isOpen) return null

@@ -22,17 +22,22 @@ from arq.jobs import Job
 from fastapi import APIRouter, Body, Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
-from supabase import create_client
+from supabase import ClientOptions, create_client
 
 from app.core.config import settings
 from app.core.security import CurrentUserDep
-from app.queues.enqueue import get_arq_redis_settings
+from app.queues.enqueue import enqueue_generate_pdf, get_arq_redis_settings
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/sync", tags=["Sincronização de Campo"])
 
 bearer = HTTPBearer(auto_error=True)
+
+METODOS_END = {
+    "VT", "PT", "MT", "UT", "RT", "ET", "LT", "LT_VACUO",
+    "PAUT", "TOFD", "CRDR", "ECA", "EA", "IRT", "ACFM", "TFM",
+}
 
 
 # ─────────────────────────────────────────────────────────
@@ -49,12 +54,22 @@ async def get_user_token(
 # Dependency: pool ARQ (reutilizável, para jobs de PDF/email)
 # ─────────────────────────────────────────────────────────
 
-async def get_arq():
-    pool = await create_pool(get_arq_redis_settings())
-    try:
-        yield pool
-    finally:
-        await pool.aclose()
+_arq_pool: ArqRedis | None = None
+
+
+async def get_arq() -> ArqRedis:
+    """Pool ARQ único por processo (fechado no encerramento da API)."""
+    global _arq_pool
+    if _arq_pool is None:
+        _arq_pool = await create_pool(get_arq_redis_settings())
+    return _arq_pool
+
+
+async def close_arq() -> None:
+    global _arq_pool
+    if _arq_pool is not None:
+        await _arq_pool.aclose()
+        _arq_pool = None
 
 
 ArqDep = Annotated[Any, Depends(get_arq)]
@@ -80,7 +95,7 @@ class SyncClientItem(SyncItemBase):
 
 
 class SyncSiteItem(SyncItemBase):
-    client_id: str  # referência ao contratante (mesmo UUID do cliente que o criou)
+    contratante_id: str  # UUID do contratante (client_id é a identidade da própria obra)
     name: str
     address: str | None = None
     city: str | None = None
@@ -90,7 +105,7 @@ class SyncSiteItem(SyncItemBase):
 
 
 class SyncWorkOrderItem(SyncItemBase):
-    client_id: str
+    contratante_id: str  # UUID do contratante (client_id é a identidade da própria OS)
     code: str
     site_id: str | None = None
     scheduled_for: str | None = None
@@ -107,6 +122,23 @@ class SyncReportItem(SyncItemBase):
     technical_data: dict[str, Any] = Field(default_factory=dict)
     administrative_data: dict[str, Any] = Field(default_factory=dict)
     submit: bool = False
+    vinculo: dict[str, Any] | None = None  # linha_id e quantidades de escopo (opcional)
+
+
+class SyncEscopoLinhaItem(SyncItemBase):
+    site_id: str
+    method: str
+    unidade: str
+    quantidade_prevista: float
+    referencia_tag: str | None = None
+    ativo: bool = True
+
+
+class SyncEscopoRevisaoItem(SyncItemBase):
+    linha_id: str
+    quantidade_anterior: float | None = None
+    quantidade_nova: float
+    motivo: str
 
 
 class SyncItemResponse(BaseModel):
@@ -116,6 +148,8 @@ class SyncItemResponse(BaseModel):
     server_revision: int | None = None
     error_code: str | None = None
     message: str | None = None
+    workflow_status: str | None = None
+    report_number: str | None = None
 
 
 class SyncBatchRequest(BaseModel):
@@ -132,9 +166,20 @@ class SyncBatchResponse(BaseModel):
 
 def _supabase_user_client(token: str) -> Any:
     """Cria um cliente Supabase autenticado com o JWT do usuário."""
-    return create_client(settings.SUPABASE_URL, settings.SUPABASE_ANON_KEY, headers={
-        "Authorization": f"Bearer {token}",
-    })
+    return create_client(
+        settings.SUPABASE_URL,
+        settings.SUPABASE_ANON_KEY,
+        options=ClientOptions(headers={"Authorization": f"Bearer {token}"}),
+    )
+
+
+def _falha_interna(client_id: str, exc: Exception) -> SyncItemResponse:
+    """Detalhe do erro só no log; o aparelho recebe mensagem genérica e tenta de novo."""
+    logger.error("Erro ao gravar item %s: %s", client_id, exc)
+    return SyncItemResponse(
+        client_id=client_id, ok=False, error_code="UNKNOWN",
+        message="Não foi possível gravar agora. Nova tentativa será feita.",
+    )
 
 
 # ─────────────────────────────────────────────────────────
@@ -189,7 +234,7 @@ async def sync_reports(
                 client_id=item.get("client_id", "unknown"),
                 ok=False,
                 error_code="UNKNOWN",
-                message=str(exc),
+                message="Não foi possível gravar agora. Nova tentativa será feita.",
             ))
 
     return SyncBatchResponse(items=results)
@@ -197,12 +242,18 @@ async def sync_reports(
 
 def _detect_item_type(item: dict[str, Any]) -> str:
     """Detecta o tipo do item pelos campos presentes."""
+    if item.get("deleted"):
+        return "report_delete"
     if "method" in item and "work_order_id" in item and "equipment_tag" in item:
         return "report"
     if "code" in item and ("site_id" in item or "site" in item):
         return "work_order"
-    if "name" in item and "client_id" in item and "situation" in item:
+    if "name" in item and "contratante_id" in item:
         return "site"
+    if "quantidade_prevista" in item:
+        return "escopo_linha"
+    if "quantidade_nova" in item:
+        return "escopo_revisao"
     if "legal_name" in item or "cnpj" in item:
         return "client"
     return "unknown"
@@ -231,6 +282,12 @@ async def _process_item(
         return await _process_work_order(sb, item, tenant_id, user_id, role, client_id, client_revision)
     if item_type == "report":
         return await _process_report(sb, item, tenant_id, user_id, role, client_id, client_revision)
+    if item_type == "report_delete":
+        return _process_report_delete(sb, tenant_id, client_id, client_revision)
+    if item_type == "escopo_linha":
+        return await _process_escopo_linha(sb, item, tenant_id, role, client_id, client_revision)
+    if item_type == "escopo_revisao":
+        return await _process_escopo_revisao(sb, item, tenant_id, role, client_id, client_revision)
     return SyncItemResponse(
         client_id=client_id,
         ok=False,
@@ -292,7 +349,7 @@ async def _process_client(
             "active": item.get("active", True),
             "created_by": user_id,
             "created_in_field": role == "inspector",
-            "needs_review": True,
+            "needs_review": role == "inspector",
         }).execute()
 
         if not res.data:
@@ -312,9 +369,7 @@ async def _process_client(
                 client_id=client_id, ok=False, error_code="DUPLICATE_NUMBER",
                 message="CNPJ já cadastrado neste tenant",
             )
-        return SyncItemResponse(
-            client_id=client_id, ok=False, error_code="UNKNOWN", message=msg,
-        )
+        return _falha_interna(client_id, exc)
 
 
 async def _process_site(
@@ -327,7 +382,7 @@ async def _process_site(
     client_revision: int,
 ) -> SyncItemResponse:
     # Verifica se o contratante existe neste tenant
-    client_check = sb.table("clients").select("id").eq("id", item["client_id"]).eq("tenant_id", tenant_id).execute()
+    client_check = sb.table("clients").select("id").eq("id", item["contratante_id"]).eq("tenant_id", tenant_id).execute()
     if not client_check.data or len(client_check.data) == 0:
         return SyncItemResponse(
             client_id=client_id, ok=False, error_code="CLIENT_NOT_FOUND",
@@ -335,17 +390,27 @@ async def _process_site(
         )
 
     existing = sb.table("sites").select("id").eq("id", client_id).execute()
-    if existing.data and len(existing.data) > 0:
-        return SyncItemResponse(
-            client_id=client_id, ok=True, server_id=existing.data[0]["id"],
-            server_revision=client_revision,
-        )
 
     try:
+        if existing.data and len(existing.data) > 0:
+            # Obra já existe: grava a última versão (ex.: concluir ou reativar). Reenvio não muda nada.
+            sb.table("sites").update({
+                "name": item["name"],
+                "address": item.get("address"),
+                "city": item.get("city"),
+                "uf": item.get("uf"),
+                "contract_ref": item.get("contract_ref"),
+                "situation": item.get("situation", "active"),
+            }).eq("id", client_id).execute()
+            return SyncItemResponse(
+                client_id=client_id, ok=True, server_id=client_id,
+                server_revision=client_revision,
+            )
+
         res = sb.table("sites").insert({
             "id": client_id,
             "tenant_id": tenant_id,
-            "client_id": item["client_id"],
+            "client_id": item["contratante_id"],
             "name": item["name"],
             "address": item.get("address"),
             "city": item.get("city"),
@@ -354,7 +419,7 @@ async def _process_site(
             "situation": item.get("situation", "active"),
             "created_by": user_id,
             "created_in_field": role == "inspector",
-            "needs_review": True,
+            "needs_review": role == "inspector",
         }).execute()
 
         if not res.data:
@@ -368,9 +433,7 @@ async def _process_site(
             server_revision=client_revision,
         )
     except Exception as exc:
-        return SyncItemResponse(
-            client_id=client_id, ok=False, error_code="UNKNOWN", message=str(exc),
-        )
+        return _falha_interna(client_id, exc)
 
 
 async def _process_work_order(
@@ -383,7 +446,7 @@ async def _process_work_order(
     client_revision: int,
 ) -> SyncItemResponse:
     # Verifica se o contratante existe
-    client_check = sb.table("clients").select("id").eq("id", item["client_id"]).eq("tenant_id", tenant_id).execute()
+    client_check = sb.table("clients").select("id").eq("id", item["contratante_id"]).eq("tenant_id", tenant_id).execute()
     if not client_check.data or len(client_check.data) == 0:
         return SyncItemResponse(
             client_id=client_id, ok=False, error_code="CLIENT_NOT_FOUND",
@@ -410,7 +473,7 @@ async def _process_work_order(
         res = sb.table("work_orders").insert({
             "id": client_id,
             "tenant_id": tenant_id,
-            "client_id": item["client_id"],
+            "client_id": item["contratante_id"],
             "code": item["code"],
             "site_id": item.get("site_id"),
             "scheduled_for": item.get("scheduled_for"),
@@ -419,7 +482,7 @@ async def _process_work_order(
             "notes": item.get("notes"),
             "created_by": user_id,
             "created_in_field": role == "inspector",
-            "needs_review": True,
+            "needs_review": role == "inspector",
         }).execute()
 
         if not res.data:
@@ -439,9 +502,115 @@ async def _process_work_order(
                 client_id=client_id, ok=False, error_code="DUPLICATE_NUMBER",
                 message="Número de OS duplicado neste tenant",
             )
+        return _falha_interna(client_id, exc)
+
+
+async def _process_escopo_linha(
+    sb: Any,
+    item: dict[str, Any],
+    tenant_id: str,
+    role: str,
+    client_id: str,
+    client_revision: int,
+) -> SyncItemResponse:
+    if role not in ("admin", "supervisor"):
         return SyncItemResponse(
-            client_id=client_id, ok=False, error_code="UNKNOWN", message=msg,
+            client_id=client_id, ok=False, error_code="FORBIDDEN",
+            message="Apenas gerente ou administrador configuram o escopo",
         )
+    if item.get("method") not in METODOS_END:
+        return SyncItemResponse(
+            client_id=client_id, ok=False, error_code="VALIDATION_ERROR",
+            message="Método END inválido",
+        )
+    site_check = sb.table("sites").select("id").eq("id", item["site_id"]).eq("tenant_id", tenant_id).execute()
+    if not site_check.data:
+        return SyncItemResponse(
+            client_id=client_id, ok=False, error_code="SITE_NOT_FOUND",
+            message="Obra não encontrada neste tenant",
+        )
+
+    valores = {
+        "method": item["method"],
+        "unidade": item["unidade"],
+        "quantidade_prevista": item["quantidade_prevista"],
+        "referencia_tag": item.get("referencia_tag"),
+        "ativo": item.get("ativo", True),
+    }
+    try:
+        existing = sb.table("obra_escopo_linha").select("id").eq("id", client_id).execute()
+        if existing.data:
+            sb.table("obra_escopo_linha").update(valores).eq("id", client_id).execute()
+        else:
+            sb.table("obra_escopo_linha").insert({
+                "id": client_id, "tenant_id": tenant_id, "site_id": item["site_id"], **valores,
+            }).execute()
+    except Exception as exc:
+        return _falha_interna(client_id, exc)
+    return SyncItemResponse(client_id=client_id, ok=True, server_id=client_id, server_revision=client_revision)
+
+
+async def _process_escopo_revisao(
+    sb: Any,
+    item: dict[str, Any],
+    tenant_id: str,
+    role: str,
+    client_id: str,
+    client_revision: int,
+) -> SyncItemResponse:
+    if role not in ("admin", "supervisor"):
+        return SyncItemResponse(
+            client_id=client_id, ok=False, error_code="FORBIDDEN",
+            message="Apenas gerente ou administrador registram aditivos",
+        )
+    try:
+        existing = sb.table("obra_escopo_revisao").select("id").eq("id", client_id).execute()
+        if not existing.data:  # histórico só recebe inserção: reenvio não duplica
+            sb.table("obra_escopo_revisao").insert({
+                "id": client_id,
+                "tenant_id": tenant_id,
+                "linha_id": item["linha_id"],
+                "quantidade_anterior": item.get("quantidade_anterior"),
+                "quantidade_nova": item["quantidade_nova"],
+                "motivo": item["motivo"],
+            }).execute()
+    except Exception as exc:
+        return _falha_interna(client_id, exc)
+    return SyncItemResponse(client_id=client_id, ok=True, server_id=client_id, server_revision=client_revision)
+
+
+def _process_report_delete(sb: Any, tenant_id: str, client_id: str, client_revision: int) -> SyncItemResponse:
+    """Apaga o rascunho no servidor. O gatilho do banco recusa qualquer outro estado."""
+    try:
+        sb.table("reports").delete().eq("id", client_id).eq("tenant_id", tenant_id).execute()
+    except Exception as exc:
+        if "ONLY_DRAFT_CAN_BE_DELETED" in str(exc):
+            return SyncItemResponse(
+                client_id=client_id, ok=False, error_code="LOCKED",
+                message="Só rascunhos podem ser apagados",
+            )
+        return _falha_interna(client_id, exc)
+    return SyncItemResponse(client_id=client_id, ok=True, server_id=client_id, server_revision=client_revision)
+
+
+def _gravar_vinculo(sb: Any, tenant_id: str, laudo_id: str, vinculo: dict[str, Any]) -> None:
+    """Grava a medição do laudo na linha de escopo (tabela separada de reports)."""
+    valores = {
+        "quantidade_inspecionada": vinculo["quantidade_inspecionada"],
+        "quantidade_aprovada": vinculo["quantidade_aprovada"],
+        "quantidade_reprovada": vinculo["quantidade_reprovada"],
+    }
+    linha_id = vinculo["linha_id"]
+    existing = (
+        sb.table("laudo_escopo_vinculo").select("id")
+        .eq("laudo_id", laudo_id).eq("linha_id", linha_id).execute()
+    )
+    if existing.data:
+        sb.table("laudo_escopo_vinculo").update(valores).eq("id", existing.data[0]["id"]).execute()
+    else:
+        sb.table("laudo_escopo_vinculo").insert({
+            "tenant_id": tenant_id, "laudo_id": laudo_id, "linha_id": linha_id, **valores,
+        }).execute()
 
 
 async def _process_report(
@@ -453,6 +622,12 @@ async def _process_report(
     client_id: str,
     client_revision: int,
 ) -> SyncItemResponse:
+    if item.get("method") not in METODOS_END:
+        return SyncItemResponse(
+            client_id=client_id, ok=False, error_code="VALIDATION_ERROR",
+            message="Método END inválido",
+        )
+
     # Verifica se a OS existe neste tenant
     wo_check = sb.table("work_orders").select("id, tenant_id").eq("id", item["work_order_id"]).eq("tenant_id", tenant_id).execute()
     if not wo_check.data or len(wo_check.data) == 0:
@@ -462,14 +637,14 @@ async def _process_report(
         )
 
     # Verifica idempotência: laudo já existe com esse client_id?
-    existing = sb.table("reports").select("id, status, revision").eq("id", client_id).execute()
+    existing = sb.table("reports").select("id, status, client_revision").eq("id", client_id).execute()
     if existing.data and len(existing.data) > 0:
         row = existing.data[0]
-        if client_revision <= row.get("revision", 0):
+        if client_revision <= row.get("client_revision", 0):
             # Reenvio seguro: não altera nada
             return SyncItemResponse(
                 client_id=client_id, ok=True,
-                server_id=row["id"], server_revision=row["revision"],
+                server_id=row["id"], server_revision=row["client_revision"],
                 message="Já sincronizado (idempotente)",
             )
         # Se client_revision > revision, permite atualizar (apenas se draft/returned)
@@ -500,6 +675,7 @@ async def _process_report(
                 "inspection_date": item["inspection_date"],
                 "technical_data": item["technical_data"],
                 "administrative_data": item["administrative_data"],
+                "client_revision": client_revision,
             }).eq("id", client_id).execute()
         else:
             # Criação: status draft, tenant_id e inspector_id do token
@@ -510,7 +686,7 @@ async def _process_report(
                 "template_id": template_id,
                 "inspector_id": user_id,
                 "status": "draft",
-                "revision": client_revision,
+                "client_revision": client_revision,
                 "equipment_tag": item["equipment_tag"],
                 "inspection_date": item["inspection_date"],
                 "technical_data": item["technical_data"],
@@ -524,6 +700,9 @@ async def _process_report(
             )
 
         server_id = res.data[0]["id"]
+
+        if item.get("vinculo"):
+            _gravar_vinculo(sb, tenant_id, server_id, item["vinculo"])
 
         # Se submit=true, transição draft → submitted (gatilhos rodam)
         if item.get("submit"):
@@ -578,6 +757,11 @@ async def _process_report(
                 client_id=client_id, ok=False, error_code="INSTRUMENT_EXPIRED",
                 message="Instrumento com calibração vencida",
             )
+        if "REPORT_INCOMPLETE" in msg:
+            return SyncItemResponse(
+                client_id=client_id, ok=False, error_code="MISSING_REQUIRED",
+                message="Informe TAG, data da inspeção e qualificação do inspetor",
+            )
         if "REPORT_IMMUTABLE" in msg or "LOCKED" in msg:
             return SyncItemResponse(
                 client_id=client_id, ok=False, error_code="LOCKED",
@@ -588,9 +772,7 @@ async def _process_report(
                 client_id=client_id, ok=False, error_code="TEMPLATE_NOT_FOUND",
                 message="Template não encontrado",
             )
-        return SyncItemResponse(
-            client_id=client_id, ok=False, error_code="VALIDATION_ERROR", message=msg,
-        )
+        return _falha_interna(client_id, exc)
 
 
 # ─────────────────────────────────────────────────────────
@@ -633,7 +815,13 @@ async def get_sync_status(
     arq: ArqDep,
     current_user: CurrentUserDep,
 ) -> dict[str, Any]:
-    """Retorna o status de um job ARQ (PDF ou e-mail)."""
+    """Retorna o status de um job ARQ (PDF ou e-mail). Somente supervisor ou admin."""
+    if not current_user.is_reviewer:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a supervisores e administradores",
+        )
+
     try:
         job = Job(job_id=job_id, redis=arq)
         info = await job.info()
@@ -703,123 +891,54 @@ class EmitResponse(BaseModel):
     ok: bool
     report_id: str
     report_number: str | None = None
-    pdf_path: str | None = None
+    pdf_job_id: str | None = None
     message: str
 
 
 @router.post(
     "/emitir/{report_id}",
-    summary="Emite um laudo (draft → issued) e gera o PDF",
+    summary="Emite um laudo aprovado (approved → issued) e enfileira o PDF",
 )
 async def emitir_laudo(
     report_id: str,
     current_user: CurrentUserDep,
-    sb: Any = Depends(lambda: create_client(settings.supabase_url, settings.supabase_key)),
+    token: Annotated[str, Depends(get_user_token)],
 ) -> EmitResponse:
-    """Marca o laudo como emitido (aprovado → issued), gera o PDF e armazena no bucket report-pdfs."""
-    # Busca o laudo
-    res = sb.table("reports").select("*").eq("id", report_id).eq("tenant_id", current_user.tenant_id).execute()
-    if not res.data or len(res.data) == 0:
-        raise HTTPException(status_code=404, detail="Laudo não encontrado")
-    report = res.data[0]
-
-    if report["status"] not in ("approved",):
+    """Emite com o JWT do usuário: o gatilho do banco confere o papel e grava número, snapshot e hash."""
+    if not current_user.is_reviewer:
         raise HTTPException(
-            status_code=400,
-            detail=f"Só é possível emitir laudos aprovados. Status atual: {report['status']}",
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a supervisores e administradores",
         )
 
-    # Gera número do laudo se ainda não tiver
-    report_number = report.get("report_number")
-    if not report_number:
-        from app.routers.sync import _process_report  # noqa: F401
-        # Chama a função de número via RPC
-        rpc = sb.rpc("next_report_number", {
-            "p_tenant": current_user.tenant_id,
-            "p_method": report["method"],
-            "p_year": int(report["created_at"][:4]),
-        }).execute()
-        report_number = rpc.data
+    sb = _supabase_user_client(token)
+    res = sb.table("reports").select("id, status").eq("id", report_id).eq("tenant_id", current_user.tenant_id).execute()
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Laudo não encontrado")
+    if res.data[0]["status"] != "approved":
+        raise HTTPException(status_code=400, detail="Só é possível emitir laudos aprovados")
 
-        sb.table("reports").update({"report_number": report_number}).eq("id", report_id).execute()
-
-    # Gera PDF simples (placeholder)
-    pdf_content = f"""%PDF-1.4
-1 0 obj
-<< /Type /Catalog /Pages 2 0 R >>
-endobj
-2 0 obj
-<< /Type /Pages /Kids [3 0 R] /Count 1 >>
-endobj
-3 0 obj
-<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R >>
-endobj
-4 0 obj
-<< /Length 200 >>
-stream
-BT
-/F1 12 Tf
-50 800 Td
-(AXOS RELATORIOS - Laudo Tecnico END) Tj
-50 780 Td
-(Numero: {report_number}) Tj
-50 760 Td
-(Metodo: {report['method']}) Tj
-50 740 Td
-(Status: EMITIDO) Tj
-ET
-endstream
-endobj
-xref
-0 5
-0000000000 65535 f
-0000000009 00000 n
-0000000058 00000 n
-0000000115 00000 n
-0000000206 00000 n
-trailer
-<< /Size 5 /Root 1 0 R >>
-startxref
-300
-%%EOF
-""".encode("latin-1")
-
-    import hashlib
-    pdf_sha256 = hashlib.sha256(pdf_content).hexdigest()
-
-    # Salva no storage (bucket report-pdfs)
-    storage_path = f"{current_user.tenant_id}/{report_id}.pdf"
     try:
-        sb.storage.from_("report-pdfs").upload(
-            path=storage_path,
-            file=pdf_content,
-            file_options={"content-type": "application/pdf", "upsert": "false"},
-        )
+        emitido = sb.table("reports").update({"status": "issued"}).eq("id", report_id).eq("status", "approved").execute()
     except Exception as exc:
-        # Se já existe, ignora (não sobrescrever)
-        if "already exists" not in str(exc).lower() and "409" not in str(exc):
-            raise
+        logger.error("Erro ao emitir laudo %s: %s", report_id, exc)
+        raise HTTPException(status_code=409, detail="Não foi possível emitir o laudo") from exc
+    if not emitido.data:
+        raise HTTPException(status_code=409, detail="Não foi possível emitir o laudo")
 
-    # Registra em report_pdfs
-    sb.table("report_pdfs").insert({
-        "report_id": report_id,
-        "tenant_id": current_user.tenant_id,
-        "storage_path": storage_path,
-        "sha256": pdf_sha256,
-    }).execute()
-
-    # Atualiza o laudo para emitido
-    sb.table("reports").update({
-        "status": "issued",
-        "issued_at": "now()",
-        "issued_by": current_user.user_id,
-        "data_hash": pdf_sha256,
-    }).eq("id", report_id).execute()
+    # Laudo já emitido: falha na fila não desfaz a emissão, o PDF pode ser gerado depois
+    pdf_job_id: str | None = None
+    message = "Laudo emitido. PDF em geração."
+    try:
+        pdf_job_id = await enqueue_generate_pdf(await get_arq(), report_id, current_user.tenant_id)
+    except Exception as exc:
+        logger.error("Laudo %s emitido, mas o PDF não entrou na fila: %s", report_id, exc)
+        message = "Laudo emitido. PDF pendente: a fila está indisponível."
 
     return EmitResponse(
         ok=True,
         report_id=report_id,
-        report_number=report_number,
-        pdf_path=storage_path,
-        message="Laudo emitido com sucesso",
+        report_number=emitido.data[0].get("report_number"),
+        pdf_job_id=pdf_job_id,
+        message=message,
     )

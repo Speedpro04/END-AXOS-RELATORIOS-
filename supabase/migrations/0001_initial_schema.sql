@@ -40,8 +40,9 @@ create type public.app_role as enum ('admin', 'supervisor', 'inspector');
 create type public.report_status as enum
   ('draft', 'submitted', 'returned', 'approved', 'issued', 'superseded');
 
-create type public.ndt_method as enum
-  ('US', 'LP', 'PM', 'VS', 'PINTURA', 'VASO_PRESSAO');
+create type public.end_method as enum
+  ('VT', 'PT', 'MT', 'UT', 'RT', 'ET', 'LT', 'LT_VACUO',
+   'PAUT', 'TOFD', 'CRDR', 'ECA', 'EA', 'IRT', 'ACFM', 'TFM');
 
 -- ---------------------------------------------------------------------
 -- 2. TABELAS
@@ -139,7 +140,7 @@ create table public.qualifications (
   id          uuid primary key default gen_random_uuid(),
   tenant_id   uuid not null references public.tenants (id) on delete restrict,
   user_id     uuid not null,
-  method      public.ndt_method not null,
+  method      public.end_method not null,
   level       smallint check (level between 1 and 3),
   cert_number text not null,
   issuer      text not null,
@@ -168,7 +169,7 @@ create index on public.instruments (tenant_id);
 create table public.report_templates (
   id         uuid primary key default gen_random_uuid(),
   tenant_id  uuid references public.tenants (id) on delete restrict,
-  method     public.ndt_method not null,
+  method     public.end_method not null,
   name       text not null,
   version    int not null default 1,
   definition jsonb not null,    -- campos do formulário; cada campo marcado kind = technical | administrative
@@ -210,6 +211,7 @@ create table public.reports (
   template_id         uuid not null references public.report_templates (id) on delete restrict,
   document_id         uuid not null default gen_random_uuid(),
   revision            int not null default 0 check (revision >= 0),
+  client_revision     int not null default 0 check (client_revision >= 0),  -- contador do aparelho (idempotência da sincronização)
   inspector_id        uuid not null,
   status              public.report_status not null default 'draft',
   report_number       text,                              -- número definitivo do laudo, atribuído pelo servidor na emissão ({PREFIXO}-{MÉTODO}-{ANO}-{SEQ})
@@ -267,18 +269,24 @@ create table public.report_number_counters (
   unique (tenant_id, method, year)
 );
 create index on public.report_number_counters (tenant_id);
+alter table public.report_number_counters enable row level security;  -- sem política: só a função abaixo grava
 
 create or replace function public.next_report_number(
   p_tenant uuid,
   p_method text,
   p_year int
 )
-returns text language plpgsql set search_path = '' as $$
+returns text language plpgsql security definer set search_path = '' as $$
 declare
   v_prefix text;
   v_seq    int;
   v_number text;
 begin
+  -- Só revisor do próprio tenant consome número (a emissão roda como o usuário logado)
+  if p_tenant is distinct from private.my_tenant_id() or not private.is_reviewer() then
+    raise exception 'FORBIDDEN';
+  end if;
+
   -- Prefixo configurável por tenant (padrão END)
   select coalesce(t.report_prefix, 'END') into v_prefix
     from public.tenants t where t.id = p_tenant;
@@ -328,26 +336,6 @@ create trigger report_pdfs_no_delete before delete on public.report_pdfs
   for each row execute function private.report_pdfs_immutable();
 create trigger report_pdfs_no_truncate before truncate on public.report_pdfs
   for each statement execute function private.report_pdfs_immutable();
-
--- RLS: leitura só por membros do tenant
-alter table public.report_pdfs enable row level security;
-create policy report_pdfs_select on public.report_pdfs for select to authenticated
-  using (tenant_id = (select private.my_tenant_id()));
-create policy report_pdfs_insert on public.report_pdfs for insert to authenticated
-  with check (tenant_id = (select private.my_tenant_id()));
-
--- ---------------------------------------------------------------------
--- Storage: bucket privado report-pdfs (escrita só pelo backend)
--- ---------------------------------------------------------------------
-insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-values ('report-pdfs', 'report-pdfs', false, 10485760, array['application/pdf'])
-on conflict (id) do nothing;
-
-create policy report_pdfs_storage_select on storage.objects for select to authenticated
-  using (
-    bucket_id = 'report-pdfs'
-    and (storage.foldername(name))[1] = ((select private.my_tenant_id())::text)
-  );
 
 create table public.report_instruments (
   report_id     uuid not null,
@@ -432,6 +420,26 @@ returns boolean language sql stable security definer set search_path = '' as $$
     false)
 $$;
 
+-- RLS: leitura só por membros do tenant
+alter table public.report_pdfs enable row level security;
+create policy report_pdfs_select on public.report_pdfs for select to authenticated
+  using (tenant_id = (select private.my_tenant_id()));
+create policy report_pdfs_insert on public.report_pdfs for insert to authenticated
+  with check (tenant_id = (select private.my_tenant_id()));
+
+-- ---------------------------------------------------------------------
+-- Storage: bucket privado report-pdfs (escrita só pelo backend)
+-- ---------------------------------------------------------------------
+insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+values ('report-pdfs', 'report-pdfs', false, 10485760, array['application/pdf'])
+on conflict (id) do nothing;
+
+create policy report_pdfs_storage_select on storage.objects for select to authenticated
+  using (
+    bucket_id = 'report-pdfs'
+    and (storage.foldername(name))[1] = ((select private.my_tenant_id())::text)
+  );
+
 -- Hash SHA-256 do conteúdo do laudo (inclui hashes dos anexos e o snapshot, quando existir)
 create or replace function private.report_hash(r public.reports)
 returns text language sql stable security definer set search_path = '' as $$
@@ -487,6 +495,7 @@ begin
   new.issued_at := null;     new.issued_by := null;
   new.data_hash := null;     new.client_snapshot := null;
   new.header_snapshot := null;
+  new.report_number := null;
 
   select * into v_tpl from public.report_templates t
    where t.id = new.template_id and t.published;
@@ -526,7 +535,8 @@ begin
      or new.document_id   is distinct from old.document_id
      or new.revision      is distinct from old.revision
      or new.inspector_id  is distinct from old.inspector_id
-     or new.created_at    is distinct from old.created_at\n      or new.header_snapshot is distinct from old.header_snapshot then
+     or new.created_at    is distinct from old.created_at
+     or new.header_snapshot is distinct from old.header_snapshot then
     raise exception 'FIELD_IMMUTABLE';
   end if;
 
@@ -555,6 +565,7 @@ begin
   new.data_hash       := old.data_hash;
   new.client_snapshot := old.client_snapshot;
   new.header_snapshot := old.header_snapshot;
+  new.report_number   := old.report_number;
 
   v_tech_changed :=
     (new.equipment_tag, new.inspection_date, new.inspection_site,
@@ -700,6 +711,17 @@ begin
         'contract_ref', (select s.contract_ref from public.work_orders w left join public.sites s on s.id = w.site_id where w.id = new.work_order_id),
         'work_order_code', (select w.code from public.work_orders w where w.id = new.work_order_id)
       );
+      -- número definitivo: revisão mantém o número do documento; a primeira emissão gera um novo
+      if new.revision > 0 then
+        select r.report_number into new.report_number from public.reports r
+         where r.document_id = new.document_id and r.revision = new.revision - 1;
+      else
+        new.report_number := public.next_report_number(
+          new.tenant_id,
+          (select t.method::text from public.report_templates t where t.id = new.template_id),
+          extract(year from now())::int);
+      end if;
+
       new.issued_at := now();
       new.issued_by := v_uid;
       new.data_hash := private.report_hash(new);
@@ -1123,7 +1145,11 @@ revoke truncate, references, trigger on all tables in schema public from authent
 
 revoke all on public.tenants from authenticated;
 grant select on public.tenants to authenticated;
-grant update (legal_name, trade_name, cnpj, require_second_reviewer) on public.tenants to authenticated;
+grant update (legal_name, trade_name, cnpj, require_second_reviewer, allow_field_creation,
+  address_street, address_number, address_complement, address_neighborhood,
+  address_city, address_uf, address_cep, phone, email,
+  responsible_name, responsible_register, logo_path, logo_sha256, report_prefix)
+  on public.tenants to authenticated;
 
 revoke all on public.profiles from authenticated;
 grant select on public.profiles to authenticated;

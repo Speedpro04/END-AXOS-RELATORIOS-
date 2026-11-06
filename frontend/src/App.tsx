@@ -1,13 +1,14 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { TenantHeader } from './components/TenantHeader'
 import { TenantFooter } from './components/TenantFooter'
 import { InspectionModal } from './components/InspectionModal'
 import { DEFAULT_TENANT, type TenantProfile } from './types/tenant'
-import type { InspectionReport } from './types/inspection'
+import type { ENDMethod, InspectionReport } from './types/inspection'
 import { buildReportCode } from './utils/buildReportCode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ObraProvider, useObra } from './contexts/ObraContext'
 import { db } from './services/dbDexie'
+import { enqueueSync, ensureObraWorkOrder, syncManager } from './services/sync'
 import type { LocalReport } from './types/sync'
 
 // Páginas Dedicadas
@@ -70,71 +71,96 @@ function AppContent() {
 
   const [reports, setReports] = useState<InspectionReport[]>([])
   const [reportsLoaded, setReportsLoaded] = useState(false)
+  const [offlineQueueCount, setOfflineQueueCount] = useState<number>(0)
+
+  const tenantId = profile?.tenant_id ?? ''
+
+  const loadReports = useCallback(async () => {
+    if (!tenantId) return
+    try {
+      await db.migrateFromLocalStorage()
+      // Laudos antigos do aparelho (sem empresa definida) continuam visíveis
+      const all = (await db.reports.toArray()).filter(
+        (r) => r.tenantId === tenantId || r.tenantId === '' || r.tenantId === DEFAULT_TENANT.id
+      )
+      if (all.length === 0 && import.meta.env.DEV) {
+        // Dados de exemplo só em desenvolvimento
+        const defaultReports: LocalReport[] = [
+          {
+            id: '1',
+            tenantId,
+            method: 'VT',
+            data: {
+              id: '1',
+              code: 'END-VT-2026-001',
+              method: 'VT',
+              title: 'Ensaio Visual no Spool SP-2101 / Junta J-01',
+              equipmentTag: 'SP-2101-J01',
+              unitArea: 'Unidade U-2100 (Processamento Primário)',
+              inspectorName: 'Carlos Eduardo Silva',
+              inspectorSNQC: 'SNQC 14892 (N2-VT)',
+              normProcedure: 'ASME V Art. 9',
+              acceptanceCriteria: 'ASME Sec. VIII Div. 1 Apêndice 8',
+              date: '2026-10-21',
+              status: 'aprovado',
+              findingsCount: 0,
+              summary: 'Ensaio Visual realizado 100% na junta de solda. Aprovado sem descontinuidades.',
+              technicalData: { metodo: 'Visual direta', iluminacao: '500 lux' },
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            verdict: 'A',
+            localStatus: 'sincronizado',
+            serverStatus: 'aprovado',
+            clientRevision: 0,
+            serverRevision: 0,
+            reportNumber: 'END-VT-2026-001',
+            updatedAt: new Date().toISOString(),
+            lastSyncAt: new Date().toISOString(),
+            lastError: null,
+          },
+        ]
+        await db.reports.bulkPut(defaultReports)
+        setReports(defaultReports.map((r) => r.data))
+      } else {
+        setReports(all.map((r) => r.data))
+      }
+    } catch (err) {
+      console.error('[Dexie] Falha ao carregar reports:', err)
+    } finally {
+      setReportsLoaded(true)
+    }
+  }, [tenantId])
 
   useEffect(() => {
-    const loadReports = async () => {
-      try {
-        const all = await db.reports.toArray()
-        if (all.length === 0) {
-          // Se não há nada no Dexie, inicializa com os relatórios padrão
-          const defaultReports: LocalReport[] = [
-            {
-              id: '1',
-              tenantId: tenant.id,
-              method: 'VT',
-              data: {
-                id: '1',
-                code: 'END-VT-2026-001',
-                method: 'VT',
-                title: 'Ensaio Visual no Spool SP-2101 / Junta J-01',
-                equipmentTag: 'SP-2101-J01',
-                unitArea: 'Unidade U-2100 (Processamento Primário)',
-                inspectorName: 'Carlos Eduardo Silva',
-                inspectorSNQC: 'SNQC 14892 (N2-VT)',
-                normProcedure: 'ASME V Art. 9',
-                acceptanceCriteria: 'ASME Sec. VIII Div. 1 Apêndice 8',
-                date: '2026-10-21',
-                status: 'aprovado',
-                findingsCount: 0,
-                summary: 'Ensaio Visual realizado 100% na junta de solda. Aprovado sem descontinuidades.',
-                technicalData: { metodo: 'Visual direta', iluminacao: '500 lux' },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              },
-              verdict: 'A',
-              localStatus: 'sincronizado',
-              serverStatus: 'aprovado',
-              clientRevision: 0,
-              serverRevision: 0,
-              reportNumber: 'END-VT-2026-001',
-              updatedAt: new Date().toISOString(),
-              lastSyncAt: new Date().toISOString(),
-              lastError: null,
-            },
-          ]
-          await db.reports.bulkPut(defaultReports)
-          setReports(defaultReports.map(r => r.data as InspectionReport))
-        } else {
-          setReports(all.map(r => r.data as InspectionReport))
-        }
-      } catch (err) {
-        console.error('[Dexie] Falha ao carregar reports:', err)
-      } finally {
-        setReportsLoaded(true)
-      }
-    }
     loadReports()
-  }, [])
+  }, [loadReports])
+
+  // Sincroniza ao entrar e recarrega a lista quando chegam dados do servidor
+  useEffect(() => {
+    if (!tenantId) return
+    let lastSyncAt = syncManager.getState().lastSyncAt
+    const unsubscribe = syncManager.subscribe((state) => {
+      setOfflineQueueCount(state.pendingCount)
+      if (state.lastSyncAt !== lastSyncAt) {
+        lastSyncAt = state.lastSyncAt
+        loadReports()
+      }
+    })
+    syncManager.refreshPendingCount()
+    syncManager.syncNow()
+    return unsubscribe
+  }, [tenantId, loadReports])
 
   // Navegação entre páginas de modelos
   // 'HUB' | 'LP' | 'ME' | 'EVS' | 'NR13' | 'PM' | 'US' | 'PINTURA'
   const [currentPage, setCurrentPage] = useState<string>('OBRAS')
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
-  const [offlineQueueCount] = useState<number>(0)
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingReport, setEditingReport] = useState<InspectionReport | null>(null)
+  const [modalMethod, setModalMethod] = useState<ENDMethod | undefined>(undefined)
 
   const handleLogout = async () => {
     await signOut()
@@ -164,81 +190,73 @@ function AppContent() {
   }
 
   const handleSaveReport = async (reportData: Partial<InspectionReport>) => {
-    if (editingReport) {
-      const updated = reports.map((r) =>
-        r.id === editingReport.id
-          ? ({ ...r, ...reportData, updatedAt: new Date().toISOString() } as InspectionReport)
-          : r
-      )
-      setReports(updated)
-      // Salva no Dexie
-      const localReport: LocalReport = {
-        id: editingReport.id,
-        tenantId: tenant.id,
-        method: updated.find(r => r.id === editingReport.id)!.method,
-        workOrderId: null,
-        data: updated.find(r => r.id === editingReport.id)!,
-        verdict: null,
-        localStatus: 'rascunho',
-        serverStatus: null,
-        clientRevision: 0,
-        serverRevision: null,
-        reportNumber: null,
-        updatedAt: new Date().toISOString(),
-        lastSyncAt: null,
-        lastError: null,
-      }
-      await db.reports.put(localReport)
-    } else {
-      const newReport: InspectionReport = {
-        id: crypto.randomUUID(),
-        code: 'RASCUNHO', // número definitivo atribuído pelo servidor na emissão
-        method: reportData.method || 'VT',
-        title: reportData.title || 'Laudo Técnico END',
-        equipmentTag: reportData.equipmentTag || 'TAG-PENDENTE',
-        unitArea: reportData.unitArea || 'Área Industrial',
-        inspectorName: reportData.inspectorName || 'Inspetor',
-        inspectorSNQC: reportData.inspectorSNQC || 'SNQC',
-        normProcedure: reportData.normProcedure || 'Norma',
-        acceptanceCriteria: reportData.acceptanceCriteria || 'Critério',
-        date: reportData.date || new Date().toISOString().split('T')[0],
-        status: 'rascunho',
-        findingsCount: reportData.findingsCount || 0,
-        summary: reportData.summary || '',
-        technicalData: reportData.technicalData || {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        linhaId: reportData.linhaId || null,
-        quantidadeInspecionada: reportData.quantidadeInspecionada || 0,
-        quantidadeAprovada: reportData.quantidadeAprovada || 0,
-        quantidadeReprovada: reportData.quantidadeReprovada || 0,
-      }
-      const localReport: LocalReport = {
-        id: newReport.id,
-        tenantId: tenant.id,
-        method: newReport.method,
-        workOrderId: null,
-        data: newReport,
-        verdict: null,
-        localStatus: 'rascunho',
-        serverStatus: null,
-        clientRevision: 0,
-        serverRevision: null,
-        reportNumber: null,
-        updatedAt: new Date().toISOString(),
-        lastSyncAt: null,
-        lastError: null,
-      }
-      await db.reports.put(localReport)
-      setReports([newReport, ...reports])
-    }
+    const agora = new Date().toISOString()
+    // Veredito é do inspetor; o status de workflow é só do servidor
+    const { status: veredito, ...campos } = reportData
+    const existing = editingReport ? await db.reports.get(editingReport.id) : undefined
+
+    const data: InspectionReport = editingReport
+      ? { ...editingReport, ...campos, updatedAt: agora }
+      : {
+          id: crypto.randomUUID(),
+          code: 'RASCUNHO', // número definitivo atribuído pelo servidor na emissão
+          method: reportData.method || 'VT',
+          title: reportData.title || 'Laudo Técnico END',
+          equipmentTag: reportData.equipmentTag || 'TAG-PENDENTE',
+          unitArea: reportData.unitArea || 'Área Industrial',
+          inspectorName: reportData.inspectorName || 'Inspetor',
+          inspectorSNQC: reportData.inspectorSNQC || 'SNQC',
+          normProcedure: reportData.normProcedure || 'Norma',
+          acceptanceCriteria: reportData.acceptanceCriteria || 'Critério',
+          date: reportData.date || agora.split('T')[0],
+          status: 'rascunho',
+          findingsCount: reportData.findingsCount || 0,
+          summary: reportData.summary || '',
+          technicalData: reportData.technicalData || {},
+          createdAt: agora,
+          updatedAt: agora,
+          linhaId: reportData.linhaId || null,
+          quantidadeInspecionada: reportData.quantidadeInspecionada || 0,
+          quantidadeAprovada: reportData.quantidadeAprovada || 0,
+          quantidadeReprovada: reportData.quantidadeReprovada || 0,
+        }
+
+    const workOrderId =
+      existing?.workOrderId ?? (obraSelecionada && user ? await ensureObraWorkOrder(obraSelecionada, user.id) : null)
+    const verdict = veredito === 'aprovado' ? 'A' : veredito === 'reprovado' ? 'R' : existing?.verdict ?? null
+
+    await db.reports.put({
+      id: data.id,
+      tenantId,
+      method: data.method,
+      workOrderId,
+      data,
+      verdict,
+      localStatus: 'rascunho',
+      serverStatus: existing?.serverStatus ?? null,
+      clientRevision: (existing?.clientRevision ?? 0) + 1,
+      serverRevision: existing?.serverRevision ?? null,
+      reportNumber: existing?.reportNumber ?? null,
+      updatedAt: agora,
+      lastSyncAt: existing?.lastSyncAt ?? null,
+      lastError: null,
+    })
+    setReports(editingReport ? reports.map((r) => (r.id === data.id ? data : r)) : [data, ...reports])
     setEditingReport(null)
+    // Sem obra o laudo fica guardado no aparelho: no servidor todo laudo pertence a uma OS
+    if (workOrderId) await enqueueSync('report', data.id)
   }
 
   const handleDeleteReport = async (id: string) => {
-    const updated = reports.filter((r) => r.id !== id)
-    setReports(updated)
+    const existing = await db.reports.get(id)
+    setReports(reports.filter((r) => r.id !== id))
     await db.reports.delete(id)
+    if (existing?.lastSyncAt) {
+      await enqueueSync('report', id, 'delete') // o servidor só aceita apagar rascunho
+    } else {
+      await db.outbox.where('entityId').equals(id).delete()
+      await syncManager.refreshPendingCount()
+    }
   }
 
   // Lista de Abas de Modelos Técnicos — Convencional (8)
@@ -424,6 +442,7 @@ function AppContent() {
             onVoltarObras={() => setCurrentPage('OBRAS')}
             onSelectModel={(modelId) => {
               if (obraSelecionada) {
+                setModalMethod(modelId as ENDMethod)
                 setIsModalOpen(true)
                 setEditingReport(null)
               } else {
@@ -432,6 +451,7 @@ function AppContent() {
             }}
             onNewReport={() => {
               setEditingReport(null)
+              setModalMethod(undefined)
               setIsModalOpen(true)
             }}
             onEditReport={(report) => {
@@ -455,52 +475,52 @@ function AppContent() {
         )}
 
         {currentPage === 'VT' && (
-          <VTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <VTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'PT' && (
-          <PTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <PTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'MT' && (
-          <MTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <MTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'UT' && (
-          <UTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <UTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'RT' && (
-          <RTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <RTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'ET' && (
-          <ETPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <ETPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'LT' && (
-          <LTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <LTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'LT_VACUO' && (
-          <LT_VACUOPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <LT_VACUOPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'PAUT' && (
-          <PAUTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <PAUTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'TOFD' && (
-          <TOFDPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <TOFDPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'CRDR' && (
-          <CRDRPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <CRDRPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'ECA' && (
-          <ECAPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <ECAPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'EA' && (
-          <EAPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <EAPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'IRT' && (
-          <IRTPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <IRTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'ACFM' && (
-          <ACFMPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <ACFMPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'TFM' && (
-          <TFMPage onBack={() => setCurrentPage('HUB')} tenant={tenant} tenantName={tenant.tradeName} />
+          <TFMPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
       </main>
 
@@ -513,6 +533,7 @@ function AppContent() {
         }}
         onSave={handleSaveReport}
         initialReport={editingReport}
+        initialMethod={modalMethod}
         siteId={obraSelecionada?.id}
       />
 

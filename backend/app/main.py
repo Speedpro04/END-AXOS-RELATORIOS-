@@ -23,7 +23,7 @@ from app.core.config import settings
 from app.core.redis import close_redis, ping_redis
 
 # Routers
-from app.routers.sync import router as sync_router
+from app.routers.sync import close_arq, router as sync_router
 from app.routers.avanco import router as avanco_router
 
 logger = logging.getLogger(__name__)
@@ -40,20 +40,21 @@ logging.basicConfig(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
-    logger.info("🚀  Iniciando AXOS API...")
+    logger.info("Iniciando AXOS API...")
     # Verifica conexão Redis na inicialização
     try:
         await ping_redis()
-        logger.info("✅  Redis conectado.")
+        logger.info("Redis conectado.")
     except Exception as e:
-        logger.warning("⚠️  Redis indisponível na inicialização: %s", e)
+        logger.warning("Redis indisponível na inicialização: %s", e)
 
     yield  # ← API fica disponível aqui
 
     # Shutdown
-    logger.info("🛑  Encerrando AXOS API...")
+    logger.info("Encerrando AXOS API...")
+    await close_arq()
     await close_redis()
-    logger.info("✅  Pool Redis fechado.")
+    logger.info("Pool Redis fechado.")
 
 
 # ─────────────────────────────────────────────────────────

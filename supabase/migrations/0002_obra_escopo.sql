@@ -22,7 +22,7 @@ create table public.obra_escopo_linha (
   id              uuid primary key default gen_random_uuid(),
   tenant_id       uuid not null references public.tenants (id) on delete restrict,
   site_id         uuid not null references public.sites (id) on delete restrict,
-  method          text not null,                           -- um dos 16 métodos END
+  method          public.end_method not null,              -- um dos 16 métodos END
   unidade         text not null check (unidade in ('junta','ponto_medicao','peca','metro_linear','m2','filme','equipamento')),
   quantidade_prevista numeric not null check (quantidade_prevista > 0),
   referencia_tag   text,                                     -- área ou TAG de referência (opcional)
@@ -31,7 +31,7 @@ create table public.obra_escopo_linha (
   created_at       timestamptz not null default now(),
   updated_at       timestamptz not null default now(),
   unique (id, tenant_id),
-  foreign key (tenant_id, site_id) references public.sites (id, tenant_id)
+  foreign key (site_id, tenant_id) references public.sites (id, tenant_id)
 );
 create index on public.obra_escopo_linha (tenant_id);
 create index on public.obra_escopo_linha (site_id);
@@ -57,7 +57,7 @@ create table public.obra_escopo_revisao (
   created_by       uuid not null default auth.uid(),
   created_at       timestamptz not null default now(),
   unique (id, tenant_id),
-  foreign key (tenant_id, linha_id) references public.obra_escopo_linha (id, tenant_id)
+  foreign key (linha_id, tenant_id) references public.obra_escopo_linha (id, tenant_id)
 );
 create index on public.obra_escopo_revisao (tenant_id);
 create index on public.obra_escopo_revisao (linha_id);
@@ -83,9 +83,9 @@ create table public.laudo_escopo_vinculo (
   created_by        uuid not null default auth.uid(),
   created_at        timestamptz not null default now(),
   unique (id, tenant_id),
-  foreign key (tenant_id, laudo_id) references public.reports (id, tenant_id),
-  foreign key (tenant_id, linha_id) references public.obra_escopo_linha (id, tenant_id),
-  foreign key (tenant_id, laudo_origem_id) references public.reports (id, tenant_id),
+  foreign key (laudo_id, tenant_id) references public.reports (id, tenant_id),
+  foreign key (linha_id, tenant_id) references public.obra_escopo_linha (id, tenant_id),
+  foreign key (laudo_origem_id, tenant_id) references public.reports (id, tenant_id),
   check (quantidade_aprovada + quantidade_reprovada = quantidade_inspecionada)
 );
 create index on public.laudo_escopo_vinculo (tenant_id);
@@ -108,17 +108,17 @@ alter table public.laudo_escopo_vinculo enable row level security;
 create policy obra_escopo_linha_select on public.obra_escopo_linha for select to authenticated
   using (tenant_id = (select private.my_tenant_id()));
 create policy obra_escopo_linha_insert on public.obra_escopo_linha for insert to authenticated
-  with check (tenant_id = (select private.my_tenant_id()));
+  with check (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
 create policy obra_escopo_linha_update on public.obra_escopo_linha for update to authenticated
-  using (tenant_id = (select private.my_tenant_id()))
-  with check (tenant_id = (select private.my_tenant_id()));
+  using (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()))
+  with check (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
 create policy obra_escopo_linha_delete on public.obra_escopo_linha for delete to authenticated
-  using (tenant_id = (select private.my_tenant_id()));
+  using (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
 
 create policy obra_escopo_revisao_select on public.obra_escopo_revisao for select to authenticated
   using (tenant_id = (select private.my_tenant_id()));
 create policy obra_escopo_revisao_insert on public.obra_escopo_revisao for insert to authenticated
-  with check (tenant_id = (select private.my_tenant_id()));
+  with check (tenant_id = (select private.my_tenant_id()) and (select private.is_reviewer()));
 -- histórico é append-only: não permite update/delete
 create or replace function private.obra_escopo_revisao_immutable()
 returns trigger language plpgsql set search_path = '' as $$

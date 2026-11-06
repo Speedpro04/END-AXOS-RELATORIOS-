@@ -67,23 +67,23 @@ begin
          (u_inspector1_b, t_b, 'inspector', true, 'Inspetor 1 B', true);
 
   -- Inserir clientes
-  insert into public.clients (id, tenant_id, legal_name, cnpj)
-  values (c_client_a, t_a, 'Cliente da Empresa A', '33.333.333/0001-33'),
-         (c_client_b, t_b, 'Cliente da Empresa B', '44.444.444/0001-44');
+  insert into public.clients (id, tenant_id, legal_name, cnpj, created_by)
+  values (c_client_a, t_a, 'Cliente da Empresa A', '33.333.333/0001-33', u_admin_a),
+         (c_client_b, t_b, 'Cliente da Empresa B', '44.444.444/0001-44', u_admin_b);
 
-  -- Template global publicado (método US)
+  -- Template global publicado (método UT)
   insert into public.report_templates (id, tenant_id, method, name, version, definition, published)
-  values (tpl_global, null, 'US', 'Template Ultrassom Padrão', 1, '{"fields":[]}'::jsonb, true);
+  values (tpl_global, null, 'UT', 'Template Ultrassom Padrão', 1, '{"fields":[]}'::jsonb, true);
 
   -- Ordens de serviço
-  insert into public.work_orders (id, tenant_id, client_id, code, site, assigned_to)
-  values (wo_a, t_a, c_client_a, 'OS-A-001', 'Refinaria A', u_inspector1_a),
-         (wo_b, t_b, c_client_b, 'OS-B-001', 'Plataforma B', u_inspector1_b);
+  insert into public.work_orders (id, tenant_id, client_id, code, site, assigned_to, created_by)
+  values (wo_a, t_a, c_client_a, 'OS-A-001', 'Refinaria A', u_inspector1_a, u_admin_a),
+         (wo_b, t_b, c_client_b, 'OS-B-001', 'Plataforma B', u_inspector1_b, u_admin_b);
 
-  -- Qualificações para Inspetor 1 A (US Nível 2)
+  -- Qualificações para Inspetor 1 A (UT Nível 2)
   insert into public.qualifications (id, tenant_id, user_id, method, level, cert_number, issuer, valid_until)
-  values (q_valid_a, t_a, u_inspector1_a, 'US', 2, 'SNQC-12345', 'ABENDI', current_date + 365),
-         (q_expired_a, t_a, u_inspector1_a, 'US', 2, 'SNQC-00000', 'ABENDI', current_date - 10);
+  values (q_valid_a, t_a, u_inspector1_a, 'UT', 2, 'SNQC-12345', 'SNQC', current_date + 365),
+         (q_expired_a, t_a, u_inspector1_a, 'UT', 2, 'SNQC-00000', 'SNQC', current_date - 10);
 
   -- Instrumentos Tenant A
   insert into public.instruments (id, tenant_id, name, serial_number, calibration_valid_until)
@@ -423,4 +423,78 @@ begin
   end;
 
   raise notice '[PASS] TESTE 7: audit_log estritamente append-only (camada de privilégios e triggers validadas).';
+end $$;
+
+-- =====================================================================
+-- TESTE 8: 16 métodos, número do laudo pelo servidor e escopo da obra
+-- =====================================================================
+do $$
+declare
+  t_a     uuid := '11111111-1111-1111-1111-111111111111'::uuid;
+  c_a     uuid := 'c1111111-0000-0000-0000-000000000001'::uuid;
+  rep_a   uuid := '55555555-0000-0000-0000-000000000001'::uuid;
+  rep_new uuid := '55555555-0000-0000-0000-000000000050'::uuid;
+  obra    uuid := '44444444-0000-0000-0000-000000000001'::uuid;
+  linha   uuid := '33333333-0000-0000-0000-000000000001'::uuid;
+  v_count int;
+  v_text  text;
+  v_err   text;
+begin
+  -- 8.1 Modelo global publicado para cada um dos 16 métodos
+  select count(distinct method) into v_count from public.report_templates
+   where tenant_id is null and published;
+  if v_count <> 16 then
+    raise exception 'FALHA 8.1: esperados 16 métodos com modelo, vieram %', v_count;
+  end if;
+
+  -- 8.2 Número definitivo atribuído pelo servidor na emissão
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000003","role":"authenticated"}', true);
+  select report_number into v_text from public.reports where id = rep_a;
+  if v_text is null or v_text not like 'END-UT-%-001' then
+    raise exception 'FALHA 8.2: número do laudo emitido inválido: %', v_text;
+  end if;
+
+  -- 8.3 Cliente não define o número do laudo
+  insert into public.reports (id, tenant_id, work_order_id, template_id, inspector_id, equipment_tag, report_number)
+  values (rep_new, t_a, '88888888-0000-0000-0000-000000000001'::uuid, '77777777-0000-0000-0000-000000000001'::uuid,
+          'aaaaaaaa-0000-0000-0000-000000000003'::uuid, 'V-500', 'END-UT-2026-999');
+  select report_number into v_text from public.reports where id = rep_new;
+  if v_text is not null then
+    raise exception 'FALHA 8.3: cliente definiu report_number';
+  end if;
+
+  -- 8.4 Inspetor não consome número diretamente
+  begin
+    perform public.next_report_number(t_a, 'UT', 2026);
+    raise exception 'FALHA 8.4: inspetor consumiu número de laudo';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%FORBIDDEN%' then
+      raise exception 'Erro inesperado em 8.4: %', v_err;
+    end if;
+  end;
+
+  -- 8.5 Gerente cadastra obra e linha de escopo
+  perform set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000002","role":"authenticated"}', true);
+  insert into public.sites (id, tenant_id, client_id, name) values (obra, t_a, c_a, 'Obra de teste');
+  insert into public.obra_escopo_linha (id, tenant_id, site_id, method, unidade, quantidade_prevista)
+  values (linha, t_a, obra, 'UT', 'junta', 100);
+
+  -- 8.6 Inspetor não configura escopo, mas vincula o laudo à linha
+  perform set_config('request.jwt.claims', '{"sub":"aaaaaaaa-0000-0000-0000-000000000003","role":"authenticated"}', true);
+  begin
+    insert into public.obra_escopo_linha (tenant_id, site_id, method, unidade, quantidade_prevista)
+    values (t_a, obra, 'UT', 'junta', 5);
+    raise exception 'FALHA 8.6: inspetor configurou escopo';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%row-level security%' then
+      raise exception 'Erro inesperado em 8.6: %', v_err;
+    end if;
+  end;
+  insert into public.laudo_escopo_vinculo (tenant_id, laudo_id, linha_id, quantidade_inspecionada, quantidade_aprovada, quantidade_reprovada)
+  values (t_a, rep_a, linha, 10, 9, 1);
+
+  raise notice '[PASS] TESTE 8: 16 métodos, número pelo servidor e escopo da obra validados.';
 end $$;

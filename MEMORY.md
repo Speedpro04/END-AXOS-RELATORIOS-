@@ -29,6 +29,24 @@ O **AXOS Relatórios** é uma solução de software para o segmento de Integrida
 
 ---
 
+## 1.b Fundação de Dados e 16 Métodos (05/11/2026)
+
+**Decisão do dono do produto:** ficam os 16 métodos do app. Telas aprovadas: não redesenhar. Formulários de cada método serão refinados depois, em conjunto.
+
+**Banco:** `0001` agora instala de verdade (tipo `end_method` com os 16 códigos, quebra de linha literal removida do gatilho, políticas de `report_pdfs` depois das funções que usam). Nova coluna `reports.client_revision`. Número do laudo gerado no gatilho de emissão; `next_report_number` é `security definer` e exige revisor do próprio tenant; `report_number_counters` com RLS. `tenants` libera gravação de endereço, logo e prefixo. `0002`: chaves estrangeiras corrigidas, `method` usa o tipo do banco, escopo só por revisor. Nova `0004_modelos_metodos.sql` (16 modelos globais). `run_tests.mjs` aplica todas as migrações; `@electric-sql/pglite` entrou nas dependências de desenvolvimento; teste 8 novo.
+
+**Backend:** `SUPABASE_ANON_KEY` nova em `config.py` e `.env`; cliente com JWT do usuário via `ClientOptions`; obra e OS usam `contratante_id` (antes o mesmo campo guardava duas coisas); idempotência do laudo por `client_revision`; itens de escopo, vínculo e exclusão de rascunho; erros genéricos ao aparelho; `/status` restrito a revisor; pool ARQ único; emissão com JWT do revisor e PDF real na fila; fila de PDF e e-mail corrigida para a fila que o worker consome; caminho do PDF e URL do QR corrigidos.
+
+**Frontend:** as 16 telas salvam (antes descartavam tudo); método clicado chega ao formulário rápido; `sync.ts` reescrito (envia pelo backend, atualiza cache, backoff correto); `App.tsx` sincroniza ao entrar e separa laudos por empresa; dados de exemplo só em desenvolvimento; `VITE_API_URL` unificada; painel Escopo da obra ligado à tela real; obra concluída/reativada e escopo entram na fila.
+
+**Verificação:** `npm run test:db` passa (8 grupos); `pytest` 19 passam; `npx tsc -b` sem erros; fluxo testado no navegador em modo demonstração (salvar laudo, criar contratante e obra, OS automática, fila com 4 itens).
+
+**Não verificado:** envio real ao Supabase (o projeto do `.env` não está na conta conectada e as migrações não foram aplicadas). `pdf_worker` não roda nesta máquina (faltam `jinja2` e `weasyprint` no `.venv`).
+
+**Pendências:** telas de aprovação e emissão; qualificações e instrumentos (sem eles o laudo não pode ser submetido); painéis Laudos, Novo laudo e Ordens de serviço da obra são textos provisórios; corpo do PDF por método; `Cadastros.tsx`, `USPage`, `LPPage`, `MEPage`, `EVSPage`, `NR13Page`, `PMPage` e `PinturaPage` seguem sem acesso; dados da empresa ainda só no aparelho; decidir login de demonstração, padrão do ocultador e bloqueio por plano.
+
+---
+
 ## 2. Decisões Recentes de Arquitetura e Implementação
 
 ### 2.1. Fila de Espera Redis + FastAPI + ARQ
@@ -166,7 +184,7 @@ Remoção da sigla inglesa proibida e padronização para "END" em todo o fronte
 
 **Tarefa A · Terminologia END e remoção de ABENDI dos textos (27/10/2026)**
 - Textos de interface: HubPage.tsx (`sigla antiga em inglês / NR-13` → `END / NR-13`), TenantFooter.tsx (`& sigla antiga em inglês` → `& END`), App.tsx (`Laudo Técnico sigla antiga em inglês` → `Laudo Técnico END`), InspectionModal.tsx (comentário `Seletor de Método END`), LPPage.tsx (`PR-sigla antiga em inglês-LP-002 Rev. 04` → `PR-END-LP-002 Rev. 04`).
-- Identificadores: tipo `NDTMethod` → `ENDMethod` em types/inspection.ts, InspectionModal.tsx, InspectionTable.tsx.
+- Identificadores: tipo antigo de método → `ENDMethod` em types/inspection.ts, InspectionModal.tsx, InspectionTable.tsx.
 - Prefixo do laudo: campo `reportPrefix: string` (padrão `'END'`) adicionado a `TenantProfile`; util `buildReportCode(prefix, method, year, seq)` criado em `frontend/src/utils/buildReportCode.ts`; `LAUDO Nº` na LPPage gerado via `buildReportCode`; mocks de App.tsx atualizados para ano 2026 (ex: `END-LP-2026-001`, `NR13-VASO-2026-08`); `contractRef` → `CT-PETRO-2026/0892`; fallback contrato → `CTR-2026-END-089`.
 - ABENDI removido: LPPage.tsx linhas 510 e 687 (`SNQC-ABENDI Nº 14892` → `SNQC Nº 14892`); types/tenant.ts `creaRegister` (`SNQC-ABENDI 4812` → `SNQC 4812`).
 - Verificação padrão: `grep -rniE "\bndt" frontend/src` → zero; busca por `abendi` em `frontend/src` → zero; `npm run build` passa.
