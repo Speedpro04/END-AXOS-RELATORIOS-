@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 900" width="1200" height="900">
+  <rect width="1200" height="900" fill="#121821"/>
+  <rect x="24" y="24" width="1152" height="852" rx="5" fill="none" stroke="#263042" stroke-width="2" stroke-dasharray="12 12"/>
+  <text x="600" y="430" fill="#E8ECF2" font-family="Arial, Helvetica, sans-serif" font-size="40" font-weight="600" text-anchor="middle">Imagem 2</text>
+  <text x="600" y="486" fill="#9AA6B8" font-family="Arial, Helvetica, sans-serif" font-size="28" text-anchor="middle">Laudo emitido (1200 x 900)</text>
+</svg>

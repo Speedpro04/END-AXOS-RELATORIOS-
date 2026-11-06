@@ -418,5 +418,8 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
 
 **Pendências permanecem:** migrações 0001/0002/0003 não executadas no banco; enum do método antigo na 0001 (6 métodos, com termo proibido) a tratar em migração própria; telas de cadastro em Dexie local; integrar backend de avanço novamente quando o servidor FastAPI estiver em execução na máquina do usuário.
 
+## 12. Landing Page Comercial (05/11/2026)
 
+Criada em `landing/` (`index.html`, `assets/`, `robots.txt`, `sitemap.xml`). Prévia local pela configuração `landing` de `.claude/launch.json`, porta 5500. Conferida em 1280px e 375px.
 
+**Pendências:** 3 imagens definitivas; WhatsApp comercial, quando houver número (o contato comercial definido pelo dono do produto é `suporte@axosrelatorios.com`); endereço do app para o link "Entrar"; CNPJ, política de privacidade e termos no rodapé; publicação no EasyPanel. A página cita recursos que dependem das telas de aprovação e emissão e da página pública `/verificar`, ainda não construídas: não publicar antes delas.

@@ -456,3 +456,13 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 
 **Emissão:** `POST /api/sync/emitir/{id}` usa o JWT do revisor e enfileira o PDF real no `pdf_worker`.
 
+---
+
+## 19. Landing Page Comercial (05/11/2026)
+
+Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo direto. Público: empresas de inspeção que atendem órgãos federais e estaduais. Estrutura de copy em SPIN Selling: situação, problema, implicação e necessidade de solução.
+
+- Visual segue o sistema: tema escuro, Arial, raio 5px, tokens de `axos-relatorios`, largura 1140px, sem gradiente e sem emoji. A regra de marketing do `design/` (Cormorant e Montserrat) não se aplica por decisão do dono do produto.
+- SEO: um H1, H2 por seção, H3 nos itens, dados estruturados (Organization, SoftwareApplication, FAQPage), `robots.txt` e `sitemap.xml`.
+- Texto da página só promete o que está no PRD: sem depoimentos, clientes, números de mercado ou preços inventados.
+- `assets/imagem-1.svg`, `imagem-2.svg` e `imagem-3.svg` são espaços reservados para as 3 imagens definitivas (1200 x 900).

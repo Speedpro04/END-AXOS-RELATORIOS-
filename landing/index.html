@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Laudos END para contratos públicos | AXOS Relatórios</title>
+  <meta name="description" content="Software de laudos END para empresas de inspeção que atendem governos. Rastreável, verificável por QR Code e feito para campo sem internet.">
+  <meta name="robots" content="index, follow">
+  <meta name="theme-color" content="#0B0F14">
+  <link rel="canonical" href="https://axosrelatorios.com/">
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:locale" content="pt_BR">
+  <meta property="og:site_name" content="AXOS Relatórios">
+  <meta property="og:title" content="Software de laudos END para quem não pode errar em contrato público">
+  <meta property="og:description" content="Do ensaio em campo, mesmo sem internet, ao laudo emitido e verificável por QR Code.">
+  <meta property="og:url" content="https://axosrelatorios.com/">
+  <meta property="og:image" content="https://axosrelatorios.com/assets/og-axos.png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://axosrelatorios.com/#organizacao",
+        "name": "AXOS Relatórios",
+        "url": "https://axosrelatorios.com/",
+        "logo": "https://axosrelatorios.com/assets/logo-axos.png",
+        "email": "suporte@axosrelatorios.com",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "sales",
+          "email": "suporte@axosrelatorios.com",
+          "availableLanguage": "pt-BR"
+        }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "name": "AXOS Relatórios",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, PWA",
+        "inLanguage": "pt-BR",
+        "description": "Software de laudos de ensaios não destrutivos (END) para empresas de inspeção, com coleta offline, revisão técnica, emissão imutável e verificação por QR Code.",
+        "publisher": { "@id": "https://axosrelatorios.com/#organizacao" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "O que é um software de laudos END?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "É um sistema que substitui papel e planilhas no registro de ensaios não destrutivos. A AXOS Relatórios cobre a coleta em campo, a revisão técnica, a emissão do laudo e a guarda do histórico em um só lugar."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "A plataforma funciona sem internet?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim. O inspetor registra o ensaio no aparelho mesmo sem sinal. Quando a conexão volta, os dados sobem sozinhos para o servidor, sem duplicar registros."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Quais métodos de END a AXOS Relatórios atende?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "São 16 métodos, entre convencionais e avançados, como ensaio visual, líquidos penetrantes, partículas magnéticas, ultrassom, radiografia, Phased Array, ToFD e termografia."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Como o contratante confere se o laudo é autêntico?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Cada laudo emitido sai com número definitivo, código de integridade SHA-256 e QR Code. O QR Code leva à verificação do documento e da revisão."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Um laudo pode ser alterado depois de emitido?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Não. O laudo emitido fica imutável. Se for preciso corrigir, a empresa cria uma nova revisão numerada, e a versão anterior continua preservada e identificada como substituída."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "A plataforma serve para inspeções ligadas à NR-13?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim, ela organiza o registro dos ensaios e a revisão pelo Profissional Habilitado. A conclusão técnica e a responsabilidade pelo laudo continuam sendo do profissional que assina."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O sistema substitui as exigências do edital ou do contrato?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Não. Cada edital define suas próprias exigências. A AXOS Relatórios organiza a evidência e a rastreabilidade para que sua empresa atenda o que foi contratado com mais segurança."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "O laudo sai com a marca da minha empresa?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim. O PDF traz logo, razão social, CNPJ e dados da empresa emissora, e o prefixo do número do laudo é configurável. Esses dados ficam congelados no momento da emissão."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Os dados de uma empresa ficam separados das demais?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sim. Cada empresa acessa apenas os próprios dados, e o papel de cada usuário define o que ele pode ver e alterar."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+
+  <style>
+    /* Tokens de design/tokens/dist/axos-relatorios.css */
+    :root {
+      color-scheme: dark;
+      --bg: #0B0F14;
+      --surface: #121821;
+      --surface-muted: #1A2230;
+      --border: #263042;
+      --text: #E8ECF2;
+      --text-muted: #9AA6B8;
+      --accent: #2F6FDB;
+      --accent-hover: #2A64C8;
+      --accent-text: #6FA8FF;
+      --accent-soft: #16263F;
+      --danger: #F06A6A;
+      --radius: 5px;
+      --lp-max-width: 1140px;
+      --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-6: 24px; --s-8: 32px; --s-12: 48px;
+      --section-gap: calc(var(--s-12) * 2);
+      --font: Arial, Helvetica, sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-padding-top: 88px; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 400 16px/1.5 var(--font);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+    img, svg { display: block; max-width: 100%; }
+    img { height: auto; }
+    a { color: var(--accent-text); }
+    h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; padding: 0; }
+    ul, ol { list-style: none; }
+    h1, h2, h3 { font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+    h1 { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.12; }
+    h2 { font-size: clamp(26px, 3vw, 34px); line-height: 1.2; }
+    h3 { font-size: 18px; line-height: 1.35; }
+    :focus-visible { outline: 3px solid var(--accent-text); outline-offset: 2px; border-radius: var(--radius); }
+
+    .container { width: 100%; max-width: var(--lp-max-width); margin: 0 auto; padding: 0 var(--s-8); }
+    .section { padding: var(--section-gap) 0; border-top: 1px solid var(--border); }
+    .section-head { max-width: 720px; margin-bottom: var(--s-12); }
+    .section-head p { margin-top: var(--s-4); color: var(--text-muted); font-size: 18px; }
+    .muted { color: var(--text-muted); }
+    .icon { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+
+    .skip { position: absolute; left: var(--s-4); top: -64px; z-index: 30; padding: var(--s-2) var(--s-4); background: var(--surface); border-radius: var(--radius); }
+    .skip:focus { top: var(--s-2); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
+      min-height: 44px; padding: 0 var(--s-6);
+      border: 1px solid transparent; border-radius: var(--radius);
+      font: 500 16px/1 var(--font); text-decoration: none; white-space: nowrap;
+      transition: background-color 140ms ease-out, border-color 140ms ease-out;
+    }
+    .btn-primary { background: var(--accent); color: #FFFFFF; }
+    .btn-primary:hover { background: var(--accent-hover); }
+    .btn-secondary { background: var(--surface); border-color: var(--border); color: var(--text); }
+    .btn-secondary:hover { background: var(--surface-muted); }
+
+    /* Cabeçalho */
+    .site-header { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--border); }
+    .site-header .container { display: flex; align-items: center; justify-content: space-between; gap: var(--s-6); min-height: 72px; }
+    .brand img { width: 168px; }
+    .site-nav ul { display: flex; gap: var(--s-6); }
+    .site-nav a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 140ms ease-out; }
+    .site-nav a:hover { color: var(--text); }
+
+    /* Abertura */
+    .hero { padding: calc(var(--s-12) + var(--s-8)) 0 var(--s-12); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); gap: var(--s-12); align-items: center; }
+    .hero-kicker { color: var(--accent-text); font-size: 14px; font-weight: 500; margin-bottom: var(--s-4); }
+    .hero-lead { margin-top: var(--s-6); color: var(--text-muted); font-size: 18px; max-width: 56ch; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: var(--s-3); margin-top: var(--s-8); }
+    .frame { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; background: var(--surface); }
+    .ascan { width: 100%; height: 72px; margin-top: var(--s-12); color: var(--accent-text); }
+    .ascan line { stroke: var(--border); }
+    .ascan polyline { fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+    .facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+    .facts div { padding: var(--s-6); border-left: 1px solid var(--border); }
+    .facts div:first-child { border-left: 0; }
+    .facts dt { font-size: 28px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+    .facts dd { margin-top: var(--s-1); color: var(--text-muted); font-size: 14px; }
+
+    /* Situação */
+    .columns-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-8); }
+    .columns-3 h3 { margin-bottom: var(--s-2); }
+    .columns-3 li { padding-top: var(--s-4); border-top: 1px solid var(--border); }
+
+    /* Problema */
+    .steps-list { counter-reset: item; border-top: 1px solid var(--border); }
+    .steps-list > li { counter-increment: item; display: grid; grid-template-columns: 64px minmax(0, 1fr) minmax(0, 1.6fr); gap: var(--s-6); align-items: baseline; padding: var(--s-6) 0; border-bottom: 1px solid var(--border); }
+    .steps-list > li::before { content: counter(item, decimal-leading-zero); color: var(--text-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+    /* Implicação */
+    .band { background: var(--surface); }
+    .implications { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-4); }
+    .implications li { padding: var(--s-6); background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
+    .implications p { margin-top: var(--s-2); color: var(--text-muted); }
+    .implications .question { margin-top: var(--s-4); padding-top: var(--s-4); border-top: 1px solid var(--border); color: var(--text); font-weight: 500; }
+
+    /* Benefícios */
+    .cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-4); }
+    .card { padding: var(--s-6); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); }
+    .card .icon { color: var(--accent-text); margin-bottom: var(--s-4); }
+    .card p { margin-top: var(--s-2); color: var(--text-muted); }
+
+    /* Blocos com imagem */
+    .split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-12); align-items: center; }
+    .split .section-head { margin-bottom: var(--s-8); }
+    .flow { counter-reset: flow; display: grid; gap: var(--s-6); }
+    .flow li { counter-increment: flow; position: relative; padding-left: var(--s-12); }
+    .flow li::before {
+      content: counter(flow); position: absolute; left: 0; top: 0;
+      width: 32px; height: 32px; display: grid; place-items: center;
+      background: var(--accent-soft); color: var(--accent-text); border-radius: var(--radius);
+      font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums;
+    }
+    .flow p, .stack p { margin-top: var(--s-1); color: var(--text-muted); }
+    .stack { display: grid; gap: var(--s-6); }
+    .note { margin-top: var(--s-6); color: var(--text-muted); font-size: 14px; }
+
+    /* Métodos */
+    .methods { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-8); }
+    .methods h3 { margin-bottom: var(--s-3); }
+    .methods ul { border-top: 1px solid var(--border); }
+    .methods li { display: flex; justify-content: space-between; gap: var(--s-4); padding: var(--s-3) 0; border-bottom: 1px solid var(--border); }
+    .methods li span { color: var(--text-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+    /* Perguntas frequentes */
+    .faq-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--s-12); }
+    .faq-grid .section-head { margin-bottom: 0; }
+    .faq details { border-bottom: 1px solid var(--border); }
+    .faq details:first-child { border-top: 1px solid var(--border); }
+    .faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); min-height: 56px; padding: var(--s-3) 0; cursor: pointer; list-style: none; }
+    .faq summary::-webkit-details-marker { display: none; }
+    .faq summary .icon { color: var(--text-muted); transition: transform 140ms ease-out; }
+    .faq details[open] summary .icon { transform: rotate(180deg); }
+    .faq details p { padding-bottom: var(--s-6); max-width: 68ch; color: var(--text-muted); }
+
+    /* Chamada final */
+    .closing { background: var(--surface); }
+    .closing .container { display: flex; align-items: center; justify-content: space-between; gap: var(--s-12); }
+    .closing p { margin-top: var(--s-3); max-width: 60ch; color: var(--text-muted); font-size: 18px; }
+
+    /* Rodapé */
+    .site-footer { padding: var(--s-12) 0 var(--s-8); border-top: 1px solid var(--border); }
+    .footer-grid { display: grid; grid-template-columns: minmax(0, 1.6fr) repeat(3, minmax(0, 1fr)); gap: var(--s-8); }
+    .footer-brand img { width: 184px; margin-bottom: var(--s-4); }
+    .footer-brand p { max-width: 34ch; color: var(--text-muted); font-size: 14px; }
+    .footer-title { margin-bottom: var(--s-3); font-size: 14px; font-weight: 600; }
+    .site-footer li + li { margin-top: var(--s-2); }
+    .site-footer li, .site-footer li a { color: var(--text-muted); font-size: 14px; }
+    .site-footer li a { text-decoration: none; transition: color 140ms ease-out; }
+    .site-footer li a:hover { color: var(--text); }
+    .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2); margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
+
+    @media (max-width: 960px) {
+      .site-nav { display: none; }
+      .hero-grid, .split, .faq-grid { grid-template-columns: minmax(0, 1fr); gap: var(--s-8); }
+      .cards, .columns-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .facts div:nth-child(3) { border-left: 0; }
+      .facts div:nth-child(n+3) { border-top: 1px solid var(--border); }
+      .footer-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .footer-brand { grid-column: 1 / -1; }
+      .closing .container { flex-direction: column; align-items: flex-start; gap: var(--s-6); }
+    }
+    @media (max-width: 640px) {
+      :root { --section-gap: var(--s-12); }
+      .container { padding: 0 var(--s-4); }
+      .brand img { width: 136px; }
+      .site-header .btn { padding: 0 var(--s-3); font-size: 14px; }
+      .hero { padding-top: var(--s-8); }
+      .hero-actions .btn { width: 100%; }
+      .cards, .columns-3, .implications, .methods { grid-template-columns: minmax(0, 1fr); }
+      .steps-list > li { grid-template-columns: 40px minmax(0, 1fr); gap: var(--s-1) var(--s-3); }
+      .steps-list > li p { grid-column: 2; }
+      .footer-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .closing .btn { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      * { transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+    <symbol id="i-wifi-off" viewBox="0 0 24 24"><path d="M12 20h.01"/><path d="M8.5 16.429a5 5 0 0 1 7 0"/><path d="M5 12.859a10 10 0 0 1 5.17-2.69"/><path d="M19 12.859a10 10 0 0 0-2.007-1.523"/><path d="M2 8.82a15 15 0 0 1 4.177-2.643"/><path d="M22 8.82a15 15 0 0 0-11.288-3.764"/><path d="m2 2 20 20"/></symbol>
+    <symbol id="i-user-check" viewBox="0 0 24 24"><path d="m16 11 2 2 4-4"/><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></symbol>
+    <symbol id="i-qr" viewBox="0 0 24 24"><rect width="5" height="5" x="3" y="3" rx="1"/><rect width="5" height="5" x="16" y="3" rx="1"/><rect width="5" height="5" x="3" y="16" rx="1"/><path d="M21 16h-3a2 2 0 0 0-2 2v3"/><path d="M21 21v.01"/><path d="M12 7v3a2 2 0 0 1-2 2H7"/><path d="M3 12h.01"/><path d="M12 3h.01"/><path d="M12 16v.01"/><path d="M16 12h1"/><path d="M21 12v.01"/><path d="M12 21v-1"/></symbol>
+    <symbol id="i-badge" viewBox="0 0 24 24"><path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="m16 9-5.5 5.5L8 12"/></symbol>
+    <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></symbol>
+  </svg>
+
+  <a class="skip" href="#conteudo">Ir para o conteúdo</a>
+
+  <header class="site-header">
+    <div class="container">
+      <a class="brand" href="#inicio" aria-label="AXOS Relatórios, início">
+        <img src="assets/logo-axos.png" alt="AXOS Relatórios, tecnologia em inspeção" width="578" height="165">
+      </a>
+      <nav class="site-nav" aria-label="Navegação principal">
+        <ul>
+          <li><a href="#solucao">Solução</a></li>
+          <li><a href="#como-funciona">Como funciona</a></li>
+          <li><a href="#metodos">Métodos END</a></li>
+          <li><a href="#medicao-de-obra">Medição de obra</a></li>
+          <li><a href="#perguntas">Perguntas frequentes</a></li>
+        </ul>
+      </nav>
+      <a class="btn btn-primary" href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Solicitar demonstração</a>
+    </div>
+  </header>
+
+  <main id="conteudo">
+    <section class="hero" id="inicio">
+      <div class="container">
+        <div class="hero-grid">
+          <div>
+            <p class="hero-kicker">Para empresas de inspeção que atendem órgãos federais e estaduais</p>
+            <h1>Software de laudos END para quem não pode errar em contrato público</h1>
+            <p class="hero-lead">Do ensaio em campo, mesmo sem internet, ao laudo emitido com número, código de integridade e QR Code de verificação. Cada etapa fica registrada, para sua empresa comprovar o que fez quando o fiscal perguntar.</p>
+            <div class="hero-actions">
+              <a class="btn btn-primary" href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Solicitar demonstração <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+              <a class="btn btn-secondary" href="#como-funciona">Ver como funciona</a>
+            </div>
+          </div>
+          <figure class="frame">
+            <img src="assets/imagem-1.svg" alt="Inspetor registrando um laudo de ensaios não destrutivos em campo com a AXOS Relatórios" width="1200" height="900" fetchpriority="high">
+          </figure>
+        </div>
+
+        <svg class="ascan" viewBox="0 0 1076 72" preserveAspectRatio="none" aria-hidden="true" focusable="false">
+          <line x1="0" y1="64" x2="1076" y2="64"/>
+          <polyline points="0,64 40,64 46,6 52,64 58,44 64,64 150,64 300,63 306,58 312,64 318,61 324,64 470,64 476,30 482,64 488,52 494,64 690,64 696,46 702,64 708,58 714,64 900,64 906,56 912,64 918,61 924,64 1076,64"/>
+        </svg>
+
+        <dl class="facts">
+          <div><dt>16</dt><dd>métodos de END em uma plataforma</dd></div>
+          <div><dt>Offline</dt><dd>coleta em campo sem internet</dd></div>
+          <div><dt>SHA-256</dt><dd>código de integridade em cada laudo</dd></div>
+          <div><dt>QR Code</dt><dd>verificação do documento emitido</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="rotina">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="rotina">A rotina de quem presta inspeção para o poder público</h2>
+          <p>Ensaios não destrutivos em obras e instalações públicas têm uma característica própria: o trabalho é técnico, e a prestação de contas também.</p>
+        </div>
+        <ul class="columns-3">
+          <li>
+            <h3>O ensaio acontece longe do escritório</h3>
+            <p class="muted">Em área industrial ou canteiro de obra o sinal falha, e a anotação ainda vai para o papel ou a planilha.</p>
+          </li>
+          <li>
+            <h3>O laudo passa por muitas mãos</h3>
+            <p class="muted">Inspetor, engenheiro responsável e gestor do contrato revisam arquivos que circulam por e-mail e aplicativo de mensagem.</p>
+          </li>
+          <li>
+            <h3>O contrato cobra prova</h3>
+            <p class="muted">Prazo, medição e fiscalização pedem documentos consistentes, com autor, data e versão bem definidos.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="vulneravel">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="vulneravel">Onde o laudo de inspeção fica vulnerável</h2>
+          <p>Quase sempre o risco não está no ensaio. Está no caminho entre a medição e o documento final.</p>
+        </div>
+        <ol class="steps-list">
+          <li><h3>Transcrição manual</h3><p class="muted">Cada dado copiado do papel para o computador é uma chance de erro em espessura, TAG ou data.</p></li>
+          <li><h3>Versão sem dono</h3><p class="muted">Com vários arquivos em circulação, fica difícil provar qual laudo é o definitivo e quem aprovou.</p></li>
+          <li><h3>Validades sem controle</h3><p class="muted">Certificado de inspetor ou calibração de instrumento vencidos só aparecem quando alguém confere, muitas vezes tarde demais.</p></li>
+          <li><h3>Medição de obra em planilha</h3><p class="muted">O avanço contratado depende de consolidação manual, semana após semana, e de quem conhece a planilha.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section band" aria-labelledby="custo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="custo">Em contrato público, um laudo frágil custa muito mais que retrabalho</h2>
+          <p>Vale fazer quatro perguntas sobre a operação da sua empresa hoje.</p>
+        </div>
+        <ul class="implications">
+          <li>
+            <h3>Medição travada</h3>
+            <p>Sem evidência aceita pela fiscalização, o serviço executado pode não ser atestado no prazo.</p>
+            <p class="question">Quantos dias de faturamento parado sua empresa suporta?</p>
+          </li>
+          <li>
+            <h3>Questionamento da fiscalização</h3>
+            <p>Fiscais e órgãos de controle podem pedir um documento muito depois da entrega do serviço.</p>
+            <p class="question">Se o pedido chegar hoje, em quantos minutos sua equipe acha a versão original?</p>
+          </li>
+          <li>
+            <h3>Exposição do responsável técnico</h3>
+            <p>A assinatura do engenheiro responde pelo conteúdo do laudo, inclusive em inspeções ligadas à NR-13.</p>
+            <p class="question">Ele consegue provar o que revisou, e quando?</p>
+          </li>
+          <li>
+            <h3>Reputação na próxima licitação</h3>
+            <p>Falhas de documentação desgastam a relação com o contratante e podem pesar em atestados futuros.</p>
+            <p class="question">Quanto vale o próximo edital para a sua empresa?</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="solucao" aria-labelledby="solucao-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="solucao-titulo">E se cada laudo já nascesse pronto para ser auditado?</h2>
+          <p>A AXOS Relatórios é a plataforma de laudos de inspeção que transforma essas perguntas em registro: quem fez, quem revisou, o que mudou e qual é a versão válida.</p>
+        </div>
+        <ul class="cards">
+          <li class="card">
+            <svg class="icon" aria-hidden="true"><use href="#i-wifi-off"/></svg>
+            <h3>Coleta em campo sem internet</h3>
+            <p>Medições e fotos ficam guardadas no aparelho e sobem sozinhas quando a conexão volta.</p>
+          </li>
+          <li class="card">
+            <svg class="icon" aria-hidden="true"><use href="#i-user-check"/></svg>
+            <h3>Revisão por outra pessoa</h3>
+            <p>Quem inspecionou não aprova o próprio laudo, e toda devolução exige comentário registrado.</p>
+          </li>
+          <li class="card">
+            <svg class="icon" aria-hidden="true"><use href="#i-lock"/></svg>
+            <h3>Laudo emitido não muda</h3>
+            <p>Depois da emissão o documento fica imutável. Correção só por nova revisão numerada.</p>
+          </li>
+          <li class="card">
+            <svg class="icon" aria-hidden="true"><use href="#i-qr"/></svg>
+            <h3>Verificação por QR Code</h3>
+            <p>Cada laudo sai com código de integridade SHA-256 e QR Code para conferir o documento.</p>
+          </li>
+          <li class="card">
+            <svg class="icon" aria-hidden="true"><use href="#i-badge"/></svg>
+            <h3>Validades conferidas no envio</h3>
+            <p>O sistema barra laudo com qualificação do inspetor ou calibração vencidas na data do ensaio.</p>
+          </li>
+          <li class="card">
+            <svg class="icon" aria-hidden="true"><use href="#i-history"/></svg>
+            <h3>Trilha de auditoria</h3>
+            <p>Cada ação fica registrada pelo sistema, em um histórico que não aceita edição.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="como-funciona" aria-labelledby="como-funciona-titulo">
+      <div class="container split">
+        <div>
+          <div class="section-head">
+            <h2 id="como-funciona-titulo">Como funciona, do campo ao laudo emitido</h2>
+          </div>
+          <ol class="flow">
+            <li><h3>O inspetor registra em campo</h3><p>Dados do ensaio, evidências e veredito, com ou sem conexão.</p></li>
+            <li><h3>Os dados sincronizam sozinhos</h3><p>Ao voltar a conexão, o laudo sobe para o servidor sem duplicar nada.</p></li>
+            <li><h3>O engenheiro revisa e aprova</h3><p>O Profissional Habilitado aprova ou devolve com comentário.</p></li>
+            <li><h3>O laudo é emitido e verificável</h3><p>Número definitivo, cabeçalho congelado e PDF com a marca da sua empresa.</p></li>
+          </ol>
+        </div>
+        <figure class="frame">
+          <img src="assets/imagem-2.svg" alt="Laudo técnico END emitido pela AXOS Relatórios com número, QR Code e cabeçalho da empresa de inspeção" width="1200" height="900" loading="lazy">
+        </figure>
+      </div>
+    </section>
+
+    <section class="section" id="metodos" aria-labelledby="metodos-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="metodos-titulo">16 métodos de ensaios não destrutivos em uma só plataforma</h2>
+          <p>Dos ensaios convencionais às técnicas avançadas, toda a operação de END da sua empresa fica no mesmo padrão de laudo.</p>
+        </div>
+        <div class="methods">
+          <div>
+            <h3>Ensaios convencionais</h3>
+            <ul>
+              <li>Ensaio Visual <span>VT</span></li>
+              <li>Líquidos Penetrantes <span>PT</span></li>
+              <li>Partículas Magnéticas <span>MT</span></li>
+              <li>Ultrassom Convencional <span>UT</span></li>
+              <li>Radiografia Industrial <span>RT</span></li>
+              <li>Correntes Parasitas <span>ET</span></li>
+              <li>Ensaio de Estanqueidade <span>LT</span></li>
+              <li>Estanqueidade por Caixa de Vácuo <span>LT</span></li>
+            </ul>
+          </div>
+          <div>
+            <h3>Ensaios avançados e especiais</h3>
+            <ul>
+              <li>Ultrassom Phased Array <span>PAUT</span></li>
+              <li>Time of Flight Diffraction <span>ToFD</span></li>
+              <li>Radiografia Computadorizada e Digital <span>CR/DR</span></li>
+              <li>Eddy Current Array <span>ECA</span></li>
+              <li>Emissão Acústica <span>EA</span></li>
+              <li>Termografia Infravermelha <span>IRT</span></li>
+              <li>Alternating Current Field Measurement <span>ACFM</span></li>
+              <li>Total Focusing Method <span>TFM/FMC</span></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="medicao-de-obra" aria-labelledby="medicao-titulo">
+      <div class="container split">
+        <figure class="frame">
+          <img src="assets/imagem-3.svg" alt="Painel de avanço de obra da AXOS Relatórios com Curva S e previsão de término" width="1200" height="900" loading="lazy">
+        </figure>
+        <div>
+          <div class="section-head">
+            <h2 id="medicao-titulo">Medição de obra comprovada por laudo emitido</h2>
+            <p>O avanço do contrato deixa de ser estimativa e passa a ser a soma do que foi inspecionado e emitido.</p>
+          </div>
+          <div class="stack">
+            <div><h3>Só conta o que foi emitido</h3><p>Rascunho não entra na conta, e revisões nunca somam em dobro.</p></div>
+            <div><h3>Curva S e previsão de término</h3><p>Previsto contra realizado, por método e por período, com ritmo das últimas semanas.</p></div>
+            <div><h3>Aditivos com histórico</h3><p>Toda mudança de escopo guarda quantidade anterior, nova quantidade e motivo.</p></div>
+          </div>
+          <p class="note">Recurso do plano Empresas.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" aria-labelledby="equipe-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="equipe-titulo">Uma plataforma para toda a cadeia do laudo</h2>
+        </div>
+        <ul class="columns-3">
+          <li><h3>Para o inspetor em campo</h3><p class="muted">Menos papel e nenhuma digitação dobrada. O laudo começa e avança no próprio local do ensaio.</p></li>
+          <li><h3>Para o engenheiro responsável</h3><p class="muted">Revisão organizada, com histórico de cada devolução e segurança sobre o que está sendo assinado.</p></li>
+          <li><h3>Para a diretoria da empresa</h3><p class="muted">Visão de prazos, pendências e avanço por obra, com documentos prontos para a fiscalização do contrato.</p></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="perguntas" aria-labelledby="perguntas-titulo">
+      <div class="container faq-grid">
+        <div class="section-head">
+          <h2 id="perguntas-titulo">Perguntas frequentes sobre laudos END</h2>
+        </div>
+        <div class="faq">
+          <details open>
+            <summary><h3>O que é um software de laudos END?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>É um sistema que substitui papel e planilhas no registro de ensaios não destrutivos. A AXOS Relatórios cobre a coleta em campo, a revisão técnica, a emissão do laudo e a guarda do histórico em um só lugar.</p>
+          </details>
+          <details>
+            <summary><h3>A plataforma funciona sem internet?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Sim. O inspetor registra o ensaio no aparelho mesmo sem sinal. Quando a conexão volta, os dados sobem sozinhos para o servidor, sem duplicar registros.</p>
+          </details>
+          <details>
+            <summary><h3>Quais métodos de END a AXOS Relatórios atende?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>São 16 métodos, entre convencionais e avançados, como ensaio visual, líquidos penetrantes, partículas magnéticas, ultrassom, radiografia, Phased Array, ToFD e termografia.</p>
+          </details>
+          <details>
+            <summary><h3>Como o contratante confere se o laudo é autêntico?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Cada laudo emitido sai com número definitivo, código de integridade SHA-256 e QR Code. O QR Code leva à verificação do documento e da revisão.</p>
+          </details>
+          <details>
+            <summary><h3>Um laudo pode ser alterado depois de emitido?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Não. O laudo emitido fica imutável. Se for preciso corrigir, a empresa cria uma nova revisão numerada, e a versão anterior continua preservada e identificada como substituída.</p>
+          </details>
+          <details>
+            <summary><h3>A plataforma serve para inspeções ligadas à NR-13?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Sim, ela organiza o registro dos ensaios e a revisão pelo Profissional Habilitado. A conclusão técnica e a responsabilidade pelo laudo continuam sendo do profissional que assina.</p>
+          </details>
+          <details>
+            <summary><h3>O sistema substitui as exigências do edital ou do contrato?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Não. Cada edital define suas próprias exigências. A AXOS Relatórios organiza a evidência e a rastreabilidade para que sua empresa atenda o que foi contratado com mais segurança.</p>
+          </details>
+          <details>
+            <summary><h3>O laudo sai com a marca da minha empresa?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Sim. O PDF traz logo, razão social, CNPJ e dados da empresa emissora, e o prefixo do número do laudo é configurável. Esses dados ficam congelados no momento da emissão.</p>
+          </details>
+          <details>
+            <summary><h3>Os dados de uma empresa ficam separados das demais?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
+            <p>Sim. Cada empresa acessa apenas os próprios dados, e o papel de cada usuário define o que ele pode ver e alterar.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section class="section closing" aria-labelledby="chamada-final">
+      <div class="container">
+        <div>
+          <h2 id="chamada-final">Seu próximo laudo pode nascer pronto para a fiscalização</h2>
+          <p>Veja o fluxo completo aplicado à realidade da sua empresa, do ensaio em campo ao documento verificável.</p>
+        </div>
+        <a class="btn btn-primary" href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Solicitar demonstração <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <img src="assets/logo-axos.png" alt="AXOS Relatórios" width="578" height="165" loading="lazy">
+          <p>Plataforma de laudos de ensaios não destrutivos para empresas de inspeção que atendem o poder público.</p>
+        </div>
+        <nav aria-label="Produto">
+          <p class="footer-title">Produto</p>
+          <ul>
+            <li><a href="#solucao">Solução</a></li>
+            <li><a href="#como-funciona">Como funciona</a></li>
+            <li><a href="#medicao-de-obra">Medição de obra</a></li>
+            <li><a href="#perguntas">Perguntas frequentes</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Métodos END">
+          <p class="footer-title">Métodos END</p>
+          <ul>
+            <li><a href="#metodos">Ultrassom e Phased Array</a></li>
+            <li><a href="#metodos">Radiografia industrial</a></li>
+            <li><a href="#metodos">Líquidos penetrantes</a></li>
+            <li><a href="#metodos">Todos os 16 métodos</a></li>
+          </ul>
+        </nav>
+        <div>
+          <p class="footer-title">Contato comercial</p>
+          <ul>
+            <li><a href="mailto:suporte@axosrelatorios.com">suporte@axosrelatorios.com</a></li>
+            <li><a href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Solicitar demonstração</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© 2026 AXOS Relatórios. Todos os direitos reservados.</span>
+        <span>Tecnologia em inspeção</span>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
