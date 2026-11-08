@@ -9,6 +9,7 @@ import React, { useEffect, useState } from 'react'
 import { Eye, EyeOff, Moon, Sun, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
 import { useAuth } from '../contexts/AuthContext'
+import { CadastroForm, NovaSenhaForm } from './AcessoForms'
 
 /* ─── Paletas ────────────────────────────────────────── */
 const DARK = {
@@ -108,7 +109,7 @@ function AScanLine({ color }: { color: string }) {
 /* ─── Componente Principal ───────────────────────────── */
 export const LoginPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme()
-  const { signIn, resetPassword, operationalUnits, selectedUnit, setSelectedUnit, error: authError, isLoading } = useAuth()
+  const { emRecuperacao, erroLinkRecuperacao, cancelarRecuperacao, signIn, resetPassword, operationalUnits, selectedUnit, setSelectedUnit, error: authError, isLoading } = useAuth()
   const C = theme === 'dark' ? DARK : LIGHT
 
   const [email, setEmail]               = useState('')
@@ -132,6 +133,8 @@ export const LoginPage: React.FC = () => {
 
   // Fluxo simples de Esqueci a senha
   const [isResetMode, setIsResetMode]   = useState(false)
+  const [isCadastro, setIsCadastro]     = useState(false)
+  const [cadastroEnviado, setCadastroEnviado] = useState<string | null>(null)
   const [resetSent, setResetSent]       = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
 
@@ -181,6 +184,21 @@ export const LoginPage: React.FC = () => {
     }
   }
 
+  const estiloAcesso = {
+    get rotulo() { return labelStyle },
+    get campo() { return fieldStyle('acesso') },
+    botao: {
+      width: '100%', padding: '13px', fontSize: '15px', fontWeight: 700, fontFamily: "'Arial', sans-serif",
+      backgroundColor: C.cyan, color: theme === 'dark' ? '#06222B' : '#FFFFFF', border: 'none', borderRadius: '6px',
+    } as React.CSSProperties,
+    voltar: {
+      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', background: 'none', border: 'none',
+      color: C.textSec, fontSize: '14px', cursor: 'pointer', padding: '6px',
+    } as React.CSSProperties,
+    corLink: C.cyan,
+    corTexto: C.textSec,
+  }
+
   const fieldStyle = (name: string): React.CSSProperties => ({
     width: '100%',
     boxSizing: 'border-box',
@@ -205,7 +223,19 @@ export const LoginPage: React.FC = () => {
     letterSpacing: '0.03em',
   }
 
-  const activeError = localError || authError
+  // Link vencido ou já usado: volta ao pedido de novo link
+  useEffect(() => {
+    if (!erroLinkRecuperacao) return
+    cancelarRecuperacao()
+    setIsResetMode(true)
+    setLocalError('O link de recuperação expirou ou já foi usado. Peça um novo link.')
+    // Só ao abrir a tela
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const novaSenha = emRecuperacao && !erroLinkRecuperacao
+  // Em nova senha e cadastro, o erro de perfil do contexto não interessa
+  const activeError = localError || (novaSenha || isCadastro ? null : authError)
 
   return (
     <>
@@ -373,15 +403,14 @@ export const LoginPage: React.FC = () => {
                 letterSpacing: '-0.01em',
               }}>
                 Laudo rápido.<br />
-                Registro que<br />
-                não se altera.
+                Registro organizado.
               </h2>
 
               <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {[
-                  'Revisado pela sua empresa antes de sair',
+                  '16 métodos de END em um só sistema',
                   'Funciona sem internet no campo',
-                  'PDF padronizado com a marca da sua empresa',
+                  'Laudo em PDF com dados técnicos e fotos',
                 ].map((item) => (
                   <li key={item} style={{
                     display: 'flex',
@@ -457,7 +486,7 @@ export const LoginPage: React.FC = () => {
                   letterSpacing: '-0.02em',
                   margin: '0 0 6px 0',
                 }}>
-                  {isResetMode ? 'Redefinir senha' : 'Entrar na plataforma'}
+                  {novaSenha ? 'Criar nova senha' : isCadastro ? 'Criar conta' : isResetMode ? 'Redefinir senha' : 'Entrar na plataforma'}
                 </h1>
                 <p style={{
                   fontSize: '14px',
@@ -465,7 +494,11 @@ export const LoginPage: React.FC = () => {
                   margin: '0 0 24px 0',
                   fontFamily: "'IBM Plex Sans', sans-serif",
                 }}>
-                  {isResetMode
+                  {novaSenha
+                    ? 'Escolha a nova senha da sua conta.'
+                    : isCadastro
+                    ? 'Cadastre sua empresa para começar a registrar laudos.'
+                    : isResetMode
                     ? 'Informe seu e-mail para receber o link de recuperação.'
                     : 'Use o e-mail e senha da sua conta corporativa.'}
                 </p>
@@ -487,6 +520,17 @@ export const LoginPage: React.FC = () => {
                   }}>
                     <AlertCircle size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
                     <div>{activeError}</div>
+                  </div>
+                )}
+
+                {cadastroEnviado && (
+                  <div role="status" style={{
+                    display: 'flex', alignItems: 'flex-start', gap: '10px', padding: '12px 14px', borderRadius: '8px',
+                    backgroundColor: C.successBg, border: `1px solid ${C.successBorder}`, color: C.successText,
+                    fontSize: '13px', marginBottom: '20px', lineHeight: 1.4,
+                  }}>
+                    <CheckCircle2 size={18} style={{ flexShrink: 0, marginTop: '2px' }} />
+                    <div>Enviamos um link de confirmação para <strong>{cadastroEnviado}</strong>. Abra o e-mail, confirme e entre com a sua senha.</div>
                   </div>
                 )}
 
@@ -512,7 +556,16 @@ export const LoginPage: React.FC = () => {
                   </div>
                 )}
 
-                {!isResetMode ? (
+                {novaSenha ? (
+                  <NovaSenhaForm estilo={estiloAcesso} aoErro={setLocalError} />
+                ) : isCadastro ? (
+                  <CadastroForm
+                    estilo={estiloAcesso}
+                    aoErro={setLocalError}
+                    aoVoltar={() => { setIsCadastro(false); setLocalError(null) }}
+                    aoEnviar={(enviadoPara) => { setCadastroEnviado(enviadoPara); setEmail(enviadoPara); setIsCadastro(false); setLocalError(null) }}
+                  />
+                ) : !isResetMode ? (
                   /* Formulário de Login */
                   <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
                     {/* E-mail */}
@@ -540,6 +593,7 @@ export const LoginPage: React.FC = () => {
                           type="button"
                           onClick={() => {
                             setIsResetMode(true)
+                            setCadastroEnviado(null)
                             setLocalError(null)
                           }}
                           style={{
@@ -726,17 +780,31 @@ export const LoginPage: React.FC = () => {
 
               {/* Rodapé do formulário */}
               <div style={{ marginTop: 'auto', paddingTop: '24px' }}>
-                {!isResetMode && (
+                {!isResetMode && !isCadastro && !novaSenha && (
                   <div style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '8px',
                     marginBottom: '16px',
                   }}>
                     <button
                       type="button"
+                      onClick={() => { setIsCadastro(true); setCadastroEnviado(null); setLocalError(null) }}
+                      style={{
+                        background: 'none', border: 'none', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: 600, color: C.cyan, textDecoration: 'underline',
+                        padding: 0, minHeight: '24px', fontFamily: "'IBM Plex Sans', sans-serif",
+                      }}
+                    >
+                      Criar conta
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         setIsResetMode(true)
+                        setCadastroEnviado(null)
                         setLocalError(null)
                       }}
                       style={{

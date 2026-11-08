@@ -474,3 +474,12 @@ Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**
 - Toda mudança visível é testada no navegador, no computador e no celular, em todas as telas afetadas.
 - Depois de cada publicação, o resultado é conferido também no site no ar.
 - O resumo final diz o que foi testado, o resultado e o que ficou sem teste.
+
+## Requisito: Preparação para ISO 27001, ISO 9001 e ABNT
+
+Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para auditoria e futuras certificações **ISO/IEC 27001 e ISO 9001**, com possibilidade de certificação pela ABNT.
+
+- Essas normas certificam o sistema de gestão da empresa, não o software. Nenhum código, sozinho, torna o AXOS conforme.
+- Nenhuma tela, texto ou documento pode declarar conformidade, certificação ou exibir selo antes do certificado emitido.
+- Toda mudança de backend, banco ou infraestrutura deve considerar segurança, rastreabilidade e evidência para auditoria.
+- Situação e prioridades: `docs/conformidade/analise-de-lacunas.md`. Atualize esse arquivo quando uma lacuna for fechada.

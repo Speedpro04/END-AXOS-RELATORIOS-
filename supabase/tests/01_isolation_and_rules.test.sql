@@ -498,3 +498,151 @@ begin
 
   raise notice '[PASS] TESTE 8: 16 métodos, número pelo servidor e escopo da obra validados.';
 end $$;
+
+
+do $$
+declare
+  u_novo uuid := 'dddddddd-0000-0000-0000-000000000001'::uuid;
+  u_outro uuid := 'dddddddd-0000-0000-0000-000000000002'::uuid;
+  v_t1 uuid;
+  v_t2 uuid;
+  v_err text;
+begin
+  perform set_config('role', 'none', true);
+  insert into auth.users (id, email) values (u_novo, 'novo@teste.test'), (u_outro, 'outro@teste.test');
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_novo, 'role', 'authenticated')::text, true);
+
+  v_t1 := public.criar_empresa_inicial('Empresa Nova', 'Pessoa Nova', '26.998.571/0001-50');
+  v_t2 := public.criar_empresa_inicial('Outra Empresa', 'Pessoa Nova');
+  if v_t1 is distinct from v_t2 then
+    raise exception 'FALHA 9.1: segunda chamada criou outra empresa';
+  end if;
+  if not exists (select 1 from public.profiles where id = u_novo and tenant_id = v_t1 and role = 'admin' and can_inspect) then
+    raise exception 'FALHA 9.2: perfil de administrador não criado';
+  end if;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_outro, 'role', 'authenticated')::text, true);
+  begin
+    perform public.criar_empresa_inicial('Empresa Copia', 'Outra Pessoa', '26998571000150');
+    raise exception 'FALHA 9.3: aceitou CNPJ repetido';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%CNPJ já está cadastrado%' then
+      raise exception 'Erro inesperado em 9.3: %', v_err;
+    end if;
+  end;
+  begin
+    insert into public.tenants (legal_name) values ('Direto');
+    raise exception 'FALHA 9.4: criou empresa sem a função';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%permission denied%' then
+      raise exception 'Erro inesperado em 9.4: %', v_err;
+    end if;
+  end;
+
+  perform set_config('role', 'none', true);
+  raise notice '[PASS] TESTE 9: cadastro cria uma empresa por conta, sem CNPJ repetido';
+end $$;
+
+
+do $$
+declare
+  u_x uuid := 'eeeeeeee-0000-0000-0000-000000000001'::uuid;
+  u_x2 uuid := 'eeeeeeee-0000-0000-0000-000000000002'::uuid;
+  u_y uuid := 'eeeeeeee-0000-0000-0000-000000000003'::uuid;
+  t_x uuid;
+  t_y uuid;
+  v_n int;
+  v_err text;
+  v_sol uuid;
+begin
+  perform set_config('role', 'none', true);
+  insert into auth.users (id, email) values (u_x, 'x@teste.test'), (u_x2, 'x2@teste.test'), (u_y, 'y@teste.test');
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_y, 'role', 'authenticated')::text, true);
+  t_y := public.criar_empresa_inicial('Empresa Y', 'Pessoa Y');
+  perform public.registrar_aceites('2026-11-08');
+  insert into public.lgpd_solicitacoes (tenant_id, titular_nome, titular_email, tipo)
+    values (t_y, 'Titular Y', 'titular@teste.test', 'acesso') returning id into v_sol;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_x, 'role', 'authenticated')::text, true);
+  t_x := public.criar_empresa_inicial('Empresa X', 'Pessoa X');
+  perform public.registrar_aceites('2026-11-08');
+  perform public.registrar_aceites('2026-11-08');
+
+  select count(*) into v_n from public.lgpd_aceites;
+  if v_n <> 2 then raise exception 'FALHA 10.1: viu ou duplicou aceites: %', v_n; end if;
+
+  select count(*) into v_n from public.lgpd_solicitacoes;
+  if v_n <> 0 then raise exception 'FALHA 10.2: viu pedido de outra empresa'; end if;
+
+  begin
+    insert into public.lgpd_solicitacoes (tenant_id, titular_nome, titular_email, tipo) values (t_y, 'A', 'a@teste.test', 'acesso');
+    raise exception 'FALHA 10.3: gravou pedido em outra empresa';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%row-level security%' then raise exception 'Erro inesperado em 10.3: %', v_err; end if;
+  end;
+
+  begin
+    insert into public.lgpd_aceites (tenant_id, user_id, documento, versao) values (t_x, u_x, 'termos_de_uso', 'forjado');
+    raise exception 'FALHA 10.4: gravou aceite direto';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%permission denied%' then raise exception 'Erro inesperado em 10.4: %', v_err; end if;
+  end;
+
+  begin
+    perform public.anonimizar_usuario(u_y);
+    raise exception 'FALHA 10.5: anonimizou usuário de outra empresa';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%não encontrado%' then raise exception 'Erro inesperado em 10.5: %', v_err; end if;
+  end;
+
+  begin
+    perform public.anonimizar_usuario(u_x);
+    raise exception 'FALHA 10.6: anonimizou a si mesmo';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%própria conta%' then raise exception 'Erro inesperado em 10.6: %', v_err; end if;
+  end;
+
+  perform set_config('role', 'none', true);
+  insert into public.profiles (id, tenant_id, role, can_inspect, full_name) values (u_x2, t_x, 'inspector', true, 'Nome Real');
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_x2, 'role', 'authenticated')::text, true);
+  begin
+    perform public.anonimizar_usuario(u_x);
+    raise exception 'FALHA 10.7: inspetor anonimizou usuário';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%FORBIDDEN%' then raise exception 'Erro inesperado em 10.7: %', v_err; end if;
+  end;
+  select count(*) into v_n from public.lgpd_solicitacoes;
+  if v_n <> 0 then raise exception 'FALHA 10.8: inspetor viu pedido de titular'; end if;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_x, 'role', 'authenticated')::text, true);
+  perform public.anonimizar_usuario(u_x2);
+  if not exists (select 1 from public.profiles where id = u_x2 and full_name = 'Usuário anonimizado' and not active) then
+    raise exception 'FALHA 10.9: anonimização não aplicada';
+  end if;
+
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  begin
+    perform public.next_report_number(t_x, 'UT', 2026);
+    raise exception 'FALHA 10.10: visitante chamou a numeração';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%permission denied%' then raise exception 'Erro inesperado em 10.10: %', v_err; end if;
+  end;
+
+  perform set_config('role', 'none', true);
+  raise notice '[PASS] TESTE 10: aceites, pedidos de titulares e anonimização isolados por empresa';
+end $$;

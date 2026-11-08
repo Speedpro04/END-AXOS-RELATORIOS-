@@ -51,7 +51,7 @@ const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 
 }
 
 function AppContent() {
-  const { user, profile, tenant: authTenant, selectedUnit, isLoading, signOut } = useAuth()
+  const { user, profile, tenant: authTenant, selectedUnit, isLoading, signOut, emRecuperacao } = useAuth()
   const { obraAtual: obraSelecionada, selecionarObra } = useObra()
 
   const [tenant, setTenant] = useState<TenantProfile>(() => {
@@ -304,7 +304,7 @@ function AppContent() {
     }
   }
 
-  if (!user || !profile) {
+  if (emRecuperacao || !user || !profile) {
     return <LoginPage />
   }
 

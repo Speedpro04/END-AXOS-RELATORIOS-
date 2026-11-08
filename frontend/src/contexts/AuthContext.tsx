@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import type { Session, User } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { mensagemErroAuth } from '../utils/errosAuth'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
@@ -38,7 +39,15 @@ interface AuthContextType {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>
   updateUserPassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
+  signUp: (dados: { email: string; senha: string; nome: string; empresa: string; cnpj: string }) => Promise<{ success: boolean; precisaConfirmar?: boolean; error?: string }>
+  emRecuperacao: boolean
+  erroLinkRecuperacao: boolean
+  concluirRecuperacao: () => void
+  cancelarRecuperacao: () => void
 }
+
+// Data da última atualização dos Termos e da Política
+const VERSAO_DOCUMENTOS_LEGAIS = '2026-11-08'
 
 export const DEFAULT_OPERATIONAL_UNITS = [
   'Unidade Operacional Principal',
@@ -59,6 +68,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [selectedUnit, setSelectedUnit] = useState<string>(DEFAULT_OPERATIONAL_UNITS[0])
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
+  // Link do e-mail de recuperação: abre a tela de nova senha
+  const [emRecuperacao, setEmRecuperacao] = useState(() => window.location.pathname === '/redefinir-senha')
+  const [erroLinkRecuperacao] = useState(() => window.location.pathname === '/redefinir-senha' && (window.location.hash + window.location.search).includes('error='))
 
   const loadUserData = async (currentSession: Session) => {
     try {
@@ -74,6 +86,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (pError) throw pError
       if (!pData) {
+        // Primeiro acesso de quem se cadastrou: cria a empresa com os dados informados na conta
+        const meta = currentSession.user.user_metadata as { empresa?: string; nome?: string; cnpj?: string; aceite_versao?: string } | undefined
+        if (meta?.empresa && meta?.nome) {
+          const { error: criarError } = await supabase.rpc('criar_empresa_inicial', {
+            p_empresa: meta.empresa,
+            p_nome: meta.nome,
+            p_cnpj: meta.cnpj || null,
+          })
+          if (criarError) throw new Error(mensagemErroAuth(criarError.message, 'Não foi possível concluir o cadastro da empresa. Fale com suporte@axosrelatorios.com.'))
+          // Prova do aceite marcado no cadastro
+          if (meta.aceite_versao) await supabase.rpc('registrar_aceites', { p_versao: meta.aceite_versao })
+          return loadUserData(currentSession)
+        }
         throw new Error('Perfil não encontrado no sistema. Contate o administrador.')
       }
 
@@ -169,7 +194,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initAuth()
 
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, newSession) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (evento, newSession) => {
+      if (evento === 'PASSWORD_RECOVERY') setEmRecuperacao(true)
       setSession(newSession)
       setUser(newSession?.user ?? null)
 
@@ -263,12 +289,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       })
 
       if (signInError) {
-        let msg = 'Erro ao realizar login. Verifique suas credenciais.'
-        if (signInError.message.includes('Invalid login credentials')) {
-          msg = 'E-mail ou senha incorretos.'
-        } else if (signInError.message.includes('Email not confirmed')) {
-          msg = 'E-mail não confirmado. Verifique sua caixa de entrada.'
-        }
+        const msg = mensagemErroAuth(signInError.message, 'Erro ao realizar login. Verifique suas credenciais.')
         setError(msg)
         return { success: false, error: msg }
       }
@@ -281,7 +302,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       return { success: true }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Falha inesperada no login'
+      const msg = mensagemErroAuth(err instanceof Error ? err.message : undefined, 'Falha inesperada no login')
       setError(msg)
       return { success: false, error: msg }
     } finally {
@@ -307,7 +328,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         redirectTo: `${window.location.origin}/redefinir-senha`,
       })
       if (resetError) {
-        return { success: false, error: resetError.message }
+        return { success: false, error: mensagemErroAuth(resetError.message, 'Não foi possível enviar o link. Tente novamente.') }
       }
       return {
         success: true,
@@ -316,9 +337,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (err: unknown) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Falha ao solicitar recuperação de senha',
+        error: mensagemErroAuth(err instanceof Error ? err.message : undefined, 'Falha ao solicitar recuperação de senha'),
       }
     }
+  }
+
+  const signUp: AuthContextType['signUp'] = async ({ email, senha, nome, empresa, cnpj }) => {
+    try {
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email: email.trim(),
+        password: senha,
+        options: {
+          emailRedirectTo: `${window.location.origin}/app`,
+          data: { nome: nome.trim(), empresa: empresa.trim(), cnpj, aceite_versao: VERSAO_DOCUMENTOS_LEGAIS },
+        },
+      })
+      if (signUpError) {
+        return { success: false, error: mensagemErroAuth(signUpError.message, 'Não foi possível criar a conta. Tente novamente.') }
+      }
+      return { success: true, precisaConfirmar: !data.session }
+    } catch (err: unknown) {
+      return { success: false, error: mensagemErroAuth(err instanceof Error ? err.message : undefined, 'Não foi possível criar a conta. Tente novamente.') }
+    }
+  }
+
+  const sairDoLinkDeRecuperacao = () => {
+    setEmRecuperacao(false)
+    window.history.replaceState(null, '', '/app')
   }
 
   const updateUserPassword = async (newPassword: string) => {
@@ -327,13 +372,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         password: newPassword,
       })
       if (updateError) {
-        return { success: false, error: updateError.message }
+        return { success: false, error: mensagemErroAuth(updateError.message, 'Não foi possível salvar a senha. Tente novamente.') }
       }
       return { success: true }
     } catch (err: unknown) {
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Falha ao atualizar senha',
+        error: mensagemErroAuth(err instanceof Error ? err.message : undefined, 'Falha ao atualizar senha'),
       }
     }
   }
@@ -353,6 +398,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signOut,
         resetPassword,
         updateUserPassword,
+        signUp,
+        emRecuperacao,
+        erroLinkRecuperacao,
+        concluirRecuperacao: sairDoLinkDeRecuperacao,
+        cancelarRecuperacao: sairDoLinkDeRecuperacao,
       }}
     >
       {children}

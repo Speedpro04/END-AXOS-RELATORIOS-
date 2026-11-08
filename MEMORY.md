@@ -422,7 +422,7 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
 
 Criada em `landing/` (`index.html`, `assets/`, `robots.txt`, `sitemap.xml`). Prévia local pela configuração `landing` de `.claude/launch.json`, porta 5500. Conferida em 1280px e 375px.
 
-**Pendências:** 3 imagens definitivas; WhatsApp comercial, quando houver número (o contato comercial definido pelo dono do produto é `suporte@axosrelatorios.com`); endereço do app para o link "Entrar"; revisão jurídica e razão social em `landing/politica-de-privacidade.html` e `landing/termos-de-uso.html`; publicação no EasyPanel. A página cita recursos que dependem das telas de aprovação e emissão e da página pública `/verificar`, ainda não construídas: não publicar antes delas.
+**Pendências:** 3 imagens definitivas; WhatsApp comercial, quando houver número (o contato comercial definido pelo dono do produto é `suporte@axosrelatorios.com`); endereço do app para o link "Entrar"; revisão jurídica e razão social em `landing/politica-de-privacidade.html` e `landing/termos-de-uso.html`; publicação no EasyPanel. Recursos ainda não construídos (aprovação, emissão e `/verificar`) aparecem na página como "Em desenvolvimento": ao entregar cada um, tire a marca.
 
 ## 13. Deploy do Frontend (06/11/2026)
 
@@ -459,3 +459,26 @@ Regras em `frontend/src/index.css` (`.laudo-grid`, `.campos-2`, `.campos-vinculo
 `UTPage.tsx` e `PAUTPage.tsx` agora têm campos próprios (`types/laudoEnsaio.ts`, esquemas `ut-solda-v1` e `paut-v1`), com componentes em `components/laudo/CamposLaudo.tsx` e impressão em `utils/impressaoLaudo.ts`. Abrem e editam na página (`FORMULARIO_PROPRIO` em `App.tsx`), inclusive com obra selecionada. Campos baseados em relatórios reais de campo, sem dados dos exemplos no código. `USPage.tsx` continua sem uso: não salva no laudo.
 
 **Pendências:** revisão por profissional de END; outros 14 métodos seguem com campos de ensaio visual e dependem de exemplos; janela geral de laudo ainda oferece o UT antigo; coluna Veredito da lista mostra Rascunho até o servidor mudar o status; anexos ficam só no aparelho, sem envio ao servidor; PDF não testado em impressão real; vínculo com escopo da obra não testado nos formulários novos.
+
+## Cadastro e Recuperação de Senha (08/11/2026)
+
+Tela de login com "Criar conta" e tela de nova senha em `/redefinir-senha` (`pages/AcessoForms.tsx`). Migração `0005_cadastro_empresa.sql`: `criar_empresa_inicial` cria a empresa em teste e o perfil de administrador no primeiro acesso, depois da confirmação do e-mail. Mensagens de erro em `utils/errosAuth.ts`.
+
+**Pendências no ar:** corrigir `VITE_SUPABASE_ANON_KEY` no EasyPanel (estava com a URL `/rest/v1/`); aplicar as migrações 0001 a 0005 no projeto Supabase, cujas tabelas não existiam em 08/11/2026; liberar `https://axosrelatorios.com/app` e `/redefinir-senha` nas URLs de redirecionamento do Supabase; envio real de e-mails não testado.
+
+## Banco: Projeto Novo e LGPD (08/11/2026)
+
+Projeto novo: `ygijmtzipvsvdcbvurhg`, ligado em `.mcp.json`. Migrações 0001 a 0006 testadas só em banco local (`npm run test:db`): 20 tabelas com RLS, sem acesso de visitante e sem chave estrangeira sem índice. `0006_lgpd_e_reforcos.sql` traz `lgpd_aceites`, `lgpd_solicitacoes`, `registrar_aceites` e `anonimizar_usuario`.
+
+**Pendências:** aplicar no projeto novo; definir prazos de guarda (o `audit_log` é imutável e não expira); telas de pedidos de titulares; `backend/app/queues/workers/sync_worker.py` chama `upsert_laudo`, que não existe (o envio atual usa `routers/sync.py`); planos do banco (`trial`, `starter`, `pro`, `enterprise`) não batem com a tabela de valores.
+
+## Conformidade: ISO 27001, ISO 9001 e ABNT (08/11/2026)
+
+Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para auditoria e futuras certificações **ISO/IEC 27001 e ISO 9001**, com possibilidade de certificação pela ABNT.
+
+- Essas normas certificam o sistema de gestão da empresa, não o software. Nenhum código, sozinho, torna o AXOS conforme.
+- Nenhuma tela, texto ou documento pode declarar conformidade, certificação ou exibir selo antes do certificado emitido.
+- Toda mudança de backend, banco ou infraestrutura deve considerar segurança, rastreabilidade e evidência para auditoria.
+- Situação e prioridades: `docs/conformidade/analise-de-lacunas.md`. Atualize esse arquivo quando uma lacuna for fechada.
+
+**Situação:** análise de lacunas feita. Nada certificado. Correções técnicas e documentos de gestão ainda pendentes.

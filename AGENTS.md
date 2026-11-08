@@ -35,3 +35,16 @@ Todas as operações seguem a skill https://github.com/multica-ai/andrej-karpath
 - **Commit e push somente quando o usuário pedir explicitamente.** Nunca commitar credenciais, `.env.local` ou arquivos gerados (`dist/`, `dev-dist/`).
 - Mensagem de commit em português, formato `tipo(escopo): descrição curta` (ex.: `fix(frontend): ...`).
 - Nunca imprimir senha ou credencial no terminal ou em resumo de commit.
+
+## 6. Testar Sempre (obrigatório)
+
+Nenhuma alteração é dada como pronta sem teste: no navegador, no computador e no celular, quando for visível, e no site no ar depois de publicar. A resposta final diz o que foi testado e o que ficou sem teste.
+
+## 7. Conformidade: ISO 27001, ISO 9001 e ABNT
+
+Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para auditoria e futuras certificações **ISO/IEC 27001 e ISO 9001**, com possibilidade de certificação pela ABNT.
+
+- Essas normas certificam o sistema de gestão da empresa, não o software. Nenhum código, sozinho, torna o AXOS conforme.
+- Nenhuma tela, texto ou documento pode declarar conformidade, certificação ou exibir selo antes do certificado emitido.
+- Toda mudança de backend, banco ou infraestrutura deve considerar segurança, rastreabilidade e evidência para auditoria.
+- Situação e prioridades: `docs/conformidade/analise-de-lacunas.md`. Atualize esse arquivo quando uma lacuna for fechada.
