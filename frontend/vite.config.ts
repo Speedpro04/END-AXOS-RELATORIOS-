@@ -29,7 +29,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/$/, /^\/(politica-de-privacidade|termos-de-uso)\.html$/], // páginas públicas, não o app
+        directoryIndex: null, // a raiz é a LP: o cache offline não pode responder com o app
+        navigateFallbackAllowlist: [/^\/app(?:[/?]|$)/, /^\/redefinir-senha(?:[/?]|$)/], // só as rotas do app; o resto do site é público
         runtimeCaching: [],
       },
       devOptions: { enabled: false },
