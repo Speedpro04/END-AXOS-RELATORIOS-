@@ -482,3 +482,15 @@ Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para audit
 - Situação e prioridades: `docs/conformidade/analise-de-lacunas.md`. Atualize esse arquivo quando uma lacuna for fechada.
 
 **Situação:** análise de lacunas feita. Nada certificado. Correções técnicas e documentos de gestão ainda pendentes.
+
+## Teste Grátis e Contratação (08/11/2026)
+
+Decisão do dono do produto: teste de 30 dias, sem cartão, com PDF provisório. Login só com e-mail e senha. Cadastro só com nome, e-mail, senha e aceite. Dados da empresa, CPF ou CNPJ e pagamento ficam na contratação (`pages/ContratarPage.tsx`), aberta pelo aviso de teste ou pelos cards da LP (`/app?plano=...&criar=1`). Migração `0007_teste_e_contratacao.sql`: `tenants.trial_ends_at`, `pedidos_contratacao`, `solicitar_contratacao` e bloqueio de laudo novo com teste encerrado. CPF só no plano Individual.
+
+**Pendências:** sem cobrança automática: o pedido é registrado e a AXOS libera o plano no banco (`plan` e `trial_ends_at` nulo), e não há aviso automático de pedido novo; aviso por e-mail do fim do teste; rodar `supabase/instalacao_completa.sql` (0001 a 0008) no projeto novo.
+
+## Convites da Equipe (08/11/2026)
+
+Tela Equipe só para administrador (`pages/EquipePage.tsx`). Migração `0008_convites_equipe.sql`: link de uso único, por 7 dias, preso ao e-mail, com hash no banco. Quem entra pelo link fica na empresa que convidou. Limite por plano no banco: Individual 1, Equipe 3, 5 e 10, teste 10. Conta inspetor quem tem papel de inspetor ou `can_inspect`, inclusive o administrador criador.
+
+**Pendências:** envio do convite é manual (copiar o link), porque não há serviço de e-mail; confirmar se o administrador deve contar no limite.

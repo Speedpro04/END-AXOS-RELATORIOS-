@@ -22,6 +22,6 @@ export function mensagemErroAuth(mensagem: string | undefined, padrao: string): 
   if (m.includes('session') && m.includes('missing')) {
     return 'O link expirou. Peça um novo link de recuperação.'
   }
-  if (m.includes('cnpj') || m.includes('informe o nome') || m.includes('entre na sua conta')) return mensagem as string
+  if (m.includes('cnpj') || m.includes('cpf') || m.includes('informe o nome') || m.includes('entre na sua conta') || m.includes('escolha um plano') || m.includes('administrador da conta') || m.includes('convite') || m.includes('limite de inspetores') || m.includes('já pertence') || m.includes('e-mail válido') || m.includes('função da pessoa')) return mensagem as string
   return padrao
 }

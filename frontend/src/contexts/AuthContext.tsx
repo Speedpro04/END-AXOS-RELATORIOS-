@@ -22,7 +22,8 @@ export interface TenantInfo {
   legal_name: string
   trade_name: string | null
   cnpj: string | null
-  plan: 'trial' | 'starter' | 'pro' | 'enterprise'
+  plan: string
+  trial_ends_at: string | null
   require_second_reviewer: boolean
 }
 
@@ -39,12 +40,14 @@ interface AuthContextType {
   signOut: () => Promise<void>
   resetPassword: (email: string) => Promise<{ success: boolean; message?: string; error?: string }>
   updateUserPassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>
-  signUp: (dados: { email: string; senha: string; nome: string; empresa: string; cnpj: string }) => Promise<{ success: boolean; precisaConfirmar?: boolean; error?: string }>
+  signUp: (dados: { email: string; senha: string; nome: string; convite?: string | null }) => Promise<{ success: boolean; precisaConfirmar?: boolean; error?: string }>
   emRecuperacao: boolean
   erroLinkRecuperacao: boolean
   concluirRecuperacao: () => void
   cancelarRecuperacao: () => void
 }
+
+export const CHAVE_CONVITE = 'axos_convite'
 
 // Data da última atualização dos Termos e da Política
 const VERSAO_DOCUMENTOS_LEGAIS = '2026-11-08'
@@ -87,12 +90,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (pError) throw pError
       if (!pData) {
         // Primeiro acesso de quem se cadastrou: cria a empresa com os dados informados na conta
-        const meta = currentSession.user.user_metadata as { empresa?: string; nome?: string; cnpj?: string; aceite_versao?: string } | undefined
-        if (meta?.empresa && meta?.nome) {
+        const meta = currentSession.user.user_metadata as { empresa?: string; nome?: string; aceite_versao?: string; convite?: string } | undefined
+        // Convidado entra na empresa que convidou: nunca cria outra
+        const convite = meta?.convite || localStorage.getItem(CHAVE_CONVITE)
+        if (convite) {
+          const { error: conviteError } = await supabase.rpc('aceitar_convite', { p_token: convite, p_nome: meta?.nome ?? '' })
+          if (conviteError) throw new Error(mensagemErroAuth(conviteError.message, 'Não foi possível aceitar o convite. Peça um novo convite.'))
+          localStorage.removeItem(CHAVE_CONVITE)
+          if (meta?.aceite_versao) await supabase.rpc('registrar_aceites', { p_versao: meta.aceite_versao })
+          return loadUserData(currentSession)
+        }
+        if (meta?.nome) {
           const { error: criarError } = await supabase.rpc('criar_empresa_inicial', {
-            p_empresa: meta.empresa,
+            // A conta nasce com o nome da pessoa; os dados da empresa entram na contratação
+            p_empresa: meta.empresa || meta.nome,
             p_nome: meta.nome,
-            p_cnpj: meta.cnpj || null,
           })
           if (criarError) throw new Error(mensagemErroAuth(criarError.message, 'Não foi possível concluir o cadastro da empresa. Fale com suporte@axosrelatorios.com.'))
           // Prova do aceite marcado no cadastro
@@ -112,13 +124,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         throw new Error('Sua conta foi desativada pelo administrador. Acesso revogado imediatamente.')
       }
 
+      // Quem já tem empresa não aceita convite: o link fica sem efeito
+      localStorage.removeItem(CHAVE_CONVITE)
       const activeProfile = pData as UserProfile
       setProfile(activeProfile)
 
       // 2. Carrega dados do tenant
       const { data: tData, error: tError } = await supabase
         .from('tenants')
-        .select('id, legal_name, trade_name, cnpj, plan, require_second_reviewer')
+        .select('id, legal_name, trade_name, cnpj, plan, trial_ends_at, require_second_reviewer')
         .eq('id', activeProfile.tenant_id)
         .maybeSingle()
 
@@ -271,7 +285,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             legal_name: 'AXOS Relatórios Ltda',
             trade_name: 'AXOS Relatórios',
             cnpj: '00.000.000/0001-00',
-            plan: 'enterprise',
+            plan: 'trial',
+            trial_ends_at: import.meta.env.VITE_DEMO_TESTE_FIM || new Date(Date.now() + 30 * 86_400_000).toISOString(),
             require_second_reviewer: false,
           } as TenantInfo)
 
@@ -342,14 +357,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }
 
-  const signUp: AuthContextType['signUp'] = async ({ email, senha, nome, empresa, cnpj }) => {
+  const signUp: AuthContextType['signUp'] = async ({ email, senha, nome, convite }) => {
     try {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email: email.trim(),
         password: senha,
         options: {
           emailRedirectTo: `${window.location.origin}/app`,
-          data: { nome: nome.trim(), empresa: empresa.trim(), cnpj, aceite_versao: VERSAO_DOCUMENTOS_LEGAIS },
+          data: { nome: nome.trim(), aceite_versao: VERSAO_DOCUMENTOS_LEGAIS, ...(convite ? { convite } : {}) },
         },
       })
       if (signUpError) {

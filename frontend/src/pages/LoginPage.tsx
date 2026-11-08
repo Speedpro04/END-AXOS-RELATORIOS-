@@ -8,7 +8,7 @@
 import React, { useEffect, useState } from 'react'
 import { Eye, EyeOff, Moon, Sun, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { useTheme } from '../contexts/ThemeContext'
-import { useAuth } from '../contexts/AuthContext'
+import { CHAVE_CONVITE, useAuth } from '../contexts/AuthContext'
 import { CadastroForm, NovaSenhaForm } from './AcessoForms'
 
 /* ─── Paletas ────────────────────────────────────────── */
@@ -109,31 +109,18 @@ function AScanLine({ color }: { color: string }) {
 /* ─── Componente Principal ───────────────────────────── */
 export const LoginPage: React.FC = () => {
   const { theme, toggleTheme } = useTheme()
-  const { emRecuperacao, erroLinkRecuperacao, cancelarRecuperacao, signIn, resetPassword, operationalUnits, selectedUnit, setSelectedUnit, error: authError, isLoading } = useAuth()
+  const { emRecuperacao, erroLinkRecuperacao, cancelarRecuperacao, signIn, resetPassword, error: authError, isLoading } = useAuth()
   const C = theme === 'dark' ? DARK : LIGHT
 
   const [email, setEmail]               = useState('')
   const [password, setPassword]         = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [offlineEnabled, setOfflineEnabled] = useState(true)
   const [focusedField, setFocusedField] = useState<string | null>(null)
   const [localError, setLocalError]     = useState<string | null>(null)
 
-  // Unidades operacionais com fallback para garantir opções visíveis antes do login
-  const DEFAULT_UNITS = [
-    'Unidade Operacional Principal',
-    'Refinaria Norte',
-    'Plataforma P-77',
-    'Terminal de Gás Sul',
-    'Petroquímica Leste',
-  ]
-  const availableUnits = (operationalUnits && operationalUnits.length > 0)
-    ? operationalUnits
-    : DEFAULT_UNITS
-
   // Fluxo simples de Esqueci a senha
   const [isResetMode, setIsResetMode]   = useState(false)
-  const [isCadastro, setIsCadastro]     = useState(false)
+  const [isCadastro, setIsCadastro]     = useState(() => new URLSearchParams(window.location.search).get('criar') === '1' || Boolean(localStorage.getItem(CHAVE_CONVITE)))
   const [cadastroEnviado, setCadastroEnviado] = useState<string | null>(null)
   const [resetSent, setResetSent]       = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
@@ -154,7 +141,7 @@ export const LoginPage: React.FC = () => {
     }
 
     if (password.length < 8) {
-      setLocalError('A senha deve conter no mínimo 8 dígitos.')
+      setLocalError('A senha deve ter no mínimo 8 caracteres.')
       return
     }
 
@@ -243,31 +230,8 @@ export const LoginPage: React.FC = () => {
         .login-root * { box-sizing: border-box; }
         .login-root { transition: background-color 0.2s ease, color 0.2s ease; }
         .login-form-panel { transition: background-color 0.2s ease; }
-        .login-field-select option { background: ${C.fieldBg}; color: ${C.text}; }
         .login-toggle-btn { cursor: pointer; transition: opacity 0.15s ease; }
         .login-toggle-btn:hover { opacity: 0.75; }
-        .offline-toggle {
-          position: relative; width: 44px; height: 24px;
-          flex-shrink: 0;
-        }
-        .offline-toggle input { opacity: 0; width: 0; height: 0; }
-        .offline-slider {
-          position: absolute; inset: 0;
-          background: ${offlineEnabled ? '#2FB8D6' : C.border};
-          border-radius: 24px;
-          transition: background 0.2s ease;
-          cursor: pointer;
-        }
-        .offline-slider::before {
-          content: '';
-          position: absolute;
-          left: ${offlineEnabled ? '22px' : '2px'};
-          top: 2px;
-          width: 20px; height: 20px;
-          background: white;
-          border-radius: 50%;
-          transition: left 0.2s ease;
-        }
       `}</style>
 
       <div
@@ -497,10 +461,10 @@ export const LoginPage: React.FC = () => {
                   {novaSenha
                     ? 'Escolha a nova senha da sua conta.'
                     : isCadastro
-                    ? 'Cadastre sua empresa para começar a registrar laudos.'
+                    ? (localStorage.getItem(CHAVE_CONVITE) ? 'Você foi convidado para a equipe de uma empresa. Crie seu acesso ou volte para entrar.' : 'Comece com 30 dias grátis, sem cartão.')
                     : isResetMode
                     ? 'Informe seu e-mail para receber o link de recuperação.'
-                    : 'Use o e-mail e senha da sua conta corporativa.'}
+                    : 'Use o e-mail e a senha da sua conta.'}
                 </p>
 
                 {/* Banner de Erro */}
@@ -622,7 +586,7 @@ export const LoginPage: React.FC = () => {
                           required
                           minLength={8}
                           autoComplete="current-password"
-                          placeholder="Sua senha (mínimo 8 dígitos)"
+                          placeholder="Sua senha"
                           style={{ ...fieldStyle('senha'), paddingRight: '48px' }}
                         />
                         <button
@@ -641,53 +605,6 @@ export const LoginPage: React.FC = () => {
                           {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                         </button>
                       </div>
-                    </div>
-
-                    {/* Unidade Operacional */}
-                    <div>
-                      <label htmlFor="login-planta" style={labelStyle}>Unidade operacional</label>
-                      <select
-                        id="login-planta"
-                        value={selectedUnit || availableUnits[0]}
-                        onChange={(e) => setSelectedUnit(e.target.value)}
-                        onFocus={() => setFocusedField('planta')}
-                        onBlur={()  => setFocusedField(null)}
-                        className="login-field-select"
-                        style={{ ...fieldStyle('planta'), appearance: 'auto', cursor: 'pointer' }}
-                      >
-                        {availableUnits.map((p) => (
-                          <option key={p} value={p}>{p}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Toggle Modo Offline */}
-                    <div style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '12px 14px',
-                      backgroundColor: C.fieldBg,
-                      border: `1px solid ${C.border}`,
-                      borderRadius: '6px',
-                      gap: '12px',
-                    }}>
-                      <div>
-                        <div style={{ fontSize: '14px', fontWeight: 600, color: C.text }}>
-                          Modo offline
-                        </div>
-                        <div style={{ fontSize: '12px', color: C.textSec, marginTop: '2px' }}>
-                          Guarda as medições no aparelho quando não há sinal
-                        </div>
-                      </div>
-                      <label className="offline-toggle" aria-label="Ativar modo offline">
-                        <input
-                          type="checkbox"
-                          checked={offlineEnabled}
-                          onChange={(e) => setOfflineEnabled(e.target.checked)}
-                        />
-                        <span className="offline-slider" />
-                      </label>
                     </div>
 
                     {/* Botão Entrar */}
@@ -799,21 +716,6 @@ export const LoginPage: React.FC = () => {
                       }}
                     >
                       Criar conta
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsResetMode(true)
-                        setCadastroEnviado(null)
-                        setLocalError(null)
-                      }}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        fontSize: '13px', color: C.cyan, textDecoration: 'underline',
-                        padding: 0, minHeight: '24px', fontFamily: "'IBM Plex Sans', sans-serif",
-                      }}
-                    >
-                      Esqueci minha senha
                     </button>
                     <span style={{ fontSize: '13px', color: C.textSec }}>
                       Suporte: suporte@axosrelatorios.com

@@ -30,9 +30,14 @@ import { IRTPage } from './pages/IRTPage'
 import { ACFMPage } from './pages/ACFMPage'
 import { TFMPage } from './pages/TFMPage'
 import { LoginPage } from './pages/LoginPage'
+import { ContratarPage, diasDeTeste, lembrarPlanoDaUrl } from './pages/ContratarPage'
+import { EquipePage } from './pages/EquipePage'
 
 // Métodos com formulário próprio: abrem e editam na página, não na janela geral
 const FORMULARIO_PROPRIO: string[] = ['UT', 'PAUT']
+
+// Plano escolhido nos cards da página inicial
+lembrarPlanoDaUrl()
 import { ObraEscopoPage } from './pages/ObraEscopoPage'
 import { ObrasPage } from './pages/ObrasPage'
 import { NovaObraPage } from './pages/NovaObraPage'
@@ -197,6 +202,14 @@ function AppContent() {
     if (editingReport && !isModalOpen && editingReport.method !== currentPage) setEditingReport(null)
   }, [currentPage, editingReport, isModalOpen])
 
+  const diasRestantes = diasDeTeste(authTenant?.plan, authTenant?.trial_ends_at)
+  const testeEncerrado = diasRestantes !== null && diasRestantes <= 0
+
+  // Teste encerrado: consulta continua liberada, laudo novo pede plano
+  useEffect(() => {
+    if (testeEncerrado && !['HUB', 'OBRAS', 'OBRA_NOVO', 'OBRA_CONTEXTO', 'CONTRATAR', 'EQUIPE'].includes(currentPage)) setCurrentPage('CONTRATAR')
+  }, [testeEncerrado, currentPage])
+
   const voltarDoFormulario = () => {
     setEditingReport(null)
     setCurrentPage('HUB')
@@ -294,6 +307,7 @@ function AppContent() {
     { id: 'TFM', label: 'TFM / FMC', tag: 'TFM' },
     // Módulo de Obras (Plano Empresas) - acessível apenas dentro de uma obra selecionada
     { id: 'OBRA_CONTEXTO', label: 'Obra Atual', tag: 'OBR' },
+    ...(profile?.role === 'admin' ? [{ id: 'EQUIPE', label: 'Equipe', tag: 'EQP' }] : []),
   ]
 
   const navRef = useRef<HTMLElement>(null)
@@ -448,12 +462,26 @@ function AppContent() {
       </div>
 
       {/* ÁREA PRINCIPAL DO APP */}
+      {diasRestantes !== null && currentPage !== 'CONTRATAR' && (
+        <div className="teste-aviso" role={testeEncerrado ? 'alert' : 'status'}>
+          <span>{testeEncerrado ? 'Seu teste grátis terminou. Seus dados continuam guardados.' : `Teste grátis: ${diasRestantes === 1 ? 'falta 1 dia' : `faltam ${diasRestantes} dias`}.`}</span>
+          <button type="button" className="lf-botao" onClick={() => setCurrentPage('CONTRATAR')}>Contratar plano</button>
+        </div>
+      )}
+
       <main className="app-main" style={{ flex: 1, maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '28px 32px', position: 'relative', zIndex: 1 }}>
+        {currentPage === 'EQUIPE' && <EquipePage />}
+
+        {currentPage === 'CONTRATAR' && (
+          <ContratarPage aoVoltar={() => setCurrentPage('HUB')} encerrado={testeEncerrado} />
+        )}
+
         {currentPage === 'HUB' && (
           <HubPage
             reports={reports}
             onVoltarObras={() => setCurrentPage('OBRAS')}
             onSelectModel={(modelId) => {
+              if (testeEncerrado) return setCurrentPage('CONTRATAR')
               if (obraSelecionada && !FORMULARIO_PROPRIO.includes(modelId)) {
                 setModalMethod(modelId as ENDMethod)
                 setIsModalOpen(true)
@@ -463,6 +491,7 @@ function AppContent() {
               }
             }}
             onNewReport={() => {
+              if (testeEncerrado) return setCurrentPage('CONTRATAR')
               setEditingReport(null)
               setModalMethod(undefined)
               setIsModalOpen(true)

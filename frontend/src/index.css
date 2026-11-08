@@ -653,6 +653,12 @@ select.login-field-graphite option {
   .lf-linha { padding: 12px; }
 }
 
+.lf-lista { display: flex; flex-direction: column; gap: 12px; margin: 0; padding: 0; list-style: none; }
+.lf-lista li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-bottom: 12px; border-bottom: 1px solid var(--border); }
+.lf-lista li:last-child { padding-bottom: 0; border-bottom: 0; }
+.lf-lista li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.teste-aviso { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--bg-surface-alt); color: var(--text-primary); font-size: 14px; }
+
 /* ── Responsivo do app (computador, tablet e celular) ── */
 .laudo-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
 .campos-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }

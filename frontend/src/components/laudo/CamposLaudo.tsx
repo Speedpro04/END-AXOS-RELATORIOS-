@@ -13,7 +13,7 @@ interface CampoProps {
   placeholder?: string
   obrigatorio?: boolean
   numerico?: boolean
-  tipo?: 'text' | 'date'
+  tipo?: 'text' | 'date' | 'email'
   sugestoes?: string[]
 }
 
@@ -171,13 +171,13 @@ export function identificacaoInicial(tech: Partial<IdentificacaoEnsaio> | undefi
   }
 }
 
-export const CabecalhoLaudo: React.FC<{ metodo: ENDMethod; titulo: string; aoVoltar: () => void }> = ({ metodo, titulo, aoVoltar }) => (
+export const CabecalhoLaudo: React.FC<{ metodo?: ENDMethod; titulo: string; aoVoltar: () => void }> = ({ metodo, titulo, aoVoltar }) => (
   <>
     <div className="lf-topo">
       <button type="button" className="lf-botao" onClick={aoVoltar}>
-        <ArrowLeft size={16} strokeWidth={1.75} /> Voltar ao catálogo
+        <ArrowLeft size={16} strokeWidth={1.75} /> {metodo ? 'Voltar ao catálogo' : 'Voltar'}
       </button>
-      <span className="lf-etiqueta">{METHOD_LABELS[metodo].label}</span>
+      {metodo && <span className="lf-etiqueta">{METHOD_LABELS[metodo].label}</span>}
     </div>
     <h1 className="lf-titulo">{titulo}</h1>
   </>

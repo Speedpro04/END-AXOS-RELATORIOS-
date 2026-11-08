@@ -646,3 +646,219 @@ begin
   perform set_config('role', 'none', true);
   raise notice '[PASS] TESTE 10: aceites, pedidos de titulares e anonimização isolados por empresa';
 end $$;
+
+
+do $$
+declare
+  u_p uuid := 'ffffffff-0000-0000-0000-000000000001'::uuid;
+  u_i uuid := 'ffffffff-0000-0000-0000-000000000002'::uuid;
+  t_p uuid;
+  c_p uuid := gen_random_uuid();
+  w_p uuid := gen_random_uuid();
+  v_tpl uuid;
+  v_n int;
+  v_err text;
+begin
+  perform set_config('role', 'none', true);
+  insert into auth.users (id, email) values (u_p, 'p@teste.test'), (u_i, 'i@teste.test');
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_p, 'role', 'authenticated')::text, true);
+  t_p := public.criar_empresa_inicial('Pessoa P', 'Pessoa P');
+
+  perform set_config('role', 'none', true);
+  if not exists (select 1 from public.tenants where id = t_p and plan = 'trial'
+                 and trial_ends_at between now() + interval '29 days' and now() + interval '31 days') then
+    raise exception 'FALHA 11.1: conta nova sem 30 dias de teste';
+  end if;
+  insert into public.profiles (id, tenant_id, role, can_inspect, full_name) values (u_i, t_p, 'inspector', true, 'Inspetor P');
+  insert into public.clients (id, tenant_id, legal_name) values (c_p, t_p, 'Cliente P');
+  insert into public.work_orders (id, tenant_id, client_id, code, site, assigned_to, created_by)
+    values (w_p, t_p, c_p, 'OS-P', 'Local P', u_i, u_p);
+  select id into v_tpl from public.report_templates where tenant_id is null and published limit 1;
+
+  perform set_config('role', 'authenticated', true);
+  begin
+    perform public.solicitar_contratacao('equipe_3', 'Empresa P', '12345678901', 'Pessoa P');
+    raise exception 'FALHA 11.2: plano de equipe aceitou CPF';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%informe o CNPJ%' then raise exception 'Erro inesperado em 11.2: %', v_err; end if;
+  end;
+  perform public.solicitar_contratacao('individual', 'Pessoa P', '123.456.789-01', 'Pessoa P');
+  select count(*) into v_n from public.pedidos_contratacao;
+  if v_n <> 1 then raise exception 'FALHA 11.3: pedido não registrado'; end if;
+  begin
+    update public.tenants set plan = 'equipe_10' where id = t_p;
+    raise exception 'FALHA 11.4: usuário alterou o próprio plano';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%permission denied%' then raise exception 'Erro inesperado em 11.4: %', v_err; end if;
+  end;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_i, 'role', 'authenticated')::text, true);
+  begin
+    perform public.solicitar_contratacao('individual', 'X', '12345678901', 'X');
+    raise exception 'FALHA 11.5: inspetor contratou plano';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%administrador da conta%' then raise exception 'Erro inesperado em 11.5: %', v_err; end if;
+  end;
+  select count(*) into v_n from public.pedidos_contratacao;
+  if v_n <> 0 then raise exception 'FALHA 11.6: inspetor viu pedido'; end if;
+
+  insert into public.reports (tenant_id, work_order_id, template_id, inspector_id, equipment_tag, inspection_date)
+    values (t_p, w_p, v_tpl, u_i, 'DENTRO-DO-TESTE', current_date);
+
+  perform set_config('role', 'none', true);
+  update public.tenants set trial_ends_at = now() - interval '1 day' where id = t_p;
+  perform set_config('role', 'authenticated', true);
+  begin
+    insert into public.reports (tenant_id, work_order_id, template_id, inspector_id, equipment_tag, inspection_date)
+      values (t_p, w_p, v_tpl, u_i, 'FORA-DO-TESTE', current_date);
+    raise exception 'FALHA 11.7: gravou laudo com teste encerrado';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%TESTE_ENCERRADO%' then raise exception 'Erro inesperado em 11.7: %', v_err; end if;
+  end;
+  select count(*) into v_n from public.reports where equipment_tag = 'DENTRO-DO-TESTE';
+  if v_n <> 1 then raise exception 'FALHA 11.8: laudo antigo ficou inacessível'; end if;
+
+  perform set_config('role', 'none', true);
+  update public.tenants set plan = 'individual', trial_ends_at = null where id = t_p;
+  perform set_config('role', 'authenticated', true);
+  insert into public.reports (tenant_id, work_order_id, template_id, inspector_id, equipment_tag, inspection_date)
+    values (t_p, w_p, v_tpl, u_i, 'PLANO-ATIVO', current_date);
+
+  perform set_config('role', 'none', true);
+  raise notice '[PASS] TESTE 11: teste de 30 dias, pedido de contratação e bloqueio de laudo novo';
+end $$;
+
+
+do $$
+declare
+  u_a uuid := 'abababab-0000-0000-0000-000000000001'::uuid;
+  u_c uuid := 'abababab-0000-0000-0000-000000000002'::uuid;
+  u_e uuid := 'abababab-0000-0000-0000-000000000003'::uuid;
+  u_b uuid := 'abababab-0000-0000-0000-000000000004'::uuid;
+  u_d uuid := 'abababab-0000-0000-0000-000000000005'::uuid;
+  t_a uuid;
+  t_b uuid;
+  v_token text;
+  v_token2 text;
+  v_n int;
+  v_err text;
+begin
+  perform set_config('role', 'none', true);
+  insert into auth.users (id, email) values
+    (u_a, 'admin@x.test'), (u_c, 'convidado@x.test'), (u_e, 'errado@x.test'), (u_b, 'outro@x.test'), (u_d, 'dois@x.test');
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_b, 'role', 'authenticated')::text, true);
+  t_b := public.criar_empresa_inicial('Empresa B', 'Admin B');
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_a, 'role', 'authenticated')::text, true);
+  t_a := public.criar_empresa_inicial('Empresa A', 'Admin A');
+  v_token := public.criar_convite(' Convidado@X.test ', 'inspector');
+
+  begin
+    perform token_hash from public.convites limit 1;
+    raise exception 'FALHA 12.1: administrador leu o hash do convite';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%permission denied%' then raise exception 'Erro inesperado em 12.1: %', v_err; end if;
+  end;
+  begin
+    perform public.criar_convite('convidado@x.test', 'inspector');
+    raise exception 'FALHA 12.2: dois convites abertos para o mesmo e-mail';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%convite aberto%' then raise exception 'Erro inesperado em 12.2: %', v_err; end if;
+  end;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_e, 'role', 'authenticated')::text, true);
+  begin
+    perform public.aceitar_convite(v_token, 'Errado');
+    raise exception 'FALHA 12.3: aceitou convite com outro e-mail';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%outro e-mail%' then raise exception 'Erro inesperado em 12.3: %', v_err; end if;
+  end;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_b, 'role', 'authenticated')::text, true);
+  select count(*) into v_n from public.convites;
+  if v_n <> 0 then raise exception 'FALHA 12.4: outra empresa viu o convite'; end if;
+  begin
+    perform public.aceitar_convite(v_token, 'Admin B');
+    raise exception 'FALHA 12.5: conta de outra empresa aceitou convite';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%já pertence%' then raise exception 'Erro inesperado em 12.5: %', v_err; end if;
+  end;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_c, 'role', 'authenticated')::text, true);
+  if public.aceitar_convite(v_token, 'Pessoa Convidada') is distinct from t_a then
+    raise exception 'FALHA 12.6: entrou na empresa errada';
+  end if;
+  if not exists (select 1 from public.profiles where id = u_c and tenant_id = t_a and role = 'inspector' and can_inspect) then
+    raise exception 'FALHA 12.7: perfil de inspetor não criado';
+  end if;
+  select count(*) into v_n from public.tenants;
+  if v_n <> 1 then raise exception 'FALHA 12.8: convidado vê outra empresa'; end if;
+  begin
+    perform public.criar_convite('novo@x.test', 'inspector');
+    raise exception 'FALHA 12.9: inspetor criou convite';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%administrador da conta%' then raise exception 'Erro inesperado em 12.9: %', v_err; end if;
+  end;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', u_d, 'role', 'authenticated')::text, true);
+  begin
+    perform public.aceitar_convite(v_token, 'Reuso');
+    raise exception 'FALHA 12.10: convite usado duas vezes';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%não é válido%' then raise exception 'Erro inesperado em 12.10: %', v_err; end if;
+  end;
+
+  -- Limite do plano: Individual comporta só 1 inspetor
+  perform set_config('role', 'none', true);
+  update public.profiles set active = false where id = u_c;
+  update public.tenants set plan = 'individual', trial_ends_at = null where id = t_a;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_a, 'role', 'authenticated')::text, true);
+  begin
+    perform public.criar_convite('dois@x.test', 'inspector');
+    raise exception 'FALHA 12.11: passou do limite ao convidar';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%Limite de inspetores%' then raise exception 'Erro inesperado em 12.11: %', v_err; end if;
+  end;
+  begin
+    update public.profiles set active = true where id = u_c;
+    raise exception 'FALHA 12.12: reativação passou do limite';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%Limite de inspetores%' then raise exception 'Erro inesperado em 12.12: %', v_err; end if;
+  end;
+  v_token2 := public.criar_convite('dois@x.test', 'supervisor');
+  perform set_config('request.jwt.claims', json_build_object('sub', u_d, 'role', 'authenticated')::text, true);
+  perform public.aceitar_convite(v_token2, 'Supervisor');
+  if not exists (select 1 from public.profiles where id = u_d and role = 'supervisor' and not can_inspect) then
+    raise exception 'FALHA 12.13: supervisor convidado incorreto';
+  end if;
+
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  begin
+    perform public.aceitar_convite(v_token, 'Visitante');
+    raise exception 'FALHA 12.14: visitante chamou o convite';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%permission denied%' then raise exception 'Erro inesperado em 12.14: %', v_err; end if;
+  end;
+
+  perform set_config('role', 'none', true);
+  raise notice '[PASS] TESTE 12: convites isolados por empresa, uso único e limite do plano';
+end $$;
