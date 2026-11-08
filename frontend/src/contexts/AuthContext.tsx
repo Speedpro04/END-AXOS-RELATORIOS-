@@ -35,6 +35,7 @@ interface AuthContextType {
   selectedUnit: string
   setSelectedUnit: (unit: string) => void
   isLoading: boolean
+  verificandoSessao: boolean
   error: string | null
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
   signOut: () => Promise<void>
@@ -70,6 +71,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [operationalUnits, setOperationalUnits] = useState<string[]>(DEFAULT_OPERATIONAL_UNITS)
   const [selectedUnit, setSelectedUnit] = useState<string>(DEFAULT_OPERATIONAL_UNITS[0])
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  // Só na abertura do app: separa "ainda verificando" de "não está logado"
+  const [verificandoSessao, setVerificandoSessao] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
   // Link do e-mail de recuperação: abre a tela de nova senha
   const [emRecuperacao, setEmRecuperacao] = useState(() => window.location.pathname === '/redefinir-senha')
@@ -202,7 +205,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setIsLoading(false)
         }
       } finally {
-        if (isMounted && !session) setIsLoading(false)
+        if (isMounted) {
+          if (!session) setIsLoading(false)
+          setVerificandoSessao(false)
+        }
       }
     }
 
@@ -408,6 +414,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         selectedUnit,
         setSelectedUnit,
         isLoading,
+        verificandoSessao,
         error,
         signIn,
         signOut,

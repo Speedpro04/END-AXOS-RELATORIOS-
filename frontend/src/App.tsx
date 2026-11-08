@@ -58,7 +58,7 @@ const DEFAULT_REPORT: Omit<LocalReport, 'id' | 'tenantId' | 'method' | 'data' | 
 }
 
 function AppContent() {
-  const { user, profile, tenant: authTenant, selectedUnit, isLoading, signOut, emRecuperacao } = useAuth()
+  const { user, profile, tenant: authTenant, selectedUnit, isLoading, verificandoSessao, signOut, emRecuperacao } = useAuth()
   const { obraAtual: obraSelecionada, selecionarObra } = useObra()
 
   const [tenant, setTenant] = useState<TenantProfile>(() => {
@@ -326,6 +326,14 @@ function AppContent() {
     if (navRef.current) {
       navRef.current.scrollBy({ left: dir === 'left' ? -240 : 240, behavior: 'smooth' })
     }
+  }
+
+  if (verificandoSessao && !emRecuperacao) {
+    return (
+      <div role="status" style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-base)', color: 'var(--text-muted)', fontSize: '16px' }}>
+        Carregando...
+      </div>
+    )
   }
 
   if (emRecuperacao || !user || !profile) {
