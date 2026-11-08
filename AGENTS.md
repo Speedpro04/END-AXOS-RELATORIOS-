@@ -32,7 +32,8 @@ Todas as operações seguem a skill https://github.com/multica-ai/andrej-karpath
 
 - Repositório remoto: `https://github.com/Speedpro04/END-AXOS-RELATORIOS-.git`
 - Branch de trabalho: `opencode-obras-wip`
-- **Commit e push somente quando o usuário pedir explicitamente.** Nunca commitar credenciais, `.env.local` ou arquivos gerados (`dist/`, `dev-dist/`).
+- **Commit somente quando o usuário pedir explicitamente.** Nunca commitar credenciais, `.env.local` ou arquivos gerados (`dist/`, `dev-dist/`).
+- **Depois de cada commit pedido, enviar a branch de trabalho ao GitHub e atualizar a `main`, sem perguntar e sem forçar.** Se o GitHub recusar, parar e explicar. O Deploy no EasyPanel é feito pelo dono do produto.
 - Mensagem de commit em português, formato `tipo(escopo): descrição curta` (ex.: `fix(frontend): ...`).
 - Nunca imprimir senha ou credencial no terminal ou em resumo de commit.
 
