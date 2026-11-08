@@ -1,0 +1,29 @@
+# AXOS Relatórios
+
+> Software de laudos de ensaios não destrutivos (END) para empresas de inspeção no Brasil. Em fase de lançamento: confirme na demonstração os recursos disponíveis.
+
+## O que é
+
+- Registro de ensaios em campo, com ou sem internet, com sincronização quando a conexão volta.
+- 16 métodos de END em um só sistema, como ensaio visual, líquidos penetrantes, partículas magnéticas, ultrassom, radiografia, Phased Array, ToFD e termografia.
+- A conclusão técnica e a responsabilidade pelo laudo continuam sendo do profissional que assina.
+
+## Valores mensais
+
+- Individual: 1 inspetor ativo, R$ 147.
+- Equipe 3: até 3 inspetores ativos, R$ 397.
+- Equipe 5: até 5 inspetores ativos, R$ 597.
+- Equipe 10: até 10 inspetores ativos, R$ 997.
+- Acima de 10 inspetores ativos: sob consulta.
+
+## Páginas
+
+- [Página inicial](https://axosrelatorios.com/)
+- [Valores](https://axosrelatorios.com/#valores)
+- [Perguntas frequentes](https://axosrelatorios.com/#perguntas)
+- [Termos de Uso](https://axosrelatorios.com/termos-de-uso.html)
+- [Política de Privacidade](https://axosrelatorios.com/politica-de-privacidade.html)
+
+## Contato
+
+suporte@axosrelatorios.com. CNPJ 26.998.571/0001-50.
