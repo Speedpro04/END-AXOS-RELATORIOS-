@@ -108,12 +108,12 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
           Seu teste grátis terminou. Seus dados continuam guardados: escolha um plano para voltar a registrar laudos.
         </p>
       )}
-      <form onSubmit={enviar} className="lf-coluna-secoes" style={{ maxWidth: '760px' }}>
+      <form onSubmit={enviar} className="lf-coluna-secoes contratar-form">
         <Secao titulo="Plano">
           <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={PLANOS} aoMudar={setPlano} />
         </Secao>
         <Secao titulo="Dados da empresa">
-          <div className="lf-grade">
+          <div className="lf-grade contratar-grade">
             <Campo rotulo={individual ? 'Nome ou razão social' : 'Razão social'} obrigatorio valor={razao} aoMudar={setRazao} />
             <Campo rotulo={individual ? 'CPF ou CNPJ' : 'CNPJ'} obrigatorio numerico valor={documento} aoMudar={setDocumento} />
             <Campo rotulo="Responsável" obrigatorio valor={responsavel} aoMudar={setResponsavel} />

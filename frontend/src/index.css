@@ -659,6 +659,23 @@ select.login-field-graphite option {
 .lf-lista li > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
 .teste-aviso { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 12px; padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--bg-surface-alt); color: var(--text-primary); font-size: 14px; }
 
+/* Contratação: usa toda a largura do rodapé, com campos maiores */
+.contratar-form .lf-campo { gap: 8px; }
+.contratar-form .lf-campo label { font-size: 15px; }
+.contratar-form .lf-campo input, .contratar-form .lf-campo select { min-height: 52px; padding: 12px 16px; font-size: 17px; }
+.contratar-form .lf-botao { min-height: 52px; padding: 12px 24px; font-size: 16px; }
+.contratar-grade { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+
+@media (max-width: 960px) {
+  .contratar-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 640px) {
+  .contratar-grade { grid-template-columns: minmax(0, 1fr); }
+  .contratar-form .lf-acoes { flex-direction: column-reverse; }
+  .contratar-form .lf-acoes .lf-botao { align-self: stretch; }
+}
+
 /* ── Responsivo do app (computador, tablet e celular) ── */
 .laudo-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
 .campos-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
@@ -675,7 +692,7 @@ select.login-field-graphite option {
   .app-main { padding: 16px !important; }
   .app-main > div { padding: 0 !important; min-height: 0 !important; }
   .app-abas { padding: 0 12px !important; }
-  .tenant-barra, .tenant-principal { padding-left: 16px !important; padding-right: 16px !important; }
+  .tenant-barra, .tenant-principal, .tenant-rodape { padding-left: 16px !important; padding-right: 16px !important; }
   .tenant-barra { flex-wrap: wrap; gap: 4px 12px; }
   .tenant-principal { flex-wrap: wrap; gap: 12px !important; }
   .tenant-acoes { flex-wrap: wrap; flex-shrink: 1 !important; margin-left: auto; }

@@ -13,7 +13,7 @@ export const TenantFooter: React.FC = () => {
       zIndex: 10,
       transition: 'background 0.2s ease, border-color 0.2s ease',
     }}>
-      <div style={{
+      <div className="tenant-rodape" style={{
         maxWidth: '1280px', margin: '0 auto', padding: '0 32px',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         gap: '12px', flexWrap: 'wrap',
