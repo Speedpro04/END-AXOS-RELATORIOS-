@@ -2,7 +2,7 @@
  * LoginPage – AXOS Relatórios
  * Autenticação Real Supabase Auth (E-mail + Senha de no mínimo 8 dígitos)
  * Layout split oficial: painel de marca (grafite) + formulário com suporte a tema
- * Fontes: Archivo (títulos) + IBM Plex Sans (texto)
+ * Fontes: do próprio sistema, sem serviços externos
  */
 
 import React, { useEffect, useState } from 'react'
@@ -135,16 +135,10 @@ export const LoginPage: React.FC = () => {
   const [resetSent, setResetSent]       = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
 
-  // Injetar fontes do Google
+  // Título próprio da tela de acesso
   useEffect(() => {
-    const id = 'axos-login-fonts'
-    if (!document.getElementById(id)) {
-      const link = document.createElement('link')
-      link.id   = id
-      link.rel  = 'stylesheet'
-      link.href = 'https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&display=swap'
-      document.head.appendChild(link)
-    }
+    document.title = 'Entrar | AXOS Relatórios'
+    return () => { document.title = 'AXOS Relatórios' }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -408,6 +402,7 @@ export const LoginPage: React.FC = () => {
           {/* PAINEL DIREITO – Formulário */}
           <div
             className="login-form-panel"
+            role="main"
             style={{
               flex: '1 1 50%',
               minWidth: 0,
@@ -555,6 +550,7 @@ export const LoginPage: React.FC = () => {
                             color: C.cyan,
                             textDecoration: 'underline',
                             padding: 0,
+                            minHeight: '24px',
                             fontFamily: "'IBM Plex Sans', sans-serif",
                           }}
                         >
@@ -746,7 +742,7 @@ export const LoginPage: React.FC = () => {
                       style={{
                         background: 'none', border: 'none', cursor: 'pointer',
                         fontSize: '13px', color: C.cyan, textDecoration: 'underline',
-                        padding: 0, fontFamily: "'IBM Plex Sans', sans-serif",
+                        padding: 0, minHeight: '24px', fontFamily: "'IBM Plex Sans', sans-serif",
                       }}
                     >
                       Esqueci minha senha
@@ -774,6 +770,11 @@ export const LoginPage: React.FC = () => {
                     <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                   </svg>
                   Conexão segura SSL/TLS. Papéis e permissões auditados pelo PostgreSQL.
+                </div>
+                <div style={{ textAlign: 'center', fontSize: '13px', color: C.textSec, marginTop: '8px' }}>
+                  <a href="/termos-de-uso.html" style={{ display: 'inline-block', padding: '4px 0', color: C.cyan }}>Termos de Uso</a>
+                  {' · '}
+                  <a href="/politica-de-privacidade.html" style={{ display: 'inline-block', padding: '4px 0', color: C.cyan }}>Política de Privacidade</a>
                 </div>
               </div>
             </div>

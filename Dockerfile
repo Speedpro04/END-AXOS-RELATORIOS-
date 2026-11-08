@@ -26,7 +26,7 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 
 # Landing page na raiz do domínio (o app abre em /app)
 COPY landing/index.html /usr/share/nginx/html/lp.html
-COPY landing/robots.txt landing/sitemap.xml /usr/share/nginx/html/
+COPY landing/robots.txt landing/sitemap.xml landing/politica-de-privacidade.html landing/termos-de-uso.html /usr/share/nginx/html/
 COPY landing/assets/ /usr/share/nginx/html/assets/
 
 EXPOSE 80

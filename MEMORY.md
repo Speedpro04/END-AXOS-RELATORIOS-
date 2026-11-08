@@ -422,7 +422,7 @@ Todas as operações neste repositório são regidas pela skill **andrej-karpath
 
 Criada em `landing/` (`index.html`, `assets/`, `robots.txt`, `sitemap.xml`). Prévia local pela configuração `landing` de `.claude/launch.json`, porta 5500. Conferida em 1280px e 375px.
 
-**Pendências:** 3 imagens definitivas; WhatsApp comercial, quando houver número (o contato comercial definido pelo dono do produto é `suporte@axosrelatorios.com`); endereço do app para o link "Entrar"; política de privacidade e termos no rodapé; publicação no EasyPanel. A página cita recursos que dependem das telas de aprovação e emissão e da página pública `/verificar`, ainda não construídas: não publicar antes delas.
+**Pendências:** 3 imagens definitivas; WhatsApp comercial, quando houver número (o contato comercial definido pelo dono do produto é `suporte@axosrelatorios.com`); endereço do app para o link "Entrar"; revisão jurídica e razão social em `landing/politica-de-privacidade.html` e `landing/termos-de-uso.html`; publicação no EasyPanel. A página cita recursos que dependem das telas de aprovação e emissão e da página pública `/verificar`, ainda não construídas: não publicar antes delas.
 
 ## 13. Deploy do Frontend (06/11/2026)
 
@@ -433,3 +433,9 @@ EasyPanel builda a `main` pela raiz do repositório: `Dockerfile` e `.dockerigno
 A LP de `landing/index.html` abre em `https://axosrelatorios.com/` e o app em `/app`, no mesmo serviço (decisão do dono do produto: sem subdomínio; LP provisória descartada a pedido dele). O `Dockerfile` da raiz copia a LP como `lp.html` e `landing/assets/` para `assets/`. As 3 imagens definitivas estão em `landing/assets/fotos/`. O dono do produto decidiu publicar mesmo com a pendência da seção 12 (recursos citados ainda não construídos).
 
 **Pendências:** registro A `@` da Hostinger ainda em `2.57.91.91`; certificado da raiz; conferir no Supabase se a Site URL aponta para `/app`; confirmar a caixa `suporte@axosrelatorios.com`.
+
+## 15. Acessibilidade e LGPD (08/11/2026)
+
+Referência adotada: ABNT NBR 17225:2025. Fontes do Google removidas do app (`frontend/index.html` e `LoginPage.tsx`); tela de login com área principal, título próprio e links de Termos e Política; atalho para o conteúdo nas páginas legais.
+
+**Pendências:** revisão manual completa da NBR 17225, inclusive telas internas do app; prazos de guarda dos dados; responsável por privacidade; região do Supabase; contratos com clientes e fornecedores. Sem selo: não exibir marca da ABNT nem declarar conformidade.

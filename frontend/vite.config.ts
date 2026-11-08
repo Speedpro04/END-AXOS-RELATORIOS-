@@ -29,7 +29,7 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        navigateFallbackDenylist: [/^\/$/], // a raiz é a landing page, não o app
+        navigateFallbackDenylist: [/^\/$/, /^\/(politica-de-privacidade|termos-de-uso)\.html$/], // páginas públicas, não o app
         runtimeCaching: [],
       },
       devOptions: { enabled: false },
