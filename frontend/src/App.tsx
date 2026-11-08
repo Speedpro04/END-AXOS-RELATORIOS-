@@ -164,7 +164,13 @@ function AppContent() {
 
   // Navegação entre páginas de modelos
   // 'HUB' | 'LP' | 'ME' | 'EVS' | 'NR13' | 'PM' | 'US' | 'PINTURA'
-  const [currentPage, setCurrentPage] = useState<string>('OBRAS')
+  // Veio de um card de plano da página inicial: abre direto a contratação
+  const [currentPage, setCurrentPage] = useState<string>(() => (new URLSearchParams(window.location.search).has('plano') ? 'CONTRATAR' : 'OBRAS'))
+
+  // Já logado, o plano sai do endereço: recarregar a página não reabre a contratação
+  useEffect(() => {
+    if (user && new URLSearchParams(window.location.search).has('plano')) window.history.replaceState(null, '', '/app')
+  }, [user])
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
 

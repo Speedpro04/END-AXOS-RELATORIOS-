@@ -505,6 +505,8 @@ No Supabase, tabela nova nasce liberada para visitante, e só a RLS segurava as 
 
 Os links de pagamento do dono do produto estão em `PLANOS`, em `pages/ContratarPage.tsx`, e foram conferidos um a um: plano, valor e descrição batem. Depois de gravar o pedido, o app abre o link do plano com `client_reference_id` igual ao id do pedido. Nome e e-mail não vão no endereço. "Sob consulta" não tem link. Política de Privacidade e Termos citam a Stripe.
 
+Card da LP com a conta já logada abre direto a contratação, com o plano do card (`App.tsx`). Sem login, o card abre o cadastro, e o primeiro acesso depois de confirmar o e-mail cai em Obras, com o teste de 30 dias correndo e o plano guardado para a contratação.
+
 Testado no computador e no tamanho de celular, com o pedido simulado em servidor local e o link real da Stripe abrindo. Nenhum pagamento foi feito.
 
 **Pendências:**
