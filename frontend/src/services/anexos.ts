@@ -266,6 +266,18 @@ export async function salvarAnexo(input: SalvarAnexoInput): Promise<AnexoMeta> {
   return meta;
 }
 
+/** Hash que a foto terá depois de gravada (mesmo redimensionamento de salvarAnexo). */
+export async function hashDaFoto(arquivo: File | Blob): Promise<string> {
+  const blob = await redimensionarFoto(arquivo);
+  return calcularSha256(await blob.arrayBuffer());
+}
+
+/** Indica se a mesma imagem já está anexada a outro laudo neste aparelho. */
+export async function imagemUsadaEmOutroLaudo(hashSha256: string, laudoId: string): Promise<boolean> {
+  const todos = await db.anexos.toArray();
+  return todos.some(r => r.meta.hashSha256 === hashSha256 && r.meta.laudoId !== laudoId);
+}
+
 /**
  * Lista todos os anexos vinculados a um laudo.
  * Retorna apenas os metadados (sem o blob).

@@ -453,3 +453,9 @@ Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**
 Regras em `frontend/src/index.css` (`.laudo-grid`, `.campos-2`, `.campos-vinculo`, `.catalogo-grid`, `.app-main`, `.tenant-*`). Testadas 18 abas em 320, 375, 768, 1024 e 1280 px, mais lista de obras, nova obra e configurações em 375 px.
 
 **Pendências de teste:** obras e laudos com dados, janela de inspeção e tabelas com conteúdo.
+
+## Formulários de UT e PAUT (08/11/2026)
+
+`UTPage.tsx` e `PAUTPage.tsx` agora têm campos próprios (`types/laudoEnsaio.ts`, esquemas `ut-solda-v1` e `paut-v1`), com componentes em `components/laudo/CamposLaudo.tsx` e impressão em `utils/impressaoLaudo.ts`. Abrem e editam na página (`FORMULARIO_PROPRIO` em `App.tsx`), inclusive com obra selecionada. Campos baseados em relatórios reais de campo, sem dados dos exemplos no código. `USPage.tsx` continua sem uso: não salva no laudo.
+
+**Pendências:** revisão por profissional de END; outros 14 métodos seguem com campos de ensaio visual e dependem de exemplos; janela geral de laudo ainda oferece o UT antigo; coluna Veredito da lista mostra Rascunho até o servidor mudar o status; anexos ficam só no aparelho, sem envio ao servidor; PDF não testado em impressão real; vínculo com escopo da obra não testado nos formulários novos.

@@ -1,243 +1,292 @@
-import React, { useState, useEffect } from 'react'
-import { ArrowLeft, Save, FileText } from 'lucide-react'
-import { METHOD_LABELS, type InspectionReport, type ENDMethod } from '../types/inspection'
-import { buildReportCode } from '../utils/buildReportCode'
+import React, { useMemo, useState } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
+import { METHOD_LABELS, type ENDMethod, type InspectionReport } from '../types/inspection'
+import {
+  TIPOS_DEFEITO,
+  paraNumero,
+  resumirMedicoes,
+  separarMedicoes,
+  type AparelhoEnsaio,
+  type DadosPaut,
+  type IdentificacaoEnsaio,
+  type IndicacaoPaut,
+} from '../types/laudoEnsaio'
 import { useAuth } from '../contexts/AuthContext'
+import { ObraEscopoVinculo } from '../components/laudo/ObraEscopoVinculo'
+import {
+  AreaTexto,
+  BlocoConclusao,
+  BlocoFotos,
+  BlocoIdentificacao,
+  BlocoResponsavel,
+  CabecalhoLaudo,
+  Campo,
+  Linhas,
+  Secao,
+  Selecao,
+  baseInicial,
+  identificacaoInicial,
+  useFotos,
+} from '../components/laudo/CamposLaudo'
 
 const METHOD: ENDMethod = 'PAUT'
 
 interface LaudoPageProps {
   onBack: () => void
   onSave: (report: Partial<InspectionReport>) => Promise<void>
-  tenant: { tradeName?: string | null; reportPrefix?: string | null; logoPath?: string | null }
-  tenantName: string | null
+  initialReport?: InspectionReport | null
+  siteId?: string | null
 }
 
-export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, tenant, tenantName }) => {
-  const { user, profile } = useAuth()
-  const [equipmentTag, setEquipmentTag] = useState('')
-  const [title, setTitle] = useState('')
-  const [unitArea, setUnitArea] = useState('')
-  const [inspectorName, setInspectorName] = useState('')
-  const [inspectorSNQC, setInspectorSNQC] = useState('')
-  const [normProcedure, setNormProcedure] = useState(METHOD_LABELS[METHOD].code)
-  const [acceptanceCriteria, setAcceptanceCriteria] = useState('')
-  const [status, setStatus] = useState<'rascunho' | 'enviado' | 'aprovado' | 'reprovado'>('rascunho')
-  const [findingsCount, setFindingsCount] = useState('')
-  const [summary, setSummary] = useState('')
-  const [saving, setSaving] = useState(false)
+const novaIndicacao = (): IndicacaoPaut => ({
+  id: crypto.randomUUID(), identificacao: '', posicao: '', comprimento: '', profundidade: '', tipoDefeito: '', resultado: '',
+})
 
-  // Parâmetros específicos do VT
-  const [modalidade, setModalidade] = useState('direta') // direta | remota
-  const [iluminacao, setIluminacao] = useState('')
-  const [distancia, setDistancia] = useState('')
-  const [angulo, setAngulo] = useState('')
-  const [instrumentos, setInstrumentos] = useState('')
-  const [checklist, setChecklist] = useState('')
+const formatar = (n: number | null) => (n === null ? '—' : `${n.toFixed(2).replace('.', ',')} mm`)
 
-  const handleSave = async (e: React.FormEvent) => {
+type Especifico = Omit<DadosPaut, 'esquema' | 'fotos' | keyof IdentificacaoEnsaio | keyof AparelhoEnsaio>
+
+export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialReport, siteId }) => {
+  const { profile } = useAuth()
+  const salvo = initialReport?.technicalData as Partial<DadosPaut> | undefined
+  const [base, setBase] = useState(() => baseInicial(METHOD, initialReport, profile?.full_name))
+  const [ident, setIdent] = useState(() => identificacaoInicial(salvo))
+  const [aparelho, setAparelho] = useState<AparelhoEnsaio>({
+    aparelhoFabricante: salvo?.aparelhoFabricante ?? '',
+    aparelhoModelo: salvo?.aparelhoModelo ?? '',
+    aparelhoSerie: salvo?.aparelhoSerie ?? '',
+  })
+  const [dados, setDados] = useState<Especifico>({
+    modo: salvo?.modo ?? 'solda',
+    sonda: salvo?.sonda ?? '',
+    cunha: salvo?.cunha ?? '',
+    ganhoPrimario: salvo?.ganhoPrimario ?? '',
+    ganhoVarredura: salvo?.ganhoVarredura ?? '',
+    ganhoAvaliacao: salvo?.ganhoAvaliacao ?? '',
+    tipoJunta: salvo?.tipoJunta ?? '',
+    diametroExterno: salvo?.diametroExterno ?? '',
+    espessura: salvo?.espessura ?? '',
+    indicacoes: salvo?.indicacoes ?? [],
+    tubo: salvo?.tubo ?? '',
+    espessuraNominal: salvo?.espessuraNominal ?? '',
+    comprimentoVarredura: salvo?.comprimentoVarredura ?? '',
+    espessuraMinima: salvo?.espessuraMinima ?? '',
+    medicoes: salvo?.medicoes ?? [],
+  })
+  const fotos = useFotos(salvo?.fotos)
+  const [colagem, setColagem] = useState('')
+  const [salvando, setSalvando] = useState(false)
+  const [erro, setErro] = useState<string | null>(null)
+
+  const mudarBase = (parcial: Partial<typeof base>) => setBase((b) => ({ ...b, ...parcial }))
+  const mudar = (parcial: Partial<Especifico>) => setDados((d) => ({ ...d, ...parcial }))
+  const emSolda = dados.modo === 'solda'
+  const resumo = useMemo(() => resumirMedicoes(dados.medicoes, dados.espessuraMinima), [dados.medicoes, dados.espessuraMinima])
+  const abaixo = useMemo(() => new Set(resumo.abaixoDoLimite), [resumo.abaixoDoLimite])
+  const temReprovada = emSolda ? dados.indicacoes.some((i) => i.resultado === 'R') : resumo.abaixoDoLimite.length > 0
+
+  const incluirColagem = () => {
+    const valores = separarMedicoes(colagem)
+    if (valores.length === 0) return
+    mudar({ medicoes: [...dados.medicoes, ...valores] })
+    setColagem('')
+  }
+
+  const salvar = async (e: React.FormEvent) => {
     e.preventDefault()
-    setSaving(true)
+    setSalvando(true)
+    setErro(null)
     try {
-      const report: Partial<InspectionReport> = {
-        method: METHOD,
-        title: title || `${METHOD_LABELS[METHOD].label}: Inspeção em ${equipmentTag || 'Equipamento'}`,
-        equipmentTag: equipmentTag ? equipmentTag.toUpperCase() : 'TAG-PENDENTE',
-        unitArea: unitArea || 'Área Industrial',
-        inspectorName: inspectorName || 'Inspetor Responsável',
-        inspectorSNQC: inspectorSNQC || 'SNQC',
-        normProcedure: normProcedure || METHOD_LABELS[METHOD].code,
-        acceptanceCriteria: acceptanceCriteria || 'Critério Normativo',
-        status,
-        findingsCount: findingsCount === '' ? 0 : Number(findingsCount),
-        summary: summary || '',
-        date: new Date().toISOString().split('T')[0],
-        technicalData: {
-          metodo: 'Visual',
-          modalidade,
-          iluminacao,
-          distancia,
-          angulo,
-          instrumentos,
-          checklist,
-        },
+      const fotosSalvas = await fotos.persistir(base.id)
+      const tecnico: DadosPaut & { observacoes: string; conclusao: string } = {
+        ...salvo,
+        esquema: 'paut-v1',
+        ...ident,
+        ...aparelho,
+        ...dados,
+        observacoes: base.observacoes,
+        conclusao: base.veredito,
+        fotos: fotosSalvas,
       }
-      await onSave(report)
+      await onSave({
+        id: base.id,
+        method: METHOD,
+        title: `${METHOD_LABELS[METHOD].full} ${emSolda ? 'em solda' : 'de espessura'}: ${base.equipmentTag}`,
+        equipmentTag: base.equipmentTag.toUpperCase(),
+        unitArea: base.local,
+        inspectorName: base.inspetor,
+        inspectorSNQC: base.snqc,
+        normProcedure: base.norma,
+        acceptanceCriteria: base.criterio,
+        status: base.veredito,
+        findingsCount: emSolda ? dados.indicacoes.length : resumo.abaixoDoLimite.length,
+        summary: base.parecer,
+        date: base.data,
+        technicalData: tecnico,
+        linhaId: base.linhaId,
+        quantidadeInspecionada: base.quantidadeInspecionada,
+        quantidadeAprovada: base.quantidadeAprovada,
+        quantidadeReprovada: base.quantidadeReprovada,
+      })
       onBack()
+    } catch {
+      setErro('Não foi possível registrar o laudo. Confira o espaço do aparelho e tente novamente.')
     } finally {
-      setSaving(false)
+      setSalvando(false)
     }
   }
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-        <button
-          type="button"
-          onClick={onBack}
-          style={{
-            display: 'inline-flex', alignItems: 'center', gap: '6px',
-            padding: '8px 16px', borderRadius: '5px', border: '1px solid var(--border)',
-            background: 'var(--bg-surface)', color: 'var(--text-primary)',
-            fontFamily: 'Archivo, system-ui, sans-serif', fontSize: '14px', fontWeight: 500,
-            cursor: 'pointer',
-          }}
-        >
-          <ArrowLeft size={16} strokeWidth={1.75} /> Voltar ao Catálogo
-        </button>
-        <span style={{ fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--text-muted)', background: 'var(--bg-surface-alt)', padding: '2px 8px', borderRadius: '5px' }}>
-          {METHOD_LABELS[METHOD].label}
-        </span>
-      </div>
-
-      <h1 style={{ fontSize: '22px', fontWeight: 600, marginBottom: '24px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
-        Novo Laudo — {METHOD_LABELS[METHOD].full}
-      </h1>
-
-      <form onSubmit={handleSave} className="laudo-grid">
-        {/* Coluna esquerda: Identificação + Parâmetros Técnicos */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              1. Identificação do Ativo
-            </h2>
-            <div className="campos-2">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TAG do Equipamento</label>
-                <input type="text" required placeholder="Ex: V-2104 / SP-08" value={equipmentTag} onChange={(e) => setEquipmentTag(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Título da Inspeção</label>
-                <input type="text" placeholder="Ex: Ensaio Visual de Junta de Solda" value={title} onChange={(e) => setTitle(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Área / Unidade</label>
-                <input type="text" required placeholder="Ex: Unidade U-2100" value={unitArea} onChange={(e) => setUnitArea(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Norma / Procedimento</label>
-                <input type="text" value={normProcedure} onChange={(e) => setNormProcedure(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
+    <div className="lf-pagina">
+      <CabecalhoLaudo metodo={METHOD} titulo={`${initialReport ? 'Laudo' : 'Novo laudo'}: ${METHOD_LABELS[METHOD].full}`} aoVoltar={onBack} />
+      <form onSubmit={salvar} className="laudo-grid">
+        <div className="lf-coluna-secoes">
+          <Secao titulo="Tipo de ensaio">
+            <div className="lf-grade">
+              <Selecao
+                rotulo="O que está sendo ensaiado"
+                valor={dados.modo}
+                aoMudar={(v) => mudar({ modo: v as DadosPaut['modo'] })}
+                opcoes={[
+                  { valor: 'solda', rotulo: 'Solda' },
+                  { valor: 'espessura', rotulo: 'Espessura (B-scan)' },
+                ]}
+              />
             </div>
-          </section>
+          </Secao>
 
-          <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              2. Parâmetros Técnicos — {METHOD_LABELS[METHOD].label}
-            </h2>
-            <div className="campos-2">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Modalidade</label>
-                <select value={modalidade} onChange={(e) => setModalidade(e.target.value as 'direta' | 'remota')}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }}>
-                  <option value="direta">Direta</option>
-                  <option value="remota">Remota (Boroscópio / Drone)</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Iluminação (lux)</label>
-                <input type="text" placeholder="Ex: 500 lux" value={iluminacao} onChange={(e) => setIluminacao(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Distância / Ângulo</label>
-                <input type="text" placeholder="Ex: 300 mm / 90°" value={distancia} onChange={(e) => setDistancia(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Instrumentos Auxiliares</label>
-                <input type="text" placeholder="Ex: Lupa, espelho, calibre" value={instrumentos} onChange={(e) => setInstrumentos(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ gridColumn: 'span 2', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Checklist de Itens Verificados</label>
-                <textarea rows={3} placeholder="Reforço, mordedura, desalinhamento, trinca superficial, respingos, corrosão, deformação..." value={checklist} onChange={(e) => setChecklist(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px', resize: 'vertical' }} />
-              </div>
+          <BlocoIdentificacao base={base} aoMudarBase={mudarBase} ident={ident} aoMudarIdent={(p) => setIdent((i) => ({ ...i, ...p }))} />
+
+          <Secao titulo="Aparelho e calibração">
+            <div className="lf-grade">
+              <Campo rotulo="Fabricante do aparelho" valor={aparelho.aparelhoFabricante} aoMudar={(v) => setAparelho((a) => ({ ...a, aparelhoFabricante: v }))} />
+              <Campo rotulo="Modelo do aparelho" valor={aparelho.aparelhoModelo} aoMudar={(v) => setAparelho((a) => ({ ...a, aparelhoModelo: v }))} />
+              <Campo rotulo="Número de série" valor={aparelho.aparelhoSerie} aoMudar={(v) => setAparelho((a) => ({ ...a, aparelhoSerie: v }))} />
+              <Campo rotulo="Sonda" valor={dados.sonda} aoMudar={(v) => mudar({ sonda: v })} />
+              <Campo rotulo="Cunha" valor={dados.cunha} aoMudar={(v) => mudar({ cunha: v })} />
+              <Campo rotulo="Ganho primário (dB)" numerico valor={dados.ganhoPrimario} aoMudar={(v) => mudar({ ganhoPrimario: v })} />
+              <Campo rotulo="Ganho de varredura (dB)" numerico valor={dados.ganhoVarredura} aoMudar={(v) => mudar({ ganhoVarredura: v })} />
+              <Campo rotulo="Ganho de avaliação (dB)" numerico valor={dados.ganhoAvaliacao} aoMudar={(v) => mudar({ ganhoAvaliacao: v })} />
             </div>
-          </section>
+          </Secao>
+
+          {emSolda ? (
+            <>
+              <Secao titulo="Junta">
+                <div className="lf-grade">
+                  <Selecao
+                    rotulo="Tipo de junta"
+                    valor={dados.tipoJunta}
+                    vazio="Não informado"
+                    aoMudar={(v) => mudar({ tipoJunta: v as DadosPaut['tipoJunta'] })}
+                    opcoes={[
+                      { valor: 'longitudinal', rotulo: 'Longitudinal' },
+                      { valor: 'circunferencial', rotulo: 'Circunferencial' },
+                    ]}
+                  />
+                  <Campo rotulo="Diâmetro externo (mm)" numerico valor={dados.diametroExterno} aoMudar={(v) => mudar({ diametroExterno: v })} />
+                  <Campo rotulo="Espessura (mm)" numerico valor={dados.espessura} aoMudar={(v) => mudar({ espessura: v })} />
+                </div>
+              </Secao>
+              <Secao titulo="Registro dos resultados" descricao="Se não houver descontinuidade, deixe em branco.">
+                <Linhas
+                  rotuloLinha="Indicação"
+                  textoAdicionar="Adicionar indicação"
+                  textoVazio="Nenhuma descontinuidade registrada."
+                  linhas={dados.indicacoes}
+                  aoMudar={(indicacoes) => mudar({ indicacoes })}
+                  nova={novaIndicacao}
+                  campos={(i, alterar) => (
+                    <>
+                      <Campo rotulo="Junta" valor={i.identificacao} aoMudar={(v) => alterar({ identificacao: v })} />
+                      <Campo rotulo="Posição" valor={i.posicao} sugestoes={['SK 90', 'SK 270']} aoMudar={(v) => alterar({ posicao: v })} />
+                      <Campo rotulo="Comprimento (mm)" numerico valor={i.comprimento} aoMudar={(v) => alterar({ comprimento: v })} />
+                      <Campo rotulo="Profundidade (mm)" numerico valor={i.profundidade} aoMudar={(v) => alterar({ profundidade: v })} />
+                      <Selecao rotulo="Tipo de defeito" valor={i.tipoDefeito} vazio="Não informado" opcoes={TIPOS_DEFEITO} aoMudar={(v) => alterar({ tipoDefeito: v as IndicacaoPaut['tipoDefeito'] })} />
+                      <Selecao rotulo="Resultado" valor={i.resultado} vazio="Não informado" opcoes={[{ valor: 'A', rotulo: 'Aprovada' }, { valor: 'R', rotulo: 'Reprovada' }]} aoMudar={(v) => alterar({ resultado: v as IndicacaoPaut['resultado'] })} />
+                    </>
+                  )}
+                />
+              </Secao>
+            </>
+          ) : (
+            <>
+              <Secao titulo="Peça">
+                <div className="lf-grade">
+                  <Campo rotulo="Tubo ou diâmetro" valor={dados.tubo} placeholder={'Ex: 3"'} aoMudar={(v) => mudar({ tubo: v })} />
+                  <Campo rotulo="Espessura nominal (mm)" numerico valor={dados.espessuraNominal} aoMudar={(v) => mudar({ espessuraNominal: v })} />
+                  <Campo rotulo="Comprimento de varredura (mm)" numerico valor={dados.comprimentoVarredura} aoMudar={(v) => mudar({ comprimentoVarredura: v })} />
+                  <Campo rotulo="Espessura mínima aceita (mm)" numerico valor={dados.espessuraMinima} aoMudar={(v) => mudar({ espessuraMinima: v })} />
+                </div>
+              </Secao>
+              <Secao titulo="Medições de espessura" descricao="Digite ponto a ponto ou cole a lista de uma vez.">
+                <div className="lf-resumo" aria-live="polite">
+                  <div><span>Pontos</span><strong>{resumo.total}</strong></div>
+                  <div><span>Mínima</span><strong>{formatar(resumo.minimo)}</strong></div>
+                  <div><span>Máxima</span><strong>{formatar(resumo.maximo)}</strong></div>
+                  <div><span>Média</span><strong>{formatar(resumo.media)}</strong></div>
+                </div>
+                {paraNumero(dados.espessuraMinima) === null && resumo.total > 0 && (
+                  <p className="lf-descricao">Informe a espessura mínima aceita para o sistema destacar os pontos abaixo dela.</p>
+                )}
+                {resumo.abaixoDoLimite.length > 0 && (
+                  <p className="lf-alerta" role="alert">
+                    {resumo.abaixoDoLimite.length === 1 ? '1 ponto abaixo' : `${resumo.abaixoDoLimite.length} pontos abaixo`} da espessura mínima: {resumo.abaixoDoLimite.join(', ')}.
+                  </p>
+                )}
+                <div className="lf-medicoes">
+                  {dados.medicoes.map((m, i) => (
+                    <div className={`lf-medicao${abaixo.has(i + 1) ? ' lf-medicao-baixa' : ''}`} key={i}>
+                      <label htmlFor={`medicao-${i}`}>{i + 1}</label>
+                      <input
+                        id={`medicao-${i}`}
+                        inputMode="decimal"
+                        value={m}
+                        aria-label={`Ponto ${i + 1}, espessura em milímetros${abaixo.has(i + 1) ? ', abaixo da mínima' : ''}`}
+                        onChange={(e) => mudar({ medicoes: dados.medicoes.map((v, j) => (j === i ? e.target.value : v)) })}
+                      />
+                      <button type="button" aria-label={`Remover ponto ${i + 1}`} onClick={() => mudar({ medicoes: dados.medicoes.filter((_, j) => j !== i) })}>
+                        <Trash2 size={16} strokeWidth={1.75} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <div className="lf-linha-botoes">
+                  <button type="button" className="lf-botao" onClick={() => mudar({ medicoes: [...dados.medicoes, ''] })}>
+                    <Plus size={16} strokeWidth={1.75} /> Adicionar ponto
+                  </button>
+                </div>
+                <AreaTexto rotulo="Colar lista de medições" linhas={3} placeholder="Ex: 4,9 4,8 4,9 4,5" valor={colagem} aoMudar={setColagem} />
+                <div className="lf-linha-botoes">
+                  <button type="button" className="lf-botao" disabled={!colagem.trim()} onClick={incluirColagem}>Incluir lista</button>
+                </div>
+              </Secao>
+            </>
+          )}
+
+          <BlocoFotos
+            descricao={emSolda ? 'Croqui da peça e telas do aparelho, cada um com legenda.' : 'Desenho técnico com o mapa dos pontos e tela do aparelho, cada um com legenda.'}
+            laudoId={base.id}
+            controle={fotos}
+            sugestoes={emSolda ? ['Croqui', 'SK 90', 'SK 270'] : ['Desenho técnico', 'Imagem do B-scan']}
+          />
         </div>
 
-        {/* Coluna direita: Responsável + Veredito + Ações */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              3. Responsável Técnico
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Inspetor Executor</label>
-                <input type="text" required placeholder="Nome completo" value={inspectorName} onChange={(e) => setInspectorName(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Registro SNQC</label>
-                <input type="text" required placeholder="Ex: SNQC 14892 (N2-PAUT)" value={inspectorSNQC} onChange={(e) => setInspectorSNQC(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-            </div>
-          </section>
-
-          <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
-              4. Veredito & Parecer
-            </h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Veredito</label>
-                <select value={status} onChange={(e) => setStatus(e.target.value as any)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }}>
-                  <option value="rascunho">Rascunho (Campo)</option>
-                  <option value="enviado">Em Revisão (Supervisor)</option>
-                  <option value="aprovado">Conforme / Qualificado</option>
-                  <option value="reprovado">Não Conforme / Reparo</option>
-                </select>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Descontinuidades</label>
-                <input type="number" min={0} placeholder="0" value={findingsCount} onChange={(e) => setFindingsCount(String(e.target.value === "" ? "" : parseInt(e.target.value) || 0))}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px' }} />
-              </div>
-              <div style={{ gridColumn: 'span 1', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Parecer Técnico</label>
-                <textarea rows={4} placeholder="Descreva o parecer técnico conclusivo..." value={summary} onChange={(e) => setSummary(e.target.value)}
-                  style={{ padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: 'Archivo, sans-serif', fontSize: '14px', resize: 'vertical' }} />
-              </div>
-            </div>
-          </section>
-
-          <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', justifyContent: 'flex-end' }}>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-              <button
-                type="button"
-                onClick={onBack}
-                style={{
-                  padding: '10px 20px', borderRadius: '5px', border: '1px solid var(--border)',
-                  background: 'var(--bg-base)', color: 'var(--text-primary)',
-                  fontFamily: 'Archivo, system-ui, sans-serif', fontSize: '14px', fontWeight: 600,
-                  cursor: 'pointer',
-                }}
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  padding: '10px 24px', borderRadius: '5px', border: 'none',
-                  background: 'var(--card-met-azul)', color: 'var(--card-met-azul-texto)',
-                  fontFamily: 'Archivo, system-ui, sans-serif', fontSize: '14px', fontWeight: 600,
-                  cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.7 : 1,
-                }}
-              >
-                {saving ? 'Salvando...' : 'Registrar Laudo'}
-              </button>
-            </div>
-          </section>
+        <div className="lf-coluna-secoes">
+          <BlocoResponsavel base={base} aoMudar={mudarBase} exemploSnqc="Ex: SNQC 00000 US-N2 / Phased Array" />
+          {siteId && (
+            <Secao titulo="Medição da obra">
+              <ObraEscopoVinculo
+                linhaId={base.linhaId}
+                quantidadeInspecionada={base.quantidadeInspecionada}
+                quantidadeAprovada={base.quantidadeAprovada}
+                quantidadeReprovada={base.quantidadeReprovada}
+                onChange={mudarBase}
+                siteId={siteId}
+              />
+            </Secao>
+          )}
+          <BlocoConclusao base={base} aoMudar={mudarBase} temReprovada={temReprovada} aviso={emSolda ? undefined : 'Atenção: há ponto abaixo da espessura mínima, mas o laudo está como aprovado.'} erro={erro} salvando={salvando} aoCancelar={onBack} />
         </div>
       </form>
     </div>

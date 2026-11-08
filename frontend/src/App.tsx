@@ -30,6 +30,9 @@ import { IRTPage } from './pages/IRTPage'
 import { ACFMPage } from './pages/ACFMPage'
 import { TFMPage } from './pages/TFMPage'
 import { LoginPage } from './pages/LoginPage'
+
+// Métodos com formulário próprio: abrem e editam na página, não na janela geral
+const FORMULARIO_PROPRIO: string[] = ['UT', 'PAUT']
 import { ObraEscopoPage } from './pages/ObraEscopoPage'
 import { ObrasPage } from './pages/ObrasPage'
 import { NovaObraPage } from './pages/NovaObraPage'
@@ -189,6 +192,16 @@ function AppContent() {
     localStorage.setItem('axos_tenant_profile', JSON.stringify(updated))
   }
 
+  // Saiu do formulário sem salvar: o próximo laudo não pode herdar a edição
+  useEffect(() => {
+    if (editingReport && !isModalOpen && editingReport.method !== currentPage) setEditingReport(null)
+  }, [currentPage, editingReport, isModalOpen])
+
+  const voltarDoFormulario = () => {
+    setEditingReport(null)
+    setCurrentPage('HUB')
+  }
+
   const handleSaveReport = async (reportData: Partial<InspectionReport>) => {
     const agora = new Date().toISOString()
     // Veredito é do inspetor; o status de workflow é só do servidor
@@ -198,7 +211,7 @@ function AppContent() {
     const data: InspectionReport = editingReport
       ? { ...editingReport, ...campos, updatedAt: agora }
       : {
-          id: crypto.randomUUID(),
+          id: reportData.id || crypto.randomUUID(),
           code: 'RASCUNHO', // número definitivo atribuído pelo servidor na emissão
           method: reportData.method || 'VT',
           title: reportData.title || 'Laudo Técnico END',
@@ -441,7 +454,7 @@ function AppContent() {
             reports={reports}
             onVoltarObras={() => setCurrentPage('OBRAS')}
             onSelectModel={(modelId) => {
-              if (obraSelecionada) {
+              if (obraSelecionada && !FORMULARIO_PROPRIO.includes(modelId)) {
                 setModalMethod(modelId as ENDMethod)
                 setIsModalOpen(true)
                 setEditingReport(null)
@@ -456,7 +469,8 @@ function AppContent() {
             }}
             onEditReport={(report) => {
               setEditingReport(report)
-              setIsModalOpen(true)
+              if (FORMULARIO_PROPRIO.includes(report.method)) setCurrentPage(report.method)
+              else setIsModalOpen(true)
             }}
             onDeleteReport={handleDeleteReport}
           />
@@ -484,7 +498,7 @@ function AppContent() {
           <MTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'UT' && (
-          <UTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
+          <UTPage key={editingReport?.id ?? 'novo'} initialReport={editingReport} siteId={obraSelecionada?.id} onBack={voltarDoFormulario} onSave={handleSaveReport} />
         )}
         {currentPage === 'RT' && (
           <RTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
@@ -499,7 +513,7 @@ function AppContent() {
           <LT_VACUOPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'PAUT' && (
-          <PAUTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
+          <PAUTPage key={editingReport?.id ?? 'novo'} initialReport={editingReport} siteId={obraSelecionada?.id} onBack={voltarDoFormulario} onSave={handleSaveReport} />
         )}
         {currentPage === 'TOFD' && (
           <TOFDPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />

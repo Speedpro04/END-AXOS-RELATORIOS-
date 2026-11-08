@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { MoreHorizontal, FileText, Edit2, RefreshCw, History } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type ReportStatus } from '../types/inspection'
+import { ESTILO_TECNICO, htmlTecnico } from '../utils/impressaoLaudo'
 
 const AZUL_DESTAQUE = 'var(--card-met-azul, #2FB8D6)'
 
@@ -142,6 +143,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
       const emitido = estaEmitido(report)
       // TODO: Integrar com pdf_worker existente (backend) quando o endpoint de emissão estiver disponível.
       // Por enquanto, gera HTML em nova aba e aciona window.print() para impressão/PDF do navegador.
+      const tecnico = await htmlTecnico(report, escapeHtml)
       const conteudo = `
 <!DOCTYPE html>
 <html lang="pt-BR">
@@ -163,6 +165,7 @@ h1 { font-size: 18px; margin-bottom: 4px; color: #0284C7; }
 table { width: 100%; border-collapse: collapse; margin-top: 12px; }
 th, td { border: 1px solid #ccc; padding: 6px 8px; font-size: 10.5px; text-align: left; }
 th { background: #f2f2f2; }
+${ESTILO_TECNICO}
 </style>
 </head>
 <body>
@@ -173,7 +176,7 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
     <strong>Número:</strong> ${escapeHtml(report.code)} &nbsp;|&nbsp;
     <strong>Método:</strong> ${escapeHtml(report.method)} &nbsp;|&nbsp;
     <strong>Status:</strong> ${escapeHtml(report.status)} &nbsp;|&nbsp;
-    <strong>Revisão:</strong> ${escapeHtml(String(report.technicalData?.revisao)) || '0'}
+    <strong>Revisão:</strong> ${escapeHtml(String(report.technicalData?.revisao ?? '0'))}
   </div>
   <table>
     <tr><th style="width:30%">Campo</th><th>Valor</th></tr>
@@ -188,6 +191,7 @@ ${!emitido ? '<div class="watermark">PROVISÓRIO, SEM VALOR OFICIAL</div>' : ''}
     <tr><td>Título</td><td>${escapeHtml(report.title)}</td></tr>
     <tr><td>Resumo</td><td>${escapeHtml(report.summary) || '—'}</td></tr>
   </table>
+  ${tecnico}
   <div style="margin-top:20px; font-size:10px; color:#666;">
     ${emitido ? 'PDF oficial emitido pelo sistema AXOS Relatórios.' : 'PDF gerado a partir de laudo PROVISÓRIO. Sem valor oficial.'}
   </div>

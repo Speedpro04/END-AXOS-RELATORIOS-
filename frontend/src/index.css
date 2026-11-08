@@ -596,6 +596,63 @@ select.login-field-graphite option {
   box-shadow: 0 4px 8px rgba(2, 132, 199, 0.25) !important;
 }
 
+/* ── Formulários de laudo com campos próprios (UT e PAUT) ── */
+.lf-pagina { max-width: 1280px; margin: 0 auto; color: var(--text-primary); }
+.lf-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 24px; }
+.lf-titulo { margin: 0 0 24px; font-size: 24px; font-weight: 600; line-height: 1.25; }
+.lf-etiqueta { padding: 2px 8px; border-radius: 5px; background: var(--bg-surface-alt); color: var(--text-muted); font-size: 14px; font-weight: 500; }
+.lf-coluna-secoes { display: flex; flex-direction: column; gap: 24px; min-width: 0; }
+.lf-secao { display: flex; flex-direction: column; gap: 16px; padding: 24px; border: 1px solid var(--border); border-radius: 5px; background: var(--bg-surface); }
+.lf-secao h2 { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.35; color: var(--text-primary); }
+.lf-descricao { margin: 0; color: var(--text-muted); font-size: 14px; }
+.lf-grade { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 16px; }
+.lf-coluna { display: flex; flex-direction: column; gap: 16px; }
+.lf-campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.lf-campo label { color: var(--text-secondary); font-size: 14px; font-weight: 500; line-height: 1.4; }
+.lf-campo input, .lf-campo select, .lf-campo textarea, .lf-medicao input {
+  width: 100%; min-height: 40px; padding: 8px 12px; border: 1px solid var(--border); border-radius: 5px !important;
+  background: var(--bg-base); color: var(--text-primary); font-size: 16px; font-family: inherit; box-sizing: border-box;
+}
+.lf-campo input:focus-visible, .lf-campo select:focus-visible, .lf-campo textarea:focus-visible, .lf-medicao input:focus-visible, .lf-botao:focus-visible, .lf-medicao button:focus-visible {
+  outline: 3px solid var(--card-met-azul); outline-offset: 1px;
+}
+.lf-botao {
+  display: inline-flex; align-items: center; justify-content: center; align-self: flex-start; gap: 8px; min-height: 40px; padding: 8px 16px;
+  border: 1px solid var(--border); border-radius: 5px !important; background: var(--bg-surface); color: var(--text-primary);
+  font-size: 14px; font-weight: 500; cursor: pointer; transition: background-color 140ms ease-out;
+}
+.lf-botao:hover { background: var(--bg-surface-alt); }
+.lf-botao:disabled { opacity: 0.5; cursor: not-allowed; }
+.lf-botao-primario { border-color: var(--card-met-azul); background: var(--card-met-azul); color: #0B0F14; font-weight: 600; }
+.lf-botao-primario:hover { background: var(--card-met-azul-hover); }
+.lf-acoes { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 12px; }
+.lf-linhas { display: flex; flex-direction: column; gap: 16px; }
+.lf-linha { display: flex; flex-direction: column; gap: 16px; padding: 16px; border: 1px solid var(--border); border-radius: 5px; }
+.lf-linha-topo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.lf-linha-botoes { display: flex; flex-wrap: wrap; gap: 8px; }
+.lf-alerta { margin: 0; padding: 8px 12px; border: 1px solid var(--danger); border-radius: 5px; color: var(--text-primary); font-size: 14px; }
+.lf-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(240px, 100%), 1fr)); gap: 16px; }
+.lf-fotos:empty { display: none; }
+.lf-foto { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.lf-foto img { width: 100%; max-height: 220px; object-fit: contain; border: 1px solid var(--border); border-radius: 5px; background: var(--bg-base); }
+.lf-resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+.lf-resumo div { display: flex; flex-direction: column; gap: 4px; padding: 12px; border-radius: 5px; background: var(--bg-surface-alt); }
+.lf-resumo span { color: var(--text-muted); font-size: 14px; }
+.lf-resumo strong { font-size: 18px; font-variant-numeric: tabular-nums; }
+.lf-medicoes { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
+.lf-medicoes:empty { display: none; }
+.lf-medicao { display: grid; grid-template-columns: 32px minmax(0, 1fr) 40px; align-items: center; gap: 4px; }
+.lf-medicao label { color: var(--text-muted); font-size: 14px; text-align: right; font-variant-numeric: tabular-nums; }
+.lf-medicao input { padding: 8px; font-variant-numeric: tabular-nums; }
+.lf-medicao button { display: flex; align-items: center; justify-content: center; height: 40px; border: 0; background: none; color: var(--text-muted); cursor: pointer; }
+.lf-medicao-baixa input { border: 2px solid var(--danger); font-weight: 600; }
+.lf-medicao-baixa label { color: var(--text-primary); font-weight: 600; }
+
+@media (max-width: 960px) {
+  .lf-secao { padding: 16px; }
+  .lf-linha { padding: 12px; }
+}
+
 /* ── Responsivo do app (computador, tablet e celular) ── */
 .laudo-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
 .campos-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
