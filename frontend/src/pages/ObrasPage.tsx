@@ -100,7 +100,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onAbrirPainel }) =
       <h1 style={{ fontSize: '29px', fontWeight: 600, margin: '0 0 32px', color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
         Obras
       </h1>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
         <button
           type="button"
           onClick={onBack}
@@ -144,8 +144,8 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onAbrirPainel }) =
       )}
 
       {/* Barra de ações */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px', minWidth: 0 }}>
           <div className="relative" style={{ maxWidth: '420px' }}>
             <Search size={16} strokeWidth={1.75} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} aria-hidden='true' />
             <input
@@ -160,7 +160,7 @@ export const ObrasPage: React.FC<ObrasPageProps> = ({ onBack, onAbrirPainel }) =
               }}
             />
           </div>
-          <div style={{ display: 'flex', gap: '8px' }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', minWidth: 0 }}>
             <select
               value={filtroContratante || ''}
               onChange={(e) => setFiltroContratante(e.target.value || null)}

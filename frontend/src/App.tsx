@@ -318,7 +318,7 @@ function AppContent() {
         boxShadow: '0 1px 3px rgba(15, 23, 42, 0.03)',
         transition: 'background 0.2s ease, border-color 0.2s ease',
       }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <div className="app-abas" style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 24px', position: 'relative', display: 'flex', alignItems: 'center' }}>
           
           {/* Botão de Rolar para Esquerda */}
           <button
@@ -435,7 +435,7 @@ function AppContent() {
       </div>
 
       {/* ÁREA PRINCIPAL DO APP */}
-      <main style={{ flex: 1, maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '28px 32px', position: 'relative', zIndex: 1 }}>
+      <main className="app-main" style={{ flex: 1, maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '28px 32px', position: 'relative', zIndex: 1 }}>
         {currentPage === 'HUB' && (
           <HubPage
             reports={reports}

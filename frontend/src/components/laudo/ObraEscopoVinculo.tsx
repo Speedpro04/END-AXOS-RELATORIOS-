@@ -85,7 +85,7 @@ export const ObraEscopoVinculo: React.FC<ObraEscopoVinculoProps> = ({
         )}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 140px 140px 140px', gap: '12px', alignItems: 'end' }}>
+      <div className="campos-vinculo">
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Linha de escopo</label>
           <select

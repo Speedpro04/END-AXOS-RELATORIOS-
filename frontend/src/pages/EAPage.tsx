@@ -94,14 +94,14 @@ export const EAPage: React.FC<LaudoPageProps> = ({ onBack, onSave, tenant, tenan
         Novo Laudo — {METHOD_LABELS[METHOD].full}
       </h1>
 
-      <form onSubmit={handleSave} style={{ display: 'grid', gridTemplateColumns: '1fr 320px', gap: '24px' }}>
+      <form onSubmit={handleSave} className="laudo-grid">
         {/* Coluna esquerda: Identificação + Parâmetros Técnicos */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <section style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               1. Identificação do Ativo
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div className="campos-2">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>TAG do Equipamento</label>
                 <input type="text" required placeholder="Ex: V-2104 / SP-08" value={equipmentTag} onChange={(e) => setEquipmentTag(e.target.value)}
@@ -129,7 +129,7 @@ export const EAPage: React.FC<LaudoPageProps> = ({ onBack, onSave, tenant, tenan
             <h2 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: 0 }}>
               2. Parâmetros Técnicos — {METHOD_LABELS[METHOD].label}
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '12px' }}>
+            <div className="campos-2">
               <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                 <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Modalidade</label>
                 <select value={modalidade} onChange={(e) => setModalidade(e.target.value as 'direta' | 'remota')}

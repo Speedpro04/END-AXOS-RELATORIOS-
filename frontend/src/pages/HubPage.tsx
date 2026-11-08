@@ -219,11 +219,7 @@ export const HubPage: React.FC<HubPageProps> = ({
                 Convencional
               </h3>
               <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, minmax(260px, 1fr))',
-                  gap: '16px',
-                }}
+                className="catalogo-grid"
               >
                 {visibleMethods
                   .filter((m) => m.groupId === 'convencional')
@@ -252,11 +248,7 @@ export const HubPage: React.FC<HubPageProps> = ({
                 Avançado e especial
               </h3>
               <div
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'repeat(4, minmax(260px, 1fr))',
-                  gap: '16px',
-                }}
+                className="catalogo-grid"
               >
                 {visibleMethods
                   .filter((m) => m.groupId === 'avancado')

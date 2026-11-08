@@ -184,11 +184,11 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
   const scaleRatio = logoScale / 100
 
   return (
-    <header className="w-full select-none sticky top-0 z-40" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif" }}>
+    <header className="tenant-header w-full select-none sticky top-0 z-40" style={{ fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif" }}>
 
       {/* ── STATUS BAR FINA ── */}
       <div style={{ background: 'var(--topbar-bg)', padding: '6px 0', transition: 'background 0.2s ease' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div className="tenant-barra" style={{ maxWidth: '1280px', margin: '0 auto', padding: '0 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '14px', fontWeight: 600, letterSpacing: '0.08em', color: 'var(--topbar-brand)', textTransform: 'uppercase' }}>
             AXOS&nbsp;RELATÓRIOS&nbsp;·&nbsp;v2.4
           </span>
@@ -209,7 +209,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
 
       {/* ── BARRA PRINCIPAL DA EMPRESA ── */}
       <div style={{ background: 'var(--bg-surface)', borderBottom: '1px solid var(--border)', boxShadow: '0 2px 8px rgba(15,23,42,0.06)', transition: 'background 0.2s ease, border-color 0.2s ease' }}>
-        <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
+        <div className="tenant-principal" style={{ maxWidth: '1280px', margin: '0 auto', padding: '14px 32px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px' }}>
 
           {/* Esquerda: Logo + Identidade */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', minWidth: 0 }}>
@@ -292,10 +292,10 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
           </div>
 
           {/* Direita: Ações */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+          <div className="tenant-acoes" style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
             {/* Usuário e papel autenticado (fonte: profiles.role) */}
             {userName && (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '4px' }}>
+              <div className="tenant-usuario" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: '4px' }}>
                 <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1.2 }}>
                   {userName}
                 </span>
@@ -635,7 +635,7 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
               </div>
 
               {/* Grade de campos */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div className="campos-2">
                 {[
                   { label: 'Nome Fantasia', key: 'tradeName', fullWidth: false, mono: false },
                   { label: 'CNPJ', key: 'cnpj', fullWidth: false, mono: true },

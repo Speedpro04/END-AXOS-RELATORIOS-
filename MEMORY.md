@@ -439,3 +439,17 @@ A LP de `landing/index.html` abre em `https://axosrelatorios.com/` e o app em `/
 Referência adotada: ABNT NBR 17225:2025. Fontes do Google removidas do app (`frontend/index.html` e `LoginPage.tsx`); tela de login com área principal, título próprio e links de Termos e Política; atalho para o conteúdo nas páginas legais.
 
 **Pendências:** revisão manual completa da NBR 17225, inclusive telas internas do app; prazos de guarda dos dados; responsável por privacidade; região do Supabase; contratos com clientes e fornecedores. Sem selo: não exibir marca da ABNT nem declarar conformidade.
+
+## Regra Permanente: Testar Sempre (08/11/2026)
+
+Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**. Nenhuma alteração é dada como pronta sem teste.
+
+- Toda mudança visível é testada no navegador, no computador e no celular, em todas as telas afetadas.
+- Depois de cada publicação, o resultado é conferido também no site no ar.
+- O resumo final diz o que foi testado, o resultado e o que ficou sem teste.
+
+## Responsivo do App (08/11/2026)
+
+Regras em `frontend/src/index.css` (`.laudo-grid`, `.campos-2`, `.campos-vinculo`, `.catalogo-grid`, `.app-main`, `.tenant-*`). Testadas 18 abas em 320, 375, 768, 1024 e 1280 px, mais lista de obras, nova obra e configurações em 375 px.
+
+**Pendências de teste:** obras e laudos com dados, janela de inspeção e tabelas com conteúdo.

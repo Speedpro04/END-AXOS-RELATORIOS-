@@ -466,3 +466,11 @@ Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo
 - SEO: um H1, H2 por seção, H3 nos itens, dados estruturados (Organization, SoftwareApplication, FAQPage), `robots.txt` e `sitemap.xml`.
 - Texto da página só promete o que está no PRD: sem depoimentos, clientes, números de mercado ou preços inventados.
 - `assets/imagem-1.svg`, `imagem-2.svg` e `imagem-3.svg` são espaços reservados para as 3 imagens definitivas (1200 x 900).
+
+## Regra Permanente: Testar Sempre
+
+Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**. Nenhuma alteração é dada como pronta sem teste.
+
+- Toda mudança visível é testada no navegador, no computador e no celular, em todas as telas afetadas.
+- Depois de cada publicação, o resultado é conferido também no site no ar.
+- O resumo final diz o que foi testado, o resultado e o que ficou sem teste.
