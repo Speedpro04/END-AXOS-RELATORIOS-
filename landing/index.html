@@ -198,8 +198,9 @@
     .site-header { position: sticky; top: 0; z-index: 20; background: var(--bg); border-bottom: 1px solid var(--border); }
     .site-header .container { display: flex; align-items: center; justify-content: space-between; gap: var(--s-6); min-height: 72px; }
     .brand img { width: 168px; }
-    .site-nav ul { display: flex; gap: var(--s-6); }
-    .site-nav a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; transition: color 140ms ease-out; }
+    .header-actions { display: flex; gap: var(--s-3); flex-shrink: 0; }
+    .site-nav ul { display: flex; gap: var(--s-4); }
+    .site-nav a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; transition: color 140ms ease-out; }
     .site-nav a:hover { color: var(--text); }
 
     /* Abertura */
@@ -291,6 +292,10 @@
     .site-footer li a:hover { color: var(--text); }
     .footer-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-2); margin-top: var(--s-8); padding-top: var(--s-6); border-top: 1px solid var(--border); color: var(--text-muted); font-size: 13px; }
 
+    @media (max-width: 1140px) {
+      .site-nav { display: none; }
+    }
+
     /* Duas colunas: a imagem acompanha o topo e a base do texto */
     @media (min-width: 961px) {
       .hero-grid, .split { align-items: stretch; }
@@ -314,6 +319,7 @@
       .container { padding: 0 var(--s-4); }
       .brand img { width: 136px; }
       .site-header .btn { padding: 0 var(--s-3); font-size: 14px; }
+      .header-actions .btn-primary { display: none; }
       .hero { padding-top: var(--s-8); }
       .hero-actions .btn { width: 100%; }
       .cards, .columns-3, .implications, .methods { grid-template-columns: minmax(0, 1fr); }
@@ -356,7 +362,10 @@
           <li><a href="#perguntas">Perguntas frequentes</a></li>
         </ul>
       </nav>
-      <a class="btn btn-primary" href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Solicitar demonstração</a>
+      <div class="header-actions">
+        <a class="btn btn-secondary" href="/app">Entrar</a>
+        <a class="btn btn-primary" href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Solicitar demonstração</a>
+      </div>
     </div>
   </header>
 
