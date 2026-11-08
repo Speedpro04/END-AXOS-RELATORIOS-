@@ -41,7 +41,14 @@ Todas as operações seguem a skill https://github.com/multica-ai/andrej-karpath
 
 Nenhuma alteração é dada como pronta sem teste: no navegador, no computador e no celular, quando for visível, e no site no ar depois de publicar. A resposta final diz o que foi testado e o que ficou sem teste.
 
-## 7. Conformidade: ISO 27001, ISO 9001 e ABNT
+## 7. Pagamentos (Stripe)
+
+- Link de pagamento é público e pode ficar no código. Chave secreta e segredo de webhook ficam só no servidor, nunca em variável `VITE_`, no repositório ou no terminal.
+- Plano só é liberado pelo servidor ou pela AXOS. O usuário nunca altera plano nem prazo.
+- Não colocar nome, e-mail, CPF ou CNPJ no endereço do pagamento.
+- Nunca fazer pagamento real em teste. Situação e pendências: seção "Pagamento pela Stripe" em `MEMORY.md`.
+
+## 8. Conformidade: ISO 27001, ISO 9001 e ABNT
 
 Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para auditoria e futuras certificações **ISO/IEC 27001 e ISO 9001**, com possibilidade de certificação pela ABNT.
 

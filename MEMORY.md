@@ -487,7 +487,7 @@ Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para audit
 
 Decisão do dono do produto: teste de 30 dias, sem cartão, com PDF provisório. Login só com e-mail e senha. Cadastro só com nome, e-mail, senha e aceite. Dados da empresa, CPF ou CNPJ e pagamento ficam na contratação (`pages/ContratarPage.tsx`), aberta pelo aviso de teste ou pelos cards da LP (`/app?plano=...&criar=1`). Migração `0007_teste_e_contratacao.sql`: `tenants.trial_ends_at`, `pedidos_contratacao`, `solicitar_contratacao` e bloqueio de laudo novo com teste encerrado. CPF só no plano Individual.
 
-**Pendências:** sem cobrança automática: o pedido é registrado e a AXOS libera o plano no banco (`plan` e `trial_ends_at` nulo), e não há aviso automático de pedido novo; aviso por e-mail do fim do teste.
+**Pendências:** sem liberação automática: o pedido é registrado, o cliente paga pelo link da Stripe e a AXOS libera o plano no banco (`plan` e `trial_ends_at` nulo), e não há aviso automático de pedido novo; aviso por e-mail do fim do teste.
 
 ## Convites da Equipe (08/11/2026)
 
@@ -500,6 +500,19 @@ Tela Equipe só para administrador (`pages/EquipePage.tsx`). Migração `0008_co
 `supabase/instalacao_completa.sql` (0001 a 0008) rodado pelo dono do produto no projeto `ygijmtzipvsvdcbvurhg`: 22 tabelas e 8 funções conferidas de fora, como visitante. O conector desta conta não tem permissão nesse projeto, então SQL novo é colado no SQL Editor.
 
 No Supabase, tabela nova nasce liberada para visitante, e só a RLS segurava as 3 tabelas de escopo da 0002. `0009_fecha_escopo_para_visitante.sql` tira essa permissão, e o teste 13 passa a acusar qualquer tabela ou função aberta a visitante. `tests/bootstrap.sql` agora imita esse padrão do Supabase.
+
+## Pagamento pela Stripe (08/11/2026)
+
+Os links de pagamento do dono do produto estão em `PLANOS`, em `pages/ContratarPage.tsx`, e foram conferidos um a um: plano, valor e descrição batem. Depois de gravar o pedido, o app abre o link do plano com `client_reference_id` igual ao id do pedido. Nome e e-mail não vão no endereço. "Sob consulta" não tem link. Política de Privacidade e Termos citam a Stripe.
+
+Testado no computador e no tamanho de celular, com o pedido simulado em servidor local e o link real da Stripe abrindo. Nenhum pagamento foi feito.
+
+**Pendências:**
+- O dono do produto vai passar webhook, chave da API e demais configurações. Com eles, o servidor libera o plano sozinho, pelo `client_reference_id`, e trata cancelamento e falta de pagamento.
+- Sem webhook, a liberação é manual e o cliente pode esperar depois de pagar.
+- Configurar na Stripe o retorno ao app depois do pagamento (`https://axosrelatorios.com/app`).
+- A página de pagamento mostra "Axos Hub" como nome da conta, e não "AXOS Relatórios". O dono do produto decide se troca.
+- Os nomes dos produtos na Stripe terminam em " -". Tirar.
 
 ## Fotos de Campo (08/11/2026)
 

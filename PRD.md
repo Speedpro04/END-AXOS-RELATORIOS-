@@ -467,6 +467,15 @@ Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo
 - Texto da página só promete o que está no PRD: sem depoimentos, clientes, números de mercado ou preços inventados.
 - `assets/imagem-1.svg`, `imagem-2.svg` e `imagem-3.svg` são espaços reservados para as 3 imagens definitivas (1200 x 900).
 
+## Contratação e Pagamento (08/11/2026)
+
+- Fluxo: card da página inicial, criar acesso, teste de 30 dias sem cartão, contratar plano, dados da empresa, pagamento.
+- Individual, Equipe 3, Equipe 5 e Equipe 10 abrem o link de pagamento da Stripe (`pages/ContratarPage.tsx`), na moeda BRL, com cobrança mensal. O número do pedido vai como `client_reference_id`, para ligar o pagamento à empresa.
+- Acima de 10 inspetores: sob consulta, sem link. A AXOS entra em contato.
+- O teste de 30 dias é do app, não da Stripe. O cartão só entra na contratação.
+- Enquanto o webhook não estiver ligado, a AXOS confere o pagamento na Stripe e libera o plano no banco (`plan` e `trial_ends_at` nulo).
+- Chave secreta e segredo de webhook da Stripe ficam só no servidor, nunca em variável `VITE_` nem no repositório.
+
 ## Regra Permanente: Testar Sempre
 
 Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**. Nenhuma alteração é dada como pronta sem teste.

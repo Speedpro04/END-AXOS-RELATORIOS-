@@ -5,11 +5,12 @@ import { CHAVE_CONVITE, useAuth } from '../contexts/AuthContext'
 import { CabecalhoLaudo, Campo, Secao, Selecao } from '../components/laudo/CamposLaudo'
 import { mensagemErroAuth } from '../utils/errosAuth'
 
-export const PLANOS = [
-  { valor: 'individual', rotulo: 'Individual: 1 inspetor, R$ 147 por mês' },
-  { valor: 'equipe_3', rotulo: 'Equipe 3: até 3 inspetores, R$ 397 por mês' },
-  { valor: 'equipe_5', rotulo: 'Equipe 5: até 5 inspetores, R$ 597 por mês' },
-  { valor: 'equipe_10', rotulo: 'Equipe 10: até 10 inspetores, R$ 997 por mês' },
+// Links de pagamento são públicos: quem paga abre a página da Stripe
+export const PLANOS: { valor: string; rotulo: string; linkPagamento?: string }[] = [
+  { valor: 'individual', rotulo: 'Individual: 1 inspetor, R$ 147 por mês', linkPagamento: 'https://buy.stripe.com/cNicN50uF3nu2Sd4Eo1wY0e' },
+  { valor: 'equipe_3', rotulo: 'Equipe 3: até 3 inspetores, R$ 397 por mês', linkPagamento: 'https://buy.stripe.com/7sY7sLa5f2jqakFdaU1wY0f' },
+  { valor: 'equipe_5', rotulo: 'Equipe 5: até 5 inspetores, R$ 597 por mês', linkPagamento: 'https://buy.stripe.com/00w14n2CN0bi50l9YI1wY0g' },
+  { valor: 'equipe_10', rotulo: 'Equipe 10: até 10 inspetores, R$ 997 por mês', linkPagamento: 'https://buy.stripe.com/fZu7sL2CN0bi50l9YI1wY0h' },
   { valor: 'sob_consulta', rotulo: 'Acima de 10 inspetores: sob consulta' },
 ]
 
@@ -43,6 +44,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
 
   const individual = plano === 'individual'
   const digitos = documento.replace(/\D/g, '')
+  const linkPagamento = PLANOS.find((p) => p.valor === plano)?.linkPagamento
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -52,7 +54,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
       return setErro(individual ? 'Informe um CPF com 11 números ou um CNPJ com 14 números.' : 'Informe um CNPJ com 14 números.')
     }
     setEnviando(true)
-    const { error } = await supabase.rpc('solicitar_contratacao', {
+    const { data: pedidoId, error } = await supabase.rpc('solicitar_contratacao', {
       p_plano: plano,
       p_razao_social: razao,
       p_documento: digitos,
@@ -61,9 +63,17 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
       p_email: email,
       p_endereco: endereco,
     })
-    setEnviando(false)
-    if (error) return setErro(mensagemErroAuth(error.message, 'Não foi possível enviar o pedido. Tente novamente.'))
+    if (error) {
+      setEnviando(false)
+      return setErro(mensagemErroAuth(error.message, 'Não foi possível enviar o pedido. Tente novamente.'))
+    }
     localStorage.removeItem(CHAVE_PLANO_ESCOLHIDO)
+    // O número do pedido vai junto para ligar o pagamento à empresa na Stripe
+    if (linkPagamento) {
+      window.location.assign(`${linkPagamento}?client_reference_id=${pedidoId as string}`)
+      return
+    }
+    setEnviando(false)
     setEnviado(true)
   }
 
@@ -112,12 +122,17 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
             <Campo rotulo="Endereço" valor={endereco} aoMudar={setEndereco} />
           </div>
         </Secao>
-        <Secao titulo="Pagamento" descricao="Depois do pedido, entramos em contato para combinar o pagamento e liberar o plano.">
+        <Secao
+          titulo="Pagamento"
+          descricao={linkPagamento
+            ? 'No próximo passo, você paga com cartão na página segura da Stripe. Liberamos o plano depois que o pagamento for confirmado.'
+            : 'Depois do pedido, entramos em contato para combinar o pagamento e liberar o plano.'}
+        >
           {erro && <p className="lf-alerta" role="alert">{erro}</p>}
           <div className="lf-acoes">
             <button type="button" className="lf-botao" onClick={aoVoltar}>Cancelar</button>
             <button type="submit" className="lf-botao lf-botao-primario" disabled={enviando}>
-              {enviando ? 'Enviando...' : 'Enviar pedido'}
+              {enviando ? 'Enviando...' : linkPagamento ? 'Continuar para o pagamento' : 'Enviar pedido'}
             </button>
           </div>
         </Secao>
