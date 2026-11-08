@@ -92,12 +92,17 @@
     }
     .points h2 { margin: 0 0 var(--s-2); font-size: 18px; font-weight: 600; line-height: 1.35; }
     .points p { margin: 0; color: var(--text-muted); font-size: 14px; line-height: 1.45; }
+    .foto { display: block; width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); }
+    .foto-topo { margin-top: var(--s-12); }
+    .fotos { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s-4); margin-top: var(--s-4); }
     footer { border-top: 1px solid var(--border); padding: var(--s-6) 0; color: var(--text-muted); font-size: 14px; }
     footer a { color: var(--accent-text); }
     @media (max-width: 760px) {
       main { padding: var(--s-8) 0; }
       .logo { max-width: 280px; }
       .points { grid-template-columns: 1fr; margin-top: var(--s-8); }
+      .foto-topo { margin-top: var(--s-8); }
+      .fotos { grid-template-columns: 1fr; }
       .btn { display: block; text-align: center; }
     }
   </style>
@@ -110,6 +115,8 @@
       <h1>Registro de END em campo, com ou sem internet.</h1>
       <p class="lead">O AXOS Relatórios é o software de laudos de Ensaios Não Destrutivos (END) para empresas de inspeção. Sua equipe registra o ensaio onde ele acontece, e os dados sincronizam quando a conexão volta.</p>
       <a class="btn" href="mailto:suporte@axosrelatorios.com?subject=Demonstra%C3%A7%C3%A3o%20AXOS%20Relat%C3%B3rios">Pedir demonstração por e-mail</a>
+
+      <img class="foto foto-topo" src="/fotos/equipe-inspecao.webp" width="1200" height="593" fetchpriority="high" alt="Inspetores fazendo ensaios em bancada e em um vaso industrial, e engenheira analisando os dados em monitores">
 
       <ul class="points">
         <li>
@@ -128,6 +135,11 @@
           <p>Ensaio visual, líquidos penetrantes, partículas magnéticas, ultrassom, radiografia, Phased Array, ToFD, termografia e outros.</p>
         </li>
       </ul>
+
+      <div class="fotos">
+        <img class="foto" src="/fotos/inspecao-solda-viga.webp" width="1200" height="655" loading="lazy" decoding="async" alt="Inspetor usando aparelho portátil de ensaio na solda de uma viga metálica em galpão industrial">
+        <img class="foto" src="/fotos/liquido-penetrante.webp" width="1200" height="655" loading="lazy" decoding="async" alt="Inspetor aplicando líquido penetrante na solda de um tubo em galpão industrial">
+      </div>
     </div>
   </main>
   <footer>
