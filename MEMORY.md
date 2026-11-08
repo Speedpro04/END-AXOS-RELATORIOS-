@@ -427,3 +427,9 @@ Criada em `landing/` (`index.html`, `assets/`, `robots.txt`, `sitemap.xml`). Pr�
 ## 13. Deploy do Frontend (06/11/2026)
 
 EasyPanel builda a `main` pela raiz do repositório: `Dockerfile` e `.dockerignore` da raiz geram o frontend. `main` atualizada com a `opencode-obras-wip`. `frontend/nginx.conf`: regra do service worker movida para antes da regra de assets (o arquivo ficaria um ano em cache). Variáveis do serviço: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`. A chave `service_role` nunca entra no frontend.
+
+## 14. LP Provisória na Raiz do Domínio (08/11/2026)
+
+`frontend/public/lp.html` abre em `https://axosrelatorios.com/` e o app em `/app`, no mesmo serviço (decisão do dono do produto: sem subdomínio). `frontend/nginx.conf` serve a LP só na raiz; `vite.config.ts` usa `start_url: '/app'` e exclui a raiz e a LP do service worker. A LP completa de `landing/` segue sem publicar.
+
+**Pendências:** domínio ainda nos nameservers de estacionamento da Hostinger; conferir no Supabase se a Site URL aponta para `/app`; confirmar a caixa `suporte@axosrelatorios.com`.

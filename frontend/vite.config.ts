@@ -20,6 +20,7 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         lang: 'pt-BR',
+        start_url: '/app',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
@@ -28,6 +29,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+        globIgnores: ['lp.html'],
+        navigateFallbackDenylist: [/^\/$/], // a raiz é a landing page, não o app
         runtimeCaching: [],
       },
       devOptions: { enabled: false },
