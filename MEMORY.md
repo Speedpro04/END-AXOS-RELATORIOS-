@@ -428,8 +428,8 @@ Criada em `landing/` (`index.html`, `assets/`, `robots.txt`, `sitemap.xml`). Pr�
 
 EasyPanel builda a `main` pela raiz do repositório: `Dockerfile` e `.dockerignore` da raiz geram o frontend. `main` atualizada com a `opencode-obras-wip`. `frontend/nginx.conf`: regra do service worker movida para antes da regra de assets (o arquivo ficaria um ano em cache). Variáveis do serviço: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_URL`. A chave `service_role` nunca entra no frontend.
 
-## 14. LP Provisória na Raiz do Domínio (08/11/2026)
+## 14. LP na Raiz do Domínio (08/11/2026)
 
-`frontend/public/lp.html` abre em `https://axosrelatorios.com/` e o app em `/app`, no mesmo serviço (decisão do dono do produto: sem subdomínio). `frontend/nginx.conf` serve a LP só na raiz; `vite.config.ts` usa `start_url: '/app'` e exclui a raiz e a LP do service worker. A LP completa de `landing/` segue sem publicar.
+A LP de `landing/index.html` abre em `https://axosrelatorios.com/` e o app em `/app`, no mesmo serviço (decisão do dono do produto: sem subdomínio; LP provisória descartada a pedido dele). O `Dockerfile` da raiz copia a LP como `lp.html` e `landing/assets/` para `assets/`. As 3 imagens definitivas estão em `landing/assets/fotos/`. O dono do produto decidiu publicar mesmo com a pendência da seção 12 (recursos citados ainda não construídos).
 
-**Pendências:** domínio ainda nos nameservers de estacionamento da Hostinger; conferir no Supabase se a Site URL aponta para `/app`; confirmar a caixa `suporte@axosrelatorios.com`.
+**Pendências:** registro A `@` da Hostinger ainda em `2.57.91.91`; certificado da raiz; conferir no Supabase se a Site URL aponta para `/app`; confirmar a caixa `suporte@axosrelatorios.com`; link "Entrar" para `/app`.

@@ -29,7 +29,6 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        globIgnores: ['lp.html'],
         navigateFallbackDenylist: [/^\/$/], // a raiz é a landing page, não o app
         runtimeCaching: [],
       },
