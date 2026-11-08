@@ -862,3 +862,139 @@ begin
   perform set_config('role', 'none', true);
   raise notice '[PASS] TESTE 12: convites isolados por empresa, uso único e limite do plano';
 end $$;
+
+-- =====================================================================
+-- TESTE 13: visitante sem login não tem permissão em nada do schema public
+-- =====================================================================
+do $$
+declare
+  v_tabelas text;
+  v_funcoes text;
+begin
+  select string_agg(c.relname, ', ') into v_tabelas
+    from pg_class c
+    join pg_namespace n on n.oid = c.relnamespace
+   where n.nspname = 'public'
+     and c.relkind in ('r', 'p', 'v', 'm')
+     and has_table_privilege('anon', c.oid, 'select, insert, update, delete, truncate, references, trigger');
+  if v_tabelas is not null then
+    raise exception 'FALHA 13.1: visitante com permissão nas tabelas: %', v_tabelas;
+  end if;
+
+  select string_agg(p.proname, ', ') into v_funcoes
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public'
+     and has_function_privilege('anon', p.oid, 'execute');
+  if v_funcoes is not null then
+    raise exception 'FALHA 13.2: visitante com permissão nas funções: %', v_funcoes;
+  end if;
+
+  raise notice '[PASS] TESTE 13: visitante sem permissão em tabelas e funções';
+end $$;
+
+-- =====================================================================
+-- TESTE 14: fotos de campo no bucket privado, isoladas por empresa e laudo
+-- =====================================================================
+do $$
+declare
+  t_a    uuid := '11111111-1111-1111-1111-111111111111'::uuid;
+  t_b    uuid := '22222222-2222-2222-2222-222222222222'::uuid;
+  u_a1   text := 'aaaaaaaa-0000-0000-0000-000000000003';
+  u_a2   text := 'aaaaaaaa-0000-0000-0000-000000000004';
+  u_b1   text := 'bbbbbbbb-0000-0000-0000-000000000002';
+  v_rep  uuid := '55555555-0000-0000-0000-00000000f070'::uuid;
+  v_foto uuid := '44444444-0000-0000-0000-000000000099'::uuid;
+  v_path text := t_a::text || '/' || v_rep::text || '/hash1.jpg';
+  v_count int;
+begin
+  -- No Supabase a tabela de arquivos já vem com RLS ligada
+  alter table storage.objects enable row level security;
+
+  if exists (select 1 from storage.buckets where id = 'report-files' and public) then
+    raise exception 'FALHA 14.1: bucket de fotos não pode ser público';
+  end if;
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_a1, 'role', 'authenticated')::text, true);
+  insert into public.reports (id, tenant_id, work_order_id, template_id, inspector_id, status, equipment_tag, inspection_date)
+  values (v_rep, t_a, '88888888-0000-0000-0000-000000000001'::uuid, '77777777-0000-0000-0000-000000000001'::uuid,
+          u_a1::uuid, 'draft', 'V-FOTO', current_date);
+
+  -- O inspetor do laudo envia a foto com o id gerado no aparelho
+  insert into storage.objects (bucket_id, name) values ('report-files', v_path);
+  insert into public.report_attachments (id, tenant_id, report_id, kind, storage_path, sha256)
+  values (v_foto, t_a, v_rep, 'photo', v_path, 'hash1');
+
+  -- Reenvio da mesma foto cai no erro que o app trata como "já enviada"
+  begin
+    insert into public.report_attachments (id, tenant_id, report_id, kind, storage_path, sha256)
+    values (gen_random_uuid(), t_a, v_rep, 'photo', v_path, 'hash1');
+    raise exception 'FALHA 14.2: foto repetida aceita no mesmo laudo';
+  exception when unique_violation then null;
+  end;
+
+  -- Outro inspetor da mesma empresa não envia para laudo que não é dele
+  perform set_config('request.jwt.claims', json_build_object('sub', u_a2, 'role', 'authenticated')::text, true);
+  begin
+    insert into storage.objects (bucket_id, name) values ('report-files', t_a::text || '/' || v_rep::text || '/hash2.jpg');
+    raise exception 'FALHA 14.3: inspetor enviou foto para laudo de outro inspetor';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Outra empresa não vê, não envia e não apaga
+  perform set_config('request.jwt.claims', json_build_object('sub', u_b1, 'role', 'authenticated')::text, true);
+  select count(*) into v_count from storage.objects where bucket_id = 'report-files';
+  if v_count <> 0 then raise exception 'FALHA 14.4: outra empresa viu o arquivo da foto'; end if;
+  select count(*) into v_count from public.report_attachments where id = v_foto;
+  if v_count <> 0 then raise exception 'FALHA 14.5: outra empresa viu o registro da foto'; end if;
+  begin
+    insert into storage.objects (bucket_id, name) values ('report-files', v_path || '.2');
+    raise exception 'FALHA 14.6: outra empresa enviou arquivo para a pasta da empresa A';
+  exception when insufficient_privilege then null;
+  end;
+  begin
+    insert into storage.objects (bucket_id, name) values ('report-files', t_b::text || '/' || v_rep::text || '/hash3.jpg');
+    raise exception 'FALHA 14.7: outra empresa usou o laudo da empresa A na própria pasta';
+  exception when insufficient_privilege then null;
+  end;
+  delete from storage.objects where name = v_path;
+  delete from public.report_attachments where id = v_foto;
+
+  -- Visitante não tem acesso nenhum
+  perform set_config('role', 'anon', true);
+  perform set_config('request.jwt.claims', '{"role":"anon"}', true);
+  begin
+    perform 1 from storage.objects where bucket_id = 'report-files';
+    raise exception 'FALHA 14.8: visitante leu arquivos';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Com o laudo enviado, a foto fica travada até para o próprio inspetor
+  perform set_config('role', 'none', true);
+  if not exists (select 1 from storage.objects where name = v_path)
+     or not exists (select 1 from public.report_attachments where id = v_foto) then
+    raise exception 'FALHA 14.9: outra empresa apagou a foto';
+  end if;
+  alter table public.reports disable trigger user;
+  update public.reports set status = 'submitted' where id = v_rep;
+  alter table public.reports enable trigger user;
+
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_a1, 'role', 'authenticated')::text, true);
+  delete from storage.objects where name = v_path;
+  delete from public.report_attachments where id = v_foto;
+  begin
+    insert into storage.objects (bucket_id, name) values ('report-files', t_a::text || '/' || v_rep::text || '/hash4.jpg');
+    raise exception 'FALHA 14.10: foto nova aceita em laudo já enviado';
+  exception when insufficient_privilege then null;
+  end;
+
+  perform set_config('role', 'none', true);
+  if not exists (select 1 from storage.objects where name = v_path)
+     or not exists (select 1 from public.report_attachments where id = v_foto) then
+    raise exception 'FALHA 14.11: foto apagada de laudo já enviado';
+  end if;
+
+  raise notice '[PASS] TESTE 14: fotos isoladas por empresa e travadas depois do envio do laudo';
+end $$;

@@ -1,4 +1,4 @@
--- AXOS Relatórios | instalação completa do banco (migrações 0001 a 0008)
+-- AXOS Relatórios | instalação completa do banco (migrações 0001 a 0009)
 -- Rode uma vez, no SQL Editor do projeto ygijmtzipvsvdcbvurhg, com o projeto vazio.
 -- Roda como um bloco só: se der erro, nada fica pela metade.
 
@@ -1925,6 +1925,18 @@ end;
 $$;
 revoke all on function public.aceitar_convite(text, text) from public, anon;
 grant execute on function public.aceitar_convite(text, text) to authenticated;
+
+
+-- ===== 0009_fecha_escopo_para_visitante.sql =====
+-- =====================================================================
+-- Axos Relatórios | migração 0009: fecha as tabelas de escopo para visitante
+--
+-- Estas 3 tabelas nasceram depois da retirada geral de permissões da 0001 e
+-- ficaram com a permissão padrão do Supabase para visitante. As regras de
+-- linha já bloqueavam o acesso; aqui elas ficam iguais às demais tabelas.
+-- =====================================================================
+
+revoke all on public.obra_escopo_linha, public.obra_escopo_revisao, public.laudo_escopo_vinculo from anon;
 
 
 commit;

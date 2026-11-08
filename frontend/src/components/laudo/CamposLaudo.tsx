@@ -287,7 +287,7 @@ export function useFotos(salvas: FotoLaudo[] | undefined) {
           urls.current.push(url)
           carregadas.push({ id: f.anexoId, anexoId: f.anexoId, url, legenda: f.legenda })
         } catch {
-          // A foto foi registrada em outro aparelho: o arquivo não está aqui
+          // Veio de outro aparelho e ainda não foi possível baixar, ou ainda não subiu de lá
           carregadas.push({ id: f.anexoId, anexoId: f.anexoId, url: '', legenda: f.legenda })
         }
       }
@@ -337,11 +337,11 @@ export function useFotos(salvas: FotoLaudo[] | undefined) {
         resultado.push({ anexoId: f.anexoId, legenda: f.legenda })
       } else if (f.arquivo) {
         const meta = await salvarAnexo({ laudoId, tipo: 'foto', arquivo: f.arquivo })
-        resultado.push({ anexoId: meta.id, legenda: f.legenda })
+        if (!resultado.some((r) => r.anexoId === meta.id)) resultado.push({ anexoId: meta.id, legenda: f.legenda })
       }
     }
     for (const id of removidas.current) {
-      await removerAnexo(id).catch(() => undefined)
+      if (!resultado.some((r) => r.anexoId === id)) await removerAnexo(id, laudoId).catch(() => undefined)
     }
     return resultado
   }
@@ -364,7 +364,7 @@ export const BlocoFotos: React.FC<{
           <div className="lf-foto" key={f.id}>
             {f.url
               ? <img src={f.url} alt={f.legenda || `Evidência ${i + 1}`} />
-              : <p className="lf-descricao">Arquivo em outro aparelho.</p>}
+              : <p className="lf-descricao">Imagem indisponível agora. Ela pode ainda não ter sido enviada pelo aparelho de origem. Confira a internet e abra o laudo de novo.</p>}
             <Campo rotulo={`Legenda da imagem ${i + 1}`} valor={f.legenda} sugestoes={sugestoes} aoMudar={(v) => controle.alterarLegenda(f.id, v)} />
             {f.repetida && <p className="lf-alerta" role="alert">Atenção: esta mesma imagem já está em outro laudo.</p>}
             <button type="button" className="lf-botao" onClick={() => controle.remover(f.id)}>

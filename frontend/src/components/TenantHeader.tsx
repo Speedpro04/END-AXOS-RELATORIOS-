@@ -196,7 +196,11 @@ export const TenantHeader: React.FC<TenantHeaderProps> = ({
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <span className="animate-pulse-dot" style={{ display: 'inline-block', width: '6px', height: '6px', borderRadius: '50%', background: isOnline ? '#10b981' : '#f59e0b' }} />
               <span style={{ fontFamily: "'DM Mono', monospace", fontSize: '14px', color: isOnline ? '#34d399' : '#fbbf24', fontWeight: 500, transition: 'color 0.2s ease' }}>
-                {isOnline ? 'Online' : `Offline [${offlineQueueCount}]`}
+                {!isOnline
+                  ? `Offline [${offlineQueueCount}]`
+                  : offlineQueueCount > 0
+                    ? `Online · ${offlineQueueCount} ${offlineQueueCount > 1 ? 'pendentes' : 'pendente'}`
+                    : 'Online'}
               </span>
             </div>
             <span style={{ color: 'var(--topbar-divider)' }}>·</span>

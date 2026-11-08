@@ -36,7 +36,7 @@ Este documento é um ponto de partida para preparar a auditoria. **Não é um pa
 | Gestão de mudanças | A.8.32 | Parcial | Histórico no Git. Sem revisão obrigatória e sem CI: a pasta `.github` não existe. Publicação é manual |
 | Código sem uso | A.8.28 | Falta | `sync_worker.py` chama a função `upsert_laudo`, que não existe no banco. A tela `USPage.tsx` não está ligada ao sistema |
 | Dados pessoais | A.5.34 | Parcial | Termos, Política, aceites, pedidos de titulares e anonimização no banco. Faltam prazos de guarda, responsável, tela de pedidos e revisão jurídica |
-| Armazenamento de evidências | A.8.13 | Falta | Fotos dos laudos ficam só no aparelho e não têm cópia no servidor |
+| Armazenamento de evidências | A.8.13 | Parcial | Envio das fotos ao bucket privado feito no app, com hash conferido na leitura e teste de isolamento. Só passa a valer com a API publicada: sem ela, os laudos não chegam ao servidor e as fotos seguem só no aparelho. Falta testar no Storage real |
 | Serviços em nuvem | A.5.23 | Falta | Sem registro de fornecedores, região dos dados e contratos (Supabase e Hostinger) |
 
 ## ISO/IEC 27001: gestão (não se resolve com código)
@@ -67,7 +67,7 @@ Precisam existir como documentos e prática da empresa, e nada disso foi encontr
 ## Prioridades técnicas
 
 1. Colocar o básico em produção: variáveis corretas no EasyPanel, banco aplicado e API publicada. O site publicado parece apontar a API para `localhost:8000`, e `api.axosrelatorios.com` não respondeu ao teste.
-2. Enviar as fotos dos laudos ao servidor.
+2. Publicar a API, para as fotos dos laudos chegarem ao servidor. O envio pelo app já está pronto.
 3. Definir cópia de segurança e fazer um teste de restauração.
 4. Adicionar HSTS e CSP no site, limite de requisições e logs com identificador de requisição.
 5. Criar CI com testes, verificação de dependências e análise de código, e travar as versões do backend.

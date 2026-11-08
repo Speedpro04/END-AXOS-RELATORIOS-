@@ -8,7 +8,9 @@ import { buildReportCode } from './utils/buildReportCode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ObraProvider, useObra } from './contexts/ObraContext'
 import { db } from './services/dbDexie'
+import { removerAnexo } from './services/anexos'
 import { enqueueSync, ensureObraWorkOrder, syncManager } from './services/sync'
+import type { FotoLaudo } from './types/laudoEnsaio'
 import type { LocalReport } from './types/sync'
 
 // Páginas Dedicadas
@@ -276,6 +278,8 @@ function AppContent() {
   const handleDeleteReport = async (id: string) => {
     const existing = await db.reports.get(id)
     setReports(reports.filter((r) => r.id !== id))
+    const fotos = (existing?.data.technicalData as { fotos?: FotoLaudo[] } | undefined)?.fotos ?? []
+    for (const foto of fotos) await removerAnexo(foto.anexoId, id).catch(() => undefined)
     await db.reports.delete(id)
     if (existing?.lastSyncAt) {
       await enqueueSync('report', id, 'delete') // o servidor só aceita apagar rascunho

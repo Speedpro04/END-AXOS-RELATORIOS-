@@ -11,6 +11,13 @@ export interface AnexoRecord {
   blob: Blob;
 }
 
+/** Foto esperando ir para o servidor, ou ser apagada de lá. */
+export interface FotoNaFila {
+  anexoId: string;
+  laudoId: string;
+  acao: 'enviar' | 'remover';
+}
+
 /**
  * Classe Dexie que representa o banco de dados local (offline-first).
  * Nome: "axos" (único banco para todas as stores).
@@ -34,6 +41,7 @@ export class AxosDB extends Dexie {
   tenantConfig!: Table<TenantConfig, string>;
   obraEscopoLinhas!: Table<ObraEscopoLinha, string>;
   obraEscopoRevisoes!: Table<ObraEscopoRevisao, string>;
+  fotosFila!: Table<FotoNaFila, string>;
 
   constructor() {
     super('axos');
@@ -49,6 +57,14 @@ export class AxosDB extends Dexie {
       tenantConfig: 'id',
       obraEscopoLinhas: 'id, tenantId, siteId, method, ativo',
       obraEscopoRevisoes: 'id, tenantId, linhaId, createdAt',
+    });
+    // Fotos que já estavam no aparelho entram na fila de envio
+    this.version(2).stores({ fotosFila: 'anexoId, acao' }).upgrade(async (tx) => {
+      const fila: FotoNaFila[] = [];
+      await tx.table<AnexoRecord, string>('anexos').each((r) => {
+        if (r.meta.tipo === 'foto') fila.push({ anexoId: r.meta.id, laudoId: r.meta.laudoId, acao: 'enviar' });
+      });
+      await tx.table<FotoNaFila, string>('fotosFila').bulkPut(fila);
     });
   }
 

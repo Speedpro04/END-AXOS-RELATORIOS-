@@ -21,7 +21,7 @@ O sistema resolve os gargalos de digitalização de laudos em campo, permitindo 
 
 ### 3.1. Frontend PWA (Offline-First)
 - **Tecnologias**: React 18, TypeScript, Vite, Dexie.js (IndexedDB).
-- **Operação Offline**: Armazenamento de dados de inspeção e imagens/anexos localmente no IndexedDB via Dexie (`axos-anexos`).
+- **Operação Offline**: Armazenamento de dados de inspeção e imagens/anexos localmente no IndexedDB via Dexie. Depois que o laudo chega ao servidor, as fotos sobem sozinhas para o bucket privado `report-files`; a leitura exige login e confere o hash.
 - **Design System & Estética** (especificação em `design/` e regras em `.agents/skills/design-frontend/skill.md`):
   - **Fonte de verdade de tokens**: `design/tokens/products/axos-relatorios.tokens.json`, compilados via `node design/scripts/build-tokens.mjs` para `design/tokens/dist/axos-relatorios.css`.
   - Tema único em tela: **escuro (dark mode)** em todos os sistemas operacionais e PWA. Não existe tema claro nas telas.

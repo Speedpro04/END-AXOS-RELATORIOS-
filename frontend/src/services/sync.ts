@@ -16,6 +16,7 @@
  * ║                                                                  ║
  * ║  ENVIO: POST /api/sync/reports, lote de até 20 itens             ║
  * ║  ORDEM: clients → sites → work_orders → escopo → reports         ║
+ * ║  FOTOS: remoções antes dos laudos; envios depois deles           ║
  * ║  BACKOFF: 15s, 30s, 1min, 2min, até 5min (erros retryable)       ║
  * ║  NUNCA apagar dados locais após sincronizar                      ║
  * ╚══════════════════════════════════════════════════════════════════╝
@@ -23,6 +24,7 @@
 
 import { API_BASE_URL } from '../config';
 import { supabase } from '../lib/supabase';
+import { contarFotosPendentes, enviarFotosPendentes, processarRemocoesDeFotos } from './anexos';
 import { db } from './dbDexie';
 import type { InspectionReport, ReportStatus } from '../types/inspection';
 import type { ObraEscopoLinha, ObraEscopoRevisao } from '../types/obra';
@@ -260,21 +262,24 @@ class SyncManager {
     this.setState({ isSyncing: true, lastError: null });
 
     try {
+      await processarRemocoesDeFotos();
       const result = await this.processOutbox(token);
       await this.refreshCache();
+      await enviarFotosPendentes();
       this.setState({
         isSyncing: false,
         lastSyncAt: new Date().toISOString(),
-        pendingCount: await db.outbox.count(),
+        pendingCount: await this.contarPendentes(),
         canRetry: result.canRetry,
       });
       return result;
     } catch (err) {
       // Rede fora ou servidor indisponível contam como offline: a fila espera o backoff
       console.error('[Sync] Falha na sincronização:', err);
+      await enviarFotosPendentes(); // falha da API não segura fotos de laudos que já estão no servidor
       this.setState({
         isSyncing: false,
-        pendingCount: await db.outbox.count(),
+        pendingCount: await this.contarPendentes(),
         lastError: 'Servidor indisponível. Nova tentativa será feita.',
         canRetry: true,
       });
@@ -446,9 +451,12 @@ class SyncManager {
     };
   }
 
+  private async contarPendentes(): Promise<number> {
+    return (await db.outbox.count()) + (await contarFotosPendentes());
+  }
+
   async refreshPendingCount(): Promise<void> {
-    const count = await db.outbox.count();
-    this.setState({ pendingCount: count });
+    this.setState({ pendingCount: await this.contarPendentes() });
   }
 
   destroy(): void {

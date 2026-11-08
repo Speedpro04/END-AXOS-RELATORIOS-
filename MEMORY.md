@@ -487,10 +487,31 @@ Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para audit
 
 Decisão do dono do produto: teste de 30 dias, sem cartão, com PDF provisório. Login só com e-mail e senha. Cadastro só com nome, e-mail, senha e aceite. Dados da empresa, CPF ou CNPJ e pagamento ficam na contratação (`pages/ContratarPage.tsx`), aberta pelo aviso de teste ou pelos cards da LP (`/app?plano=...&criar=1`). Migração `0007_teste_e_contratacao.sql`: `tenants.trial_ends_at`, `pedidos_contratacao`, `solicitar_contratacao` e bloqueio de laudo novo com teste encerrado. CPF só no plano Individual.
 
-**Pendências:** sem cobrança automática: o pedido é registrado e a AXOS libera o plano no banco (`plan` e `trial_ends_at` nulo), e não há aviso automático de pedido novo; aviso por e-mail do fim do teste; rodar `supabase/instalacao_completa.sql` (0001 a 0008) no projeto novo.
+**Pendências:** sem cobrança automática: o pedido é registrado e a AXOS libera o plano no banco (`plan` e `trial_ends_at` nulo), e não há aviso automático de pedido novo; aviso por e-mail do fim do teste.
 
 ## Convites da Equipe (08/11/2026)
 
 Tela Equipe só para administrador (`pages/EquipePage.tsx`). Migração `0008_convites_equipe.sql`: link de uso único, por 7 dias, preso ao e-mail, com hash no banco. Quem entra pelo link fica na empresa que convidou. Limite por plano no banco: Individual 1, Equipe 3, 5 e 10, teste 10. Conta inspetor quem tem papel de inspetor ou `can_inspect`, inclusive o administrador criador.
 
 **Pendências:** envio do convite é manual (copiar o link), porque não há serviço de e-mail; confirmar se o administrador deve contar no limite.
+
+## Banco no Projeto Novo (08/11/2026)
+
+`supabase/instalacao_completa.sql` (0001 a 0008) rodado pelo dono do produto no projeto `ygijmtzipvsvdcbvurhg`: 22 tabelas e 8 funções conferidas de fora, como visitante. O conector desta conta não tem permissão nesse projeto, então SQL novo é colado no SQL Editor.
+
+No Supabase, tabela nova nasce liberada para visitante, e só a RLS segurava as 3 tabelas de escopo da 0002. `0009_fecha_escopo_para_visitante.sql` tira essa permissão, e o teste 13 passa a acusar qualquer tabela ou função aberta a visitante. `tests/bootstrap.sql` agora imita esse padrão do Supabase.
+
+## Fotos de Campo (08/11/2026)
+
+A foto é gravada primeiro no aparelho (`services/anexos.ts`, IndexedDB) e entra na fila `fotosFila` (Dexie versão 2, que também enfileira as fotos antigas). O `SyncManager` apaga as removidas antes de enviar os laudos e envia as novas depois, porque a RLS só aceita foto de laudo que já está no servidor, é do próprio inspetor e está em `draft` ou `returned`.
+
+Bucket privado `report-files`, caminho `<tenant>/<laudo>/<sha256>.<ext>` em `report_attachments.storage_path`. O id da linha é o `anexoId` guardado no JSON do laudo. Em outro aparelho, `lerAnexo` baixa com login, confere o SHA-256 e guarda localmente. Não há link público nem temporário: o arquivo só sai com a sessão do usuário, porque as fotos podem mostrar pessoas e dados de clientes (LGPD). Excluir o laudo apaga as fotos dele. Teste 14 cobre o isolamento.
+
+**Testado** no navegador, no computador e no tamanho de celular, com Supabase e API simulados em servidor local, mais as regras de acesso no banco local (`npm run test:db`).
+
+**Pendências:**
+- Sem a API publicada nenhum laudo chega ao servidor, então as fotos ficam na fila, no aparelho. Depois de publicar, testar com Storage real e ajustar a frase da seção de campo em `landing/index.html`, que hoje diz que só os dados do laudo sobem.
+- Laudo sem obra não vai ao servidor, nem as fotos dele.
+- Quando o envio do laudo para revisão (`submit`) for ligado na tela, ele precisa esperar a fila de fotos zerar: com o laudo enviado, a RLS recusa foto nova.
+- `SyncStatusIndicator` não é usado em nenhuma tela. O contador de pendências, que agora inclui fotos, aparece no cabeçalho (`TenantHeader`), com ou sem internet.
+- Conferir o espaço de arquivos do plano do Supabase antes de vender.

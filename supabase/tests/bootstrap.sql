@@ -26,9 +26,10 @@ end $$;
 
 grant usage on schema extensions to anon, authenticated, service_role, public;
 grant usage on schema public to anon, authenticated, service_role;
-alter default privileges in schema public grant all on tables to authenticated, service_role;
-alter default privileges in schema public grant all on sequences to authenticated, service_role;
-alter default privileges in schema public grant all on routines to authenticated, service_role;
+-- Igual ao Supabase: objeto novo nasce liberado também para anon
+alter default privileges in schema public grant all on tables to anon, authenticated, service_role;
+alter default privileges in schema public grant all on sequences to anon, authenticated, service_role;
+alter default privileges in schema public grant all on routines to anon, authenticated, service_role;
 
 create schema if not exists auth;
 create table if not exists auth.users (

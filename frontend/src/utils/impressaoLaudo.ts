@@ -161,7 +161,7 @@ async function secaoFotos(fotos: FotoLaudo[] | undefined, esc: Esc): Promise<str
       const url = await paraDataUrl(await lerAnexo(f.anexoId))
       itens.push(`<figure><img src="${url}" alt="${esc(f.legenda)}"><figcaption>${esc(f.legenda)}</figcaption></figure>`)
     } catch {
-      itens.push(`<figure><figcaption>${esc(f.legenda)} (arquivo em outro aparelho)</figcaption></figure>`)
+      itens.push(`<figure><figcaption>${esc(f.legenda)} (imagem indisponível)</figcaption></figure>`)
     }
   }
   return `<h2>Evidências</h2><div class="fotos">${itens.join('')}</div>`
