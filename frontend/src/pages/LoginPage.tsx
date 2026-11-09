@@ -107,7 +107,7 @@ function AScanLine({ color }: { color: string }) {
 }
 
 /* ─── Componente Principal ───────────────────────────── */
-export const LoginPage: React.FC = () => {
+export const LoginPage: React.FC<{ aoEntrar: () => void }> = ({ aoEntrar }) => {
   const { theme, toggleTheme } = useTheme()
   const { emRecuperacao, erroLinkRecuperacao, cancelarRecuperacao, signIn, resetPassword, error: authError, isLoading } = useAuth()
   const C = theme === 'dark' ? DARK : LIGHT
@@ -146,7 +146,9 @@ export const LoginPage: React.FC = () => {
     }
 
     const res = await signIn(email, password)
-    if (!res.success && res.error) {
+    if (res.success) {
+      aoEntrar()
+    } else if (res.error) {
       setLocalError(res.error)
     }
   }

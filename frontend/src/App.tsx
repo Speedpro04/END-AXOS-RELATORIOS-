@@ -168,6 +168,13 @@ function AppContent() {
   const [veioDoCard] = useState(() => new URLSearchParams(window.location.search).has('plano'))
   const [currentPage, setCurrentPage] = useState<string>(veioDoCard ? 'CONTRATAR' : 'OBRAS')
 
+  // Botão Entrar da página inicial: mostra o login mesmo com sessão guardada
+  const [pedirLogin, setPedirLogin] = useState(() => new URLSearchParams(window.location.search).has('entrar'))
+  const concluirLogin = () => {
+    setPedirLogin(false)
+    window.history.replaceState(null, '', '/app')
+  }
+
   // Já logado, o plano sai do endereço: recarregar a página não reabre a contratação
   useEffect(() => {
     if (user && new URLSearchParams(window.location.search).has('plano')) window.history.replaceState(null, '', '/app')
@@ -337,8 +344,8 @@ function AppContent() {
     )
   }
 
-  if (emRecuperacao || !user || !profile) {
-    return <LoginPage />
+  if (emRecuperacao || !user || !profile || pedirLogin) {
+    return <LoginPage aoEntrar={concluirLogin} />
   }
 
   return (
