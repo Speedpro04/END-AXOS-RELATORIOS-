@@ -342,6 +342,8 @@ function AppContent() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', color: 'var(--text-primary)', position: 'relative', transition: 'background 0.2s ease, color 0.2s ease' }}>
+      {/* A contratação abre só com o formulário e o rodapé */}
+      {currentPage !== 'CONTRATAR' && (<>
       {/* HEADER: 100% White-Label da Empresa Contratante */}
       <TenantHeader
         tenant={tenant}
@@ -478,6 +480,7 @@ function AppContent() {
           </button>
         </div>
       </div>
+      </>)}
 
       {/* ÁREA PRINCIPAL DO APP */}
       {diasRestantes !== null && currentPage !== 'CONTRATAR' && (

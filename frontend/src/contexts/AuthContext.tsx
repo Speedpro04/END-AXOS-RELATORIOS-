@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import type { Session, User } from '@supabase/supabase-js'
-import { supabase } from '../lib/supabase'
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
+import { isAuthRetryableFetchError, type Session, type User } from '@supabase/supabase-js'
+import { CHAVE_SESSAO, lerSessaoGuardada, supabase } from '../lib/supabase'
+import { db, type CopiaDaConta } from '../services/dbDexie'
 import { mensagemErroAuth } from '../utils/errosAuth'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
@@ -61,6 +62,13 @@ export const DEFAULT_OPERATIONAL_UNITS = [
   'Petroquímica Leste',
 ]
 
+// Com cópia no aparelho, quanto a abertura e a saída esperam pelo servidor quando há sinal
+const ESPERA_SERVIDOR_MS = 3_000
+const INTERVALO_NOVA_CONSULTA_MS = 30_000
+const MENSAGEM_SEM_INTERNET = 'Sem internet. Para usar o app sem sinal, entre uma vez com internet neste aparelho.'
+
+const esperar = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -77,20 +85,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Link do e-mail de recuperação: abre a tela de nova senha
   const [emRecuperacao, setEmRecuperacao] = useState(() => window.location.pathname === '/redefinir-senha')
   const [erroLinkRecuperacao] = useState(() => window.location.pathname === '/redefinir-senha' && (window.location.hash + window.location.search).includes('error='))
+  // Muda ao sair da conta: uma consulta ainda no ar não pode recolocar ninguém para dentro
+  const contaAtual = useRef(0)
+  // O servidor ainda não respondeu sobre esta conta: consulta de novo quando houver rede
+  const semResposta = useRef(false)
+
+  const aplicarCopia = (copia: CopiaDaConta, perfilDoServidor?: UserProfile | null) => {
+    setProfile(perfilDoServidor ?? copia.profile)
+    setTenant(copia.tenant)
+    if (copia.unidades.length > 0) {
+      setOperationalUnits(copia.unidades)
+      setSelectedUnit((prev) => (copia.unidades.includes(prev) ? prev : copia.unidades[0]))
+    }
+  }
+
+  /** Encerra a sessão no servidor. Sem resposta dele, ela sai ao menos deste aparelho. */
+  const encerrarSessao = async () => {
+    const saida = supabase.auth.signOut().catch(() => ({ error: true }))
+    const resposta = await Promise.race([saida, esperar(navigator.onLine ? ESPERA_SERVIDOR_MS : 0).then(() => null)])
+    if (!resposta || resposta.error) localStorage.removeItem(CHAVE_SESSAO)
+  }
 
   const loadUserData = async (currentSession: Session) => {
+    const conta = contaAtual.current
+    const saiuDaConta = () => conta !== contaAtual.current
+    const userId = currentSession.user.id
+    let statusDaFalha: number | null = null
+    let perfilDoServidor: UserProfile | null = null
+
     try {
-      setError(null)
-      const userId = currentSession.user.id
+      if (!semResposta.current) setError(null)
 
       // 1. Carrega o perfil da tabela profiles (fonte única de papel)
-      const { data: pData, error: pError } = await supabase
+      const { data: pData, error: pError, status: pStatus } = await supabase
         .from('profiles')
         .select('id, tenant_id, role, can_inspect, full_name, active')
         .eq('id', userId)
         .maybeSingle()
 
-      if (pError) throw pError
+      if (saiuDaConta()) return
+      if (pError) {
+        statusDaFalha = pStatus
+        throw pError
+      }
       if (!pData) {
         // Primeiro acesso de quem se cadastrou: cria a empresa com os dados informados na conta
         const meta = currentSession.user.user_metadata as { empresa?: string; nome?: string; aceite_versao?: string; convite?: string } | undefined
@@ -119,36 +156,54 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Regra: usuário desativado perde acesso imediatamente
       if (!pData.active) {
-        await supabase.auth.signOut()
+        contaAtual.current += 1
+        semResposta.current = false
+        await db.apagarCopiaDaConta()
+        await encerrarSessao()
         setSession(null)
         setUser(null)
         setProfile(null)
         setTenant(null)
-        throw new Error('Sua conta foi desativada pelo administrador. Acesso revogado imediatamente.')
+        setError('Sua conta foi desativada pelo administrador. Acesso revogado imediatamente.')
+        return
       }
 
       // Quem já tem empresa não aceita convite: o link fica sem efeito
       localStorage.removeItem(CHAVE_CONVITE)
       const activeProfile = pData as UserProfile
+      perfilDoServidor = activeProfile
       setProfile(activeProfile)
 
       // 2. Carrega dados do tenant
-      const { data: tData, error: tError } = await supabase
+      const { data: tData, error: tError, status: tStatus } = await supabase
         .from('tenants')
         .select('id, legal_name, trade_name, cnpj, plan, trial_ends_at, require_second_reviewer')
         .eq('id', activeProfile.tenant_id)
         .maybeSingle()
 
-      if (tError) throw tError
-      if (tData) {
-        setTenant(tData as TenantInfo)
+      if (saiuDaConta()) return
+      if (tError) {
+        statusDaFalha = tStatus
+        throw tError
       }
+      if (tData) {
+        setProfile(activeProfile)
+        setTenant(tData as TenantInfo)
+        await db.guardarCopiaDaConta(activeProfile, tData as TenantInfo)
+      } else {
+        await db.apagarCopiaDaConta()
+      }
+      if (saiuDaConta()) return
+      semResposta.current = false
+      setError(null)
 
       // 3. Unidades operacionais derivadas das ordens de serviço do tenant (dados reais, não lista fixa)
-      const { data: woData } = await supabase
+      const { data: woData, error: woError } = await supabase
         .from('work_orders')
         .select('site')
         .eq('tenant_id', activeProfile.tenant_id)
+
+      if (saiuDaConta()) return
 
       const sitesSet = new Set<string>()
       if (woData && woData.length > 0) {
@@ -165,8 +220,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setOperationalUnits(uniqueSites)
       setSelectedUnit((prev) => (uniqueSites.includes(prev) ? prev : uniqueSites[0]))
+      if (!woError && tData) await db.guardarCopiaDaConta(activeProfile, tData as TenantInfo, uniqueSites)
 
     } catch (err: unknown) {
+      if (saiuDaConta()) return
+
+      // O pedido não chegou ao servidor: só neste caso a cópia do aparelho vale
+      if (statusDaFalha === 0) {
+        semResposta.current = true
+        const copia = await db.lerCopiaDaConta(userId)
+        if (saiuDaConta()) return
+        if (copia && (!perfilDoServidor || perfilDoServidor.tenant_id === copia.tenant.id)) {
+          aplicarCopia(copia, perfilDoServidor)
+        } else {
+          setError(MENSAGEM_SEM_INTERNET)
+          setProfile(null)
+          setTenant(null)
+        }
+        return
+      }
+
+      // Servidor com defeito não decide nada sobre a conta: quem já entrou continua, e a cópia fica
+      const servidorComDefeito = statusDaFalha !== null && statusDaFalha >= 500
+      if (servidorComDefeito && semResposta.current) return
+      if (!servidorComDefeito) await db.apagarCopiaDaConta()
+
       const msg = err instanceof Error ? err.message : 'Falha ao carregar dados do usuário'
       setError(msg)
       setProfile(null)
@@ -188,16 +266,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return
         }
 
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession()
+        const guardada = lerSessaoGuardada()
+        const copia = guardada ? await db.lerCopiaDaConta(guardada.user.id) : null
         if (!isMounted) return
 
-        if (error) throw error
+        const conta = contaAtual.current
+        const abrirSemServidor = () => {
+          if (!isMounted || !guardada || conta !== contaAtual.current) return
+          semResposta.current = true
+          setSession(guardada)
+          setUser(guardada.user)
+          if (copia) aplicarCopia(copia)
+          else setError(MENSAGEM_SEM_INTERNET)
+        }
 
-        setSession(initialSession)
-        setUser(initialSession?.user ?? null)
+        let respondeu = false
+        const verificacao = (async () => {
+          const { data: { session: initialSession }, error } = await supabase.auth.getSession()
+          if (!isMounted) return
 
-        if (initialSession) {
-          await loadUserData(initialSession)
+          if (error) {
+            // Token vencido e sem rede para renovar: a sessão continua guardada
+            if (isAuthRetryableFetchError(error)) return abrirSemServidor()
+            throw error
+          }
+
+          setSession(initialSession)
+          setUser(initialSession?.user ?? null)
+
+          if (initialSession) {
+            await loadUserData(initialSession)
+          }
+        })()
+          .catch((err: unknown) => {
+            if (isMounted) setError(err instanceof Error ? err.message : 'Erro ao inicializar autenticação')
+          })
+          .finally(() => {
+            respondeu = true
+          })
+
+        // A consulta continua em segundo plano: quando o servidor responder, o dado dele manda
+        if (guardada && (copia || !navigator.onLine)) {
+          await Promise.race([verificacao, esperar(navigator.onLine ? ESPERA_SERVIDOR_MS : 0)])
+          if (!respondeu) abrirSemServidor()
+        } else {
+          await verificacao
         }
       } catch (err: unknown) {
         if (isMounted) {
@@ -216,12 +329,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const { data: authListener } = supabase.auth.onAuthStateChange(async (evento, newSession) => {
       if (evento === 'PASSWORD_RECOVERY') setEmRecuperacao(true)
+
+      // Sem rede para renovar o token a biblioteca avisa "sem sessão", mas ela segue guardada
+      if (!newSession && evento === 'INITIAL_SESSION' && lerSessaoGuardada()) {
+        setIsLoading(false)
+        return
+      }
+
       setSession(newSession)
       setUser(newSession?.user ?? null)
 
       if (newSession) {
         await loadUserData(newSession)
       } else {
+        contaAtual.current += 1
+        semResposta.current = false
+        await db.apagarCopiaDaConta()
         setProfile(null)
         setTenant(null)
         setOperationalUnits(DEFAULT_OPERATIONAL_UNITS)
@@ -229,9 +352,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setIsLoading(false)
     })
 
+    // Aberto com a cópia do aparelho: pergunta ao servidor assim que houver rede.
+    // navigator.onLine também fica ligado em Wi-Fi sem internet, por isso a repetição.
+    let consultando = false
+    const consultarServidor = async () => {
+      if (!semResposta.current || consultando || !navigator.onLine) return
+      consultando = true
+      try {
+        const { data: { session: atual }, error } = await supabase.auth.getSession()
+        if (!error && atual && isMounted) await loadUserData(atual)
+      } finally {
+        consultando = false
+      }
+    }
+    window.addEventListener('online', consultarServidor)
+    const repeticao = window.setInterval(consultarServidor, INTERVALO_NOVA_CONSULTA_MS)
+
     return () => {
       isMounted = false
       authListener?.subscription.unsubscribe()
+      window.removeEventListener('online', consultarServidor)
+      window.clearInterval(repeticao)
     }
   }, [])
 
@@ -332,8 +473,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }
 
   const signOut = async () => {
+    contaAtual.current += 1
+    semResposta.current = false
     try {
-      await supabase.auth.signOut()
+      await db.apagarCopiaDaConta()
+      await encerrarSessao()
     } finally {
       setSession(null)
       setUser(null)

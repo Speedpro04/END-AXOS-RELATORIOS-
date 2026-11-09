@@ -4,6 +4,7 @@ import type { AnexoMeta } from './anexos';
 import type { LocalReport, OutboxItem, TenantConfig } from '../types/sync';
 import type { Client, Site, WorkOrder } from '../types/os';
 import type { ObraEscopoLinha, ObraEscopoRevisao } from '../types/obra';
+import type { TenantInfo, UserProfile } from '../contexts/AuthContext';
 
 /** Registro completo armazenado no IndexedDB para anexos */
 export interface AnexoRecord {
@@ -16,6 +17,14 @@ export interface FotoNaFila {
   anexoId: string;
   laudoId: string;
   acao: 'enviar' | 'remover';
+}
+
+/** Última resposta do servidor sobre a conta: só serve para abrir o app sem internet. */
+export interface CopiaDaConta {
+  chave: 'atual';
+  profile: UserProfile;
+  tenant: TenantInfo;
+  unidades: string[];
 }
 
 /**
@@ -42,6 +51,7 @@ export class AxosDB extends Dexie {
   obraEscopoLinhas!: Table<ObraEscopoLinha, string>;
   obraEscopoRevisoes!: Table<ObraEscopoRevisao, string>;
   fotosFila!: Table<FotoNaFila, string>;
+  contaLocal!: Table<CopiaDaConta, string>;
 
   constructor() {
     super('axos');
@@ -66,6 +76,39 @@ export class AxosDB extends Dexie {
       });
       await tx.table<FotoNaFila, string>('fotosFila').bulkPut(fila);
     });
+    this.version(3).stores({ contaLocal: 'chave' });
+  }
+
+  /**
+   * Cópia da conta deste usuário. Sem perfil ativo e sem a empresa dele não vale:
+   * o bloqueio do teste depende dos dados da empresa.
+   */
+  async lerCopiaDaConta(userId: string): Promise<CopiaDaConta | null> {
+    try {
+      const copia = await this.contaLocal.get('atual');
+      const valida = copia && copia.profile.id === userId && copia.profile.active && copia.tenant.id === copia.profile.tenant_id;
+      return valida ? copia : null;
+    } catch (err) {
+      console.warn('[Dexie] Não foi possível ler a cópia da conta:', err);
+      return null;
+    }
+  }
+
+  async guardarCopiaDaConta(profile: UserProfile, tenant: TenantInfo, unidades?: string[]): Promise<void> {
+    try {
+      const anteriores = (await this.lerCopiaDaConta(profile.id))?.unidades ?? [];
+      await this.contaLocal.put({ chave: 'atual', profile, tenant, unidades: unidades ?? anteriores });
+    } catch (err) {
+      console.warn('[Dexie] Não foi possível guardar a cópia da conta:', err);
+    }
+  }
+
+  async apagarCopiaDaConta(): Promise<void> {
+    try {
+      await this.contaLocal.clear();
+    } catch (err) {
+      console.warn('[Dexie] Não foi possível apagar a cópia da conta:', err);
+    }
   }
 
   /** Migração única de dados do localStorage para Dexie */
