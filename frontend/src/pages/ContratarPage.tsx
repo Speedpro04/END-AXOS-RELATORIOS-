@@ -29,7 +29,7 @@ export function lembrarPlanoDaUrl() {
   }
 }
 
-export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean }> = ({ aoVoltar, encerrado }) => {
+export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () => void; encerrado: boolean }> = ({ aoVoltar, aoIrAoSistema, encerrado }) => {
   const { user, profile, tenant } = useAuth()
   const [plano, setPlano] = useState(() => localStorage.getItem(CHAVE_PLANO_ESCOLHIDO) ?? '')
   const [razao, setRazao] = useState(tenant?.legal_name && tenant.legal_name !== profile?.full_name ? tenant.legal_name : '')
@@ -82,6 +82,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
       <div className="lf-pagina">
         <h1 className="lf-titulo">Contratar plano</h1>
         <p className="lf-descricao">Só o administrador da conta pode contratar um plano. Fale com o responsável pela sua empresa.</p>
+        <button type="button" className="lf-botao" onClick={aoVoltar}>Voltar</button>
       </div>
     )
   }
@@ -94,7 +95,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; encerrado: boolean 
             <CheckCircle2 size={24} strokeWidth={1.75} /> Pedido recebido
           </h1>
           <p className="lf-descricao">Vamos entrar em contato para combinar o pagamento e liberar o plano. Os dados da sua conta continuam guardados.</p>
-          <button type="button" className="lf-botao" onClick={aoVoltar}>Voltar ao sistema</button>
+          <button type="button" className="lf-botao" onClick={aoIrAoSistema}>Voltar ao sistema</button>
         </section>
       </div>
     )

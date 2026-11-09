@@ -165,7 +165,8 @@ function AppContent() {
   // Navegação entre páginas de modelos
   // 'HUB' | 'LP' | 'ME' | 'EVS' | 'NR13' | 'PM' | 'US' | 'PINTURA'
   // Veio de um card de plano da página inicial: abre direto a contratação
-  const [currentPage, setCurrentPage] = useState<string>(() => (new URLSearchParams(window.location.search).has('plano') ? 'CONTRATAR' : 'OBRAS'))
+  const [veioDoCard] = useState(() => new URLSearchParams(window.location.search).has('plano'))
+  const [currentPage, setCurrentPage] = useState<string>(veioDoCard ? 'CONTRATAR' : 'OBRAS')
 
   // Já logado, o plano sai do endereço: recarregar a página não reabre a contratação
   useEffect(() => {
@@ -494,7 +495,11 @@ function AppContent() {
         {currentPage === 'EQUIPE' && <EquipePage />}
 
         {currentPage === 'CONTRATAR' && (
-          <ContratarPage aoVoltar={() => setCurrentPage('HUB')} encerrado={testeEncerrado} />
+          <ContratarPage
+            aoVoltar={() => (veioDoCard ? window.location.assign('/') : setCurrentPage('HUB'))}
+            aoIrAoSistema={() => setCurrentPage('HUB')}
+            encerrado={testeEncerrado}
+          />
         )}
 
         {currentPage === 'HUB' && (
