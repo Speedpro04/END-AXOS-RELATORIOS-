@@ -276,7 +276,7 @@ export const LoginPage: React.FC = () => {
 
         {/* Container 1140px Unificado */}
         <div
-          className="login-container"
+          className={isCadastro ? 'login-container login-com-marca' : 'login-container'}
           style={{
             width: '100%',
             maxWidth: '1140px',
@@ -754,17 +754,27 @@ export const LoginPage: React.FC = () => {
         {/* CSS responsivo */}
         <style>{`
           @media (max-width: 900px) {
-            .login-container {
+            .login-container:not(.login-com-marca) {
               max-width: 520px !important;
               min-height: auto !important;
             }
-            .login-brand-panel { display: none !important; }
-            .login-mobile-logo { display: block !important; }
-            .login-form-panel  {
+            .login-container:not(.login-com-marca) .login-brand-panel { display: none !important; }
+            .login-container:not(.login-com-marca) .login-mobile-logo { display: block !important; }
+            .login-container:not(.login-com-marca) .login-form-panel {
               flex: 1 1 100% !important;
               padding: 32px 24px !important;
               border-left: none !important;
             }
+            /* Criar conta: mesmo conteúdo do computador, com o painel da marca */
+            .login-com-marca .login-brand-panel,
+            .login-com-marca .login-form-panel { padding: 32px 24px !important; }
+          }
+          @media (max-width: 640px) {
+            .login-com-marca { flex-direction: column; }
+            .login-com-marca .login-brand-panel,
+            .login-com-marca .login-form-panel { flex: 0 0 auto !important; }
+            .login-com-marca .login-brand-panel { border-right: none !important; }
+            .login-com-marca .login-brand-panel img { max-width: 220px !important; }
           }
           @media (max-width: 540px) {
             .login-root { padding: 0 !important; }

@@ -315,6 +315,13 @@
     .site-nav ul { display: flex; gap: var(--s-4); }
     .site-nav a { color: var(--text-muted); text-decoration: none; font-size: 14px; font-weight: 500; white-space: nowrap; transition: color 140ms ease-out; }
     .site-nav a:hover { color: var(--text); }
+    .site-nav { order: 1; }
+    .header-actions { order: 2; }
+    .menu-botao { display: none; order: 3; flex-shrink: 0; align-items: center; justify-content: center; width: 44px; height: 44px; padding: 0; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); cursor: pointer; }
+    .menu-botao:hover { background: var(--surface-muted); }
+    .menu-botao svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+    .menu-botao .icone-fechar, .menu-botao[aria-expanded="true"] .icone-abrir { display: none; }
+    .menu-botao[aria-expanded="true"] .icone-fechar { display: block; }
 
     /* Abertura */
     .hero { padding: calc(var(--s-12) + var(--s-8)) 0 var(--s-12); }
@@ -431,6 +438,12 @@
 
     @media (max-width: 1140px) {
       .site-nav { display: none; }
+      .site-header .container { gap: var(--s-3); }
+      .header-actions { margin-left: auto; }
+      .menu-botao { display: inline-flex; }
+      .site-nav.aberto { display: block; position: absolute; top: 100%; left: 0; right: 0; max-height: calc(100vh - 72px); overflow-y: auto; background: var(--bg); border-bottom: 1px solid var(--border); }
+      .site-nav.aberto ul { flex-direction: column; gap: 0; padding: var(--s-2) var(--s-8); }
+      .site-nav.aberto a { display: flex; align-items: center; min-height: 48px; color: var(--text); font-size: 16px; }
       .precos { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     }
 
@@ -458,6 +471,7 @@
       .container { padding: 0 var(--s-4); }
       .brand img { width: 136px; }
       .site-header .btn { padding: 0 var(--s-3); font-size: 14px; }
+      .site-nav.aberto ul { padding: var(--s-2) var(--s-4); }
       .header-actions .btn-primary { display: none; }
       .hero { padding-top: var(--s-8); }
       .hero-actions .btn { width: 100%; }
@@ -492,7 +506,11 @@
       <a class="brand" href="#inicio" aria-label="AXOS Relatórios, início">
         <img src="assets/logo-axos.png" alt="AXOS Relatórios, tecnologia em inspeção" width="578" height="165">
       </a>
-      <nav class="site-nav" aria-label="Navegação principal">
+      <button class="menu-botao" type="button" aria-label="Abrir menu" aria-expanded="false" aria-controls="menu-principal">
+        <svg class="icone-abrir" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <svg class="icone-fechar" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+      <nav class="site-nav" id="menu-principal" aria-label="Navegação principal">
         <ul>
           <li><a href="#solucao">Solução</a></li>
           <li><a href="#como-funciona">Como funciona</a></li>
@@ -898,6 +916,24 @@
       </div>
     </div>
   </footer>
+  <script>
+    // Menu do celular e do tablet: fecha ao escolher um item, com Esc ou ao tocar fora.
+    (() => {
+      const botao = document.querySelector('.menu-botao');
+      const menu = document.getElementById('menu-principal');
+      const mudar = (aberto) => {
+        menu.classList.toggle('aberto', aberto);
+        botao.setAttribute('aria-expanded', String(aberto));
+        botao.setAttribute('aria-label', aberto ? 'Fechar menu' : 'Abrir menu');
+      };
+      botao.addEventListener('click', () => mudar(!menu.classList.contains('aberto')));
+      menu.addEventListener('click', (e) => { if (e.target.closest('a')) mudar(false); });
+      document.addEventListener('click', (e) => { if (!e.target.closest('.site-header')) mudar(false); });
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && menu.classList.contains('aberto')) { mudar(false); botao.focus(); }
+      });
+    })();
+  </script>
   <script>
     // Pulso em estilo osciloscópio. Para quem pede menos animação, só começa ao clicar em Iniciar.
     (() => {
