@@ -46,6 +46,7 @@ Nenhuma alteração é dada como pronta sem teste: no navegador, no computador e
 - Link de pagamento é público e pode ficar no código. Chave secreta e segredo de webhook ficam só no servidor, nunca em variável `VITE_`, no repositório ou no terminal.
 - Plano só é liberado pelo servidor ou pela AXOS. O usuário nunca altera plano nem prazo.
 - Não colocar nome, e-mail, CPF ou CNPJ no endereço do pagamento.
+- Caminho de quem não tem conta: card, formulário da empresa, pagamento, volta à LP, e-mail para criar a senha, Entrar, login, Obras. A conta só nasce depois do pagamento, criada pelo servidor.
 - Nunca fazer pagamento real em teste. Situação e pendências: seção "Pagamento pela Stripe" em `MEMORY.md`.
 
 ## 8. Conformidade: ISO 27001, ISO 9001 e ABNT

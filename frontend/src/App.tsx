@@ -344,6 +344,19 @@ function AppContent() {
     )
   }
 
+  // Card de plano sem login: a conta só nasce depois do pagamento
+  if (!user && !pedirLogin && !emRecuperacao && new URLSearchParams(window.location.search).has('plano')) {
+    const voltarParaLp = () => window.location.assign('/')
+    return (
+      <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+        <main className="app-main" style={{ flex: 1, maxWidth: '1280px', width: '100%', margin: '0 auto', padding: '28px 32px' }}>
+          <ContratarPage aoVoltar={voltarParaLp} aoIrAoSistema={voltarParaLp} encerrado={false} />
+        </main>
+        <TenantFooter />
+      </div>
+    )
+  }
+
   if (emRecuperacao || !user || !profile || pedirLogin) {
     return <LoginPage aoEntrar={concluirLogin} />
   }

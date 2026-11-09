@@ -998,3 +998,166 @@ begin
 
   raise notice '[PASS] TESTE 14: fotos isoladas por empresa e travadas depois do envio do laudo';
 end $$;
+
+-- =====================================================================
+-- TESTE 15: contratação sem conta, só pelo servidor
+-- =====================================================================
+do $$
+declare
+  u_novo uuid := 'dddddddd-0000-0000-0000-00000000f151'::uuid;
+  u_b uuid := 'dddddddd-0000-0000-0000-00000000f152'::uuid;
+  v_pedido uuid;
+  v_pedido2 uuid;
+  v_velho uuid;
+  v_tenant uuid;
+  v_impedimento text;
+  v_usuario uuid;
+  v_qtd int;
+  v_plano text;
+  v_fim timestamptz;
+begin
+  perform set_config('role', 'none', true);
+  insert into auth.users (id, email) values (u_novo, 'novo@empresa.test'), (u_b, 'outro@empresa.test');
+
+  -- Visitante e usuário logado não usam as funções do servidor
+  perform set_config('role', 'anon', true);
+  begin
+    perform public.registrar_pedido_sem_conta('individual', 'X', '11122233344', 'Y', 'a@b.test', 'v1');
+    raise exception 'FALHA 15.1: visitante gravou pedido';
+  exception when insufficient_privilege then null;
+  end;
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', u_novo, 'role', 'authenticated')::text, true);
+  begin
+    perform public.liberar_pedido_pago(gen_random_uuid(), 's', 'c', 'a', u_novo);
+    raise exception 'FALHA 15.2: usuário logado liberou plano';
+  exception when insufficient_privilege then null;
+  end;
+
+  -- Regras do pedido
+  perform set_config('role', 'service_role', true);
+  begin
+    perform public.registrar_pedido_sem_conta('equipe_3', 'Empresa', '11122233344', 'Resp', 'novo@empresa.test', 'v1');
+    raise exception 'FALHA 15.3: CPF aceito em plano de equipe';
+  exception when raise_exception then
+    if sqlerrm like 'FALHA%' then raise; end if;
+  end;
+  begin
+    perform public.registrar_pedido_sem_conta('sob_consulta', 'Empresa', '11222333000181', 'Resp', 'novo@empresa.test', 'v1');
+    raise exception 'FALHA 15.4: plano sob consulta aceito';
+  exception when raise_exception then
+    if sqlerrm like 'FALHA%' then raise; end if;
+  end;
+  begin
+    perform public.registrar_pedido_sem_conta('equipe_3', 'Empresa', '11222333000181', 'Resp', 'novo@empresa.test', '');
+    raise exception 'FALHA 15.5: pedido sem aceite';
+  exception when raise_exception then
+    if sqlerrm like 'FALHA%' then raise; end if;
+  end;
+  begin
+    perform public.registrar_pedido_sem_conta('equipe_3', 'Empresa', '11222333000181', 'Resp', 'sem-arroba', 'v1');
+    raise exception 'FALHA 15.6: e-mail inválido aceito';
+  exception when raise_exception then
+    if sqlerrm like 'FALHA%' then raise; end if;
+  end;
+
+  v_pedido := public.registrar_pedido_sem_conta('equipe_3', ' Empresa Nova ', '11.222.333/0001-81', 'Resp Novo', 'NOVO@empresa.test', 'v1', '11999990000', 'Rua 1');
+
+  -- Pedido sem conta não aparece para nenhuma empresa
+  perform set_config('role', 'authenticated', true);
+  perform set_config('request.jwt.claims', json_build_object('sub', 'aaaaaaaa-0000-0000-0000-000000000001', 'role', 'authenticated')::text, true);
+  if exists (select 1 from public.pedidos_contratacao where id = v_pedido) then
+    raise exception 'FALHA 15.7: administrador viu pedido sem conta';
+  end if;
+
+  -- Sem conta anterior: nada impede
+  perform set_config('role', 'service_role', true);
+  select usuario, impedimento into v_usuario, v_impedimento from public.conferir_pedido_pago(v_pedido);
+  if v_usuario is distinct from u_novo or v_impedimento is not null then
+    raise exception 'FALHA 15.8: conferência errada (%, %)', v_usuario, v_impedimento;
+  end if;
+
+  v_tenant := public.liberar_pedido_pago(v_pedido, 'cs_1', 'cus_1', 'sub_1', u_novo);
+
+  perform set_config('role', 'none', true);
+  select plan, trial_ends_at into v_plano, v_fim from public.tenants where id = v_tenant;
+  if v_plano <> 'equipe_3' or v_fim is not null then
+    raise exception 'FALHA 15.9: plano não liberado (%, %)', v_plano, v_fim;
+  end if;
+  if not exists (select 1 from public.profiles where id = u_novo and tenant_id = v_tenant and role = 'admin' and full_name = 'Resp Novo') then
+    raise exception 'FALHA 15.10: perfil não criado';
+  end if;
+  select count(*) into v_qtd from public.lgpd_aceites where user_id = u_novo and versao = 'v1';
+  if v_qtd <> 2 then
+    raise exception 'FALHA 15.11: aceites registrados: %', v_qtd;
+  end if;
+  if not exists (select 1 from public.audit_log where entity_id = v_pedido and action = 'plano_liberado') then
+    raise exception 'FALHA 15.12: liberação sem registro de auditoria';
+  end if;
+
+  -- Aviso repetido da Stripe não duplica nada
+  perform set_config('role', 'service_role', true);
+  if public.liberar_pedido_pago(v_pedido, 'cs_1', 'cus_1', 'sub_1', u_novo) is distinct from v_tenant then
+    raise exception 'FALHA 15.13: repetição mudou a empresa';
+  end if;
+  perform set_config('role', 'none', true);
+  select count(*) into v_qtd from public.lgpd_aceites where user_id = u_novo;
+  if v_qtd <> 2 then
+    raise exception 'FALHA 15.14: repetição duplicou aceites';
+  end if;
+
+  -- Quem já tem empresa, ou CNPJ já usado, vai para análise da AXOS
+  perform set_config('role', 'service_role', true);
+  v_pedido2 := public.registrar_pedido_sem_conta('individual', 'Outra', '11122233344', 'Resp', 'novo@empresa.test', 'v1');
+  select impedimento into v_impedimento from public.conferir_pedido_pago(v_pedido2);
+  if v_impedimento is distinct from 'CONTA_JA_EXISTE' then
+    raise exception 'FALHA 15.15: conta existente não detectada (%)', v_impedimento;
+  end if;
+  v_pedido2 := public.registrar_pedido_sem_conta('equipe_5', 'Outra', '11222333000181', 'Resp', 'outro@empresa.test', 'v1');
+  select impedimento into v_impedimento from public.conferir_pedido_pago(v_pedido2);
+  if v_impedimento is distinct from 'CNPJ_JA_CADASTRADO' then
+    raise exception 'FALHA 15.16: CNPJ repetido não detectado (%)', v_impedimento;
+  end if;
+
+  -- Assinatura mais nova segura o plano; a última encerrada corta laudo novo
+  perform set_config('role', 'none', true);
+  update public.pedidos_contratacao set tenant_id = v_tenant where id = v_pedido2;
+  update public.pedidos_contratacao set pago_em = now() - interval '1 day' where id = v_pedido;
+  perform set_config('role', 'service_role', true);
+  perform public.liberar_pedido_pago(v_pedido2, 'cs_2', 'cus_1', 'sub_2');
+  if not public.encerrar_assinatura('sub_1') then
+    raise exception 'FALHA 15.17: assinatura antiga não encerrada';
+  end if;
+  perform set_config('role', 'none', true);
+  select plan into v_plano from public.tenants where id = v_tenant;
+  if v_plano <> 'equipe_5' then
+    raise exception 'FALHA 15.18: assinatura antiga derrubou a nova (%)', v_plano;
+  end if;
+  perform set_config('role', 'service_role', true);
+  perform public.encerrar_assinatura('sub_2');
+  if public.encerrar_assinatura('sub_2') then
+    raise exception 'FALHA 15.19: encerramento repetido teve efeito';
+  end if;
+  perform set_config('role', 'none', true);
+  select plan, trial_ends_at into v_plano, v_fim from public.tenants where id = v_tenant;
+  if v_plano <> 'trial' or v_fim is null or v_fim > now() then
+    raise exception 'FALHA 15.20: empresa sem bloqueio depois de encerrar (%, %)', v_plano, v_fim;
+  end if;
+
+  -- Pedido não pago sai depois de 7 dias; pago fica
+  perform set_config('role', 'service_role', true);
+  v_velho := public.registrar_pedido_sem_conta('individual', 'Velho', '11122233344', 'Resp', 'velho@empresa.test', 'v1');
+  perform set_config('role', 'none', true);
+  update public.pedidos_contratacao set criado_em = now() - interval '8 days' where id in (v_velho, v_pedido);
+  perform set_config('role', 'service_role', true);
+  perform public.registrar_pedido_sem_conta('individual', 'Novo', '11122233344', 'Resp', 'n@empresa.test', 'v1');
+  perform set_config('role', 'none', true);
+  if exists (select 1 from public.pedidos_contratacao where id = v_velho) then
+    raise exception 'FALHA 15.21: pedido não pago continuou guardado';
+  end if;
+  if not exists (select 1 from public.pedidos_contratacao where id = v_pedido) then
+    raise exception 'FALHA 15.22: pedido pago foi apagado';
+  end if;
+
+  raise notice '[PASS] TESTE 15: contratação sem conta só pelo servidor, com plano, aceites e auditoria';
+end $$;

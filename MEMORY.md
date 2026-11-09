@@ -505,14 +505,25 @@ No Supabase, tabela nova nasce liberada para visitante, e só a RLS segurava as 
 
 Os links de pagamento do dono do produto estão em `PLANOS`, em `pages/ContratarPage.tsx`, e foram conferidos um a um: plano, valor e descrição batem. Depois de gravar o pedido, o app abre o link do plano com `client_reference_id` igual ao id do pedido. Nome e e-mail não vão no endereço. "Sob consulta" não tem link. Política de Privacidade e Termos citam a Stripe.
 
-Card da LP com a conta já logada abre direto a contratação, com o plano do card (`App.tsx`). Sem login, o card abre o cadastro, e o primeiro acesso depois de confirmar o e-mail cai em Obras, com o teste de 30 dias correndo e o plano guardado para a contratação.
+Card da LP com a conta já logada abre direto a contratação, com o plano do card (`App.tsx`).
 
-Testado no computador e no tamanho de celular, com o pedido simulado em servidor local e o link real da Stripe abrindo. Nenhum pagamento foi feito.
+**Contratação sem conta (09/11/2026), decisão do dono do produto:** sem login, o card abre o formulário da empresa e o pagamento. A Stripe dá os 30 dias grátis, com cartão. Depois do pagamento, a pessoa volta à LP (`/?pagamento=ok` mostra o aviso), recebe o e-mail para criar a senha e entra pelo botão Entrar (`/app?entrar=1`, que sempre abre o login). Quem chega pelo link do e-mail e salva a senha já entra em Obras.
+
+- `0010_contratacao_sem_conta.sql`: pedido sem empresa e 4 funções só para `service_role` (teste 15). Visitante continua sem nenhuma permissão: o formulário fala com a API.
+- `backend/app/routers/contratacao.py`: `POST /api/contratacao/pedido` (10 por hora por origem, no Redis) e `POST /api/stripe/webhook`. O número do pedido viaja no endereço, então o webhook confere o valor pago na Stripe antes de liberar.
+- Conta já existente com aquele e-mail, CNPJ já cadastrado ou valor diferente: `situacao = em_andamento` e motivo em `observacao`, para a AXOS resolver. Ainda não há aviso automático: consultar o log da API e a tabela.
+- Cancelamento (`customer.subscription.deleted` ou situação `canceled`, `unpaid`, `incomplete_expired`) volta a empresa a `trial` com prazo vencido: dados guardados, sem laudo novo. O aviso na tela ainda diz "teste grátis terminou".
+
+Testado no computador e no tamanho de celular com servidor simulado, e com 28 testes novos da API e o teste 15 do banco. O link real da Stripe abriu. Nenhum pagamento foi feito. Sem teste: Stripe real, e-mail real, Supabase real e site no ar.
+
+**Ordem para publicar (se o site for antes da API, o card para de funcionar para quem não tem login):**
+1. Rodar `0010_contratacao_sem_conta.sql` no SQL Editor.
+2. Publicar a API no EasyPanel com `backend/Dockerfile`, Redis, e as variáveis `FRONTEND_URL=https://axosrelatorios.com`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `REDIS_URL`. Domínio `axosrelatorios.com`, caminho `/api`: sem subdomínio.
+3. Stripe: 30 dias grátis nos 4 links; depois do pagamento, ir para `https://axosrelatorios.com/?pagamento=ok`; webhook em `https://axosrelatorios.com/api/stripe/webhook` com `checkout.session.completed`, `customer.subscription.updated` e `customer.subscription.deleted`.
+4. Supabase: e-mail próprio (SMTP), porque o envio padrão não atende clientes; traduzir o modelo "Invite user"; confirmar `/redefinir-senha` em Redirect URLs.
+5. `VITE_API_URL=https://axosrelatorios.com` no site e Deploy do site por último.
 
 **Pendências:**
-- O dono do produto vai passar webhook, chave da API e demais configurações. Com eles, o servidor libera o plano sozinho, pelo `client_reference_id`, e trata cancelamento e falta de pagamento.
-- Sem webhook, a liberação é manual e o cliente pode esperar depois de pagar.
-- Configurar na Stripe o retorno ao app depois do pagamento (`https://axosrelatorios.com/app`).
 - A página de pagamento mostra "Axos Hub" como nome da conta, e não "AXOS Relatórios". O dono do produto decide se troca.
 - Os nomes dos produtos na Stripe terminam em " -". Tirar.
 

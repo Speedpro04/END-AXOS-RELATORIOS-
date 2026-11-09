@@ -233,7 +233,7 @@
             "name": "Tem teste grátis?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Sim. São 30 dias grátis, sem cartão, e o PDF sai marcado como provisório durante o teste. Ao terminar, seus dados continuam guardados, e você escolhe um plano para voltar a registrar laudos."
+              "text": "Sim. São 30 dias grátis: você informa o cartão ao contratar e a primeira cobrança vem depois desse prazo. Para cancelar antes, basta falar com o suporte, e nada é cobrado."
             }
           }
         ]
@@ -527,6 +527,10 @@
     </div>
   </header>
 
+  <div id="aviso-contratacao" role="status" hidden style="background: var(--accent-soft); border-bottom: 1px solid var(--accent); color: var(--text); padding: var(--s-4) 0; text-align: center;">
+    <div class="container">Contratação recebida. Se você ainda não tem senha, enviamos um e-mail para criá-la. Depois, é só clicar em Entrar.</div>
+  </div>
+
   <main id="conteudo">
     <section class="hero" id="inicio">
       <div class="container">
@@ -766,7 +770,7 @@
       <div class="container">
         <div class="section-head">
           <h2 id="valores-titulo">Valores do software de laudos END por número de inspetores</h2>
-          <p>Comece com 30 dias grátis, sem cartão. Depois, escolha o plano pela quantidade de inspetores ativos da sua empresa. Valores mensais.</p>
+          <p>Escolha o plano pela quantidade de inspetores ativos da sua empresa. São 30 dias grátis: você informa o cartão ao contratar e a primeira cobrança vem depois desse prazo. Valores mensais.</p>
         </div>
         <ul class="precos">
           <li class="preco">
@@ -774,14 +778,14 @@
             <p class="preco-valor">R$ 147 <small>por mês</small></p>
             <p class="preco-limite">1 inspetor ativo</p>
             <p class="preco-unidade">R$ 147,00 por inspetor</p>
-            <a class="btn btn-secondary" href="/app?plano=individual&amp;criar=1" aria-label="Testar 30 dias grátis o plano Individual">Testar 30 dias grátis</a>
+            <a class="btn btn-secondary" href="/app?plano=individual" aria-label="Testar 30 dias grátis o plano Individual">Testar 30 dias grátis</a>
           </li>
           <li class="preco">
             <h3>Equipe 3</h3>
             <p class="preco-valor">R$ 397 <small>por mês</small></p>
             <p class="preco-limite">Até 3 inspetores ativos</p>
             <p class="preco-unidade">R$ 132,33 por inspetor</p>
-            <a class="btn btn-secondary" href="/app?plano=equipe_3&amp;criar=1" aria-label="Testar 30 dias grátis o plano Equipe 3">Testar 30 dias grátis</a>
+            <a class="btn btn-secondary" href="/app?plano=equipe_3" aria-label="Testar 30 dias grátis o plano Equipe 3">Testar 30 dias grátis</a>
           </li>
           <li class="preco preco-destaque">
             <span class="preco-selo">Recomendado</span>
@@ -789,14 +793,14 @@
             <p class="preco-valor">R$ 597 <small>por mês</small></p>
             <p class="preco-limite">Até 5 inspetores ativos</p>
             <p class="preco-unidade">R$ 119,40 por inspetor</p>
-            <a class="btn btn-primary" href="/app?plano=equipe_5&amp;criar=1" aria-label="Testar 30 dias grátis o plano Equipe 5">Testar 30 dias grátis</a>
+            <a class="btn btn-primary" href="/app?plano=equipe_5" aria-label="Testar 30 dias grátis o plano Equipe 5">Testar 30 dias grátis</a>
           </li>
           <li class="preco">
             <h3>Equipe 10</h3>
             <p class="preco-valor">R$ 997 <small>por mês</small></p>
             <p class="preco-limite">Até 10 inspetores ativos</p>
             <p class="preco-unidade">R$ 99,70 por inspetor</p>
-            <a class="btn btn-secondary" href="/app?plano=equipe_10&amp;criar=1" aria-label="Testar 30 dias grátis o plano Equipe 10">Testar 30 dias grátis</a>
+            <a class="btn btn-secondary" href="/app?plano=equipe_10" aria-label="Testar 30 dias grátis o plano Equipe 10">Testar 30 dias grátis</a>
           </li>
           <li class="preco">
             <h3>Acima de 10</h3>
@@ -858,7 +862,7 @@
           </details>
           <details>
             <summary><h3>Tem teste grátis?</h3><svg class="icon" aria-hidden="true"><use href="#i-chevron"/></svg></summary>
-            <p>Sim. São 30 dias grátis, sem cartão, e o PDF sai marcado como provisório durante o teste. Ao terminar, seus dados continuam guardados, e você escolhe um plano para voltar a registrar laudos.</p>
+            <p>Sim. São 30 dias grátis: você informa o cartão ao contratar e a primeira cobrança vem depois desse prazo. Para cancelar antes, basta falar com o suporte, e nada é cobrado.</p>
           </details>
         </div>
       </div>
@@ -916,6 +920,13 @@
       </div>
     </div>
   </footer>
+  <script>
+    // Volta da Stripe: avisa o próximo passo e limpa o endereço
+    if (new URLSearchParams(location.search).get('pagamento') === 'ok') {
+      document.getElementById('aviso-contratacao').hidden = false;
+      history.replaceState(null, '', '/');
+    }
+  </script>
   <script>
     // Menu do celular e do tablet: fecha ao escolher um item, com Esc ou ao tocar fora.
     (() => {

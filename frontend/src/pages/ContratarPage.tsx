@@ -1,7 +1,8 @@
 import React, { useState } from 'react'
 import { CheckCircle2 } from 'lucide-react'
 import { supabase } from '../lib/supabase'
-import { CHAVE_CONVITE, useAuth } from '../contexts/AuthContext'
+import { API_BASE_URL } from '../config'
+import { CHAVE_CONVITE, useAuth, VERSAO_DOCUMENTOS_LEGAIS } from '../contexts/AuthContext'
 import { CabecalhoLaudo, Campo, Secao, Selecao } from '../components/laudo/CamposLaudo'
 import { mensagemErroAuth } from '../utils/errosAuth'
 
@@ -41,7 +42,9 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
+  const [aceite, setAceite] = useState(false)
 
+  const semConta = !user
   const individual = plano === 'individual'
   const digitos = documento.replace(/\D/g, '')
   const linkPagamento = PLANOS.find((p) => p.valor === plano)?.linkPagamento
@@ -53,8 +56,25 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
     if (individual ? ![11, 14].includes(digitos.length) : digitos.length !== 14) {
       return setErro(individual ? 'Informe um CPF com 11 números ou um CNPJ com 14 números.' : 'Informe um CNPJ com 14 números.')
     }
+    if (semConta && !aceite) return setErro('Para contratar, aceite os Termos de Uso e a Política de Privacidade.')
     setEnviando(true)
-    const { data: pedidoId, error } = await supabase.rpc('solicitar_contratacao', {
+    const pedido = semConta ? await gravarPedidoSemConta() : await gravarPedidoDaConta()
+    if ('erro' in pedido) {
+      setEnviando(false)
+      return setErro(pedido.erro)
+    }
+    localStorage.removeItem(CHAVE_PLANO_ESCOLHIDO)
+    // O número do pedido vai junto para ligar o pagamento à empresa na Stripe
+    if (linkPagamento) {
+      window.location.assign(`${linkPagamento}?client_reference_id=${pedido.id}`)
+      return
+    }
+    setEnviando(false)
+    setEnviado(true)
+  }
+
+  const gravarPedidoDaConta = async (): Promise<{ id: string } | { erro: string }> => {
+    const { data, error } = await supabase.rpc('solicitar_contratacao', {
       p_plano: plano,
       p_razao_social: razao,
       p_documento: digitos,
@@ -63,21 +83,36 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
       p_email: email,
       p_endereco: endereco,
     })
-    if (error) {
-      setEnviando(false)
-      return setErro(mensagemErroAuth(error.message, 'Não foi possível enviar o pedido. Tente novamente.'))
-    }
-    localStorage.removeItem(CHAVE_PLANO_ESCOLHIDO)
-    // O número do pedido vai junto para ligar o pagamento à empresa na Stripe
-    if (linkPagamento) {
-      window.location.assign(`${linkPagamento}?client_reference_id=${pedidoId as string}`)
-      return
-    }
-    setEnviando(false)
-    setEnviado(true)
+    if (error) return { erro: mensagemErroAuth(error.message, 'Não foi possível enviar o pedido. Tente novamente.') }
+    return { id: data as string }
   }
 
-  if (profile?.role !== 'admin') {
+  const gravarPedidoSemConta = async (): Promise<{ id: string } | { erro: string }> => {
+    const falha = 'Não foi possível enviar o pedido. Tente novamente.'
+    try {
+      const resposta = await fetch(`${API_BASE_URL}/api/contratacao/pedido`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plano,
+          razao_social: razao,
+          documento: digitos,
+          responsavel,
+          email,
+          aceite_versao: VERSAO_DOCUMENTOS_LEGAIS,
+          telefone: telefone || null,
+          endereco: endereco || null,
+        }),
+      })
+      const corpo = await resposta.json().catch(() => null)
+      if (!resposta.ok) return { erro: typeof corpo?.detail === 'string' ? corpo.detail : falha }
+      return { id: corpo.pedido_id }
+    } catch {
+      return { erro: falha }
+    }
+  }
+
+  if (!semConta && profile?.role !== 'admin') {
     return (
       <div className="lf-pagina">
         <h1 className="lf-titulo">Contratar plano</h1>
@@ -109,9 +144,14 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
           Seu teste grátis terminou. Seus dados continuam guardados: escolha um plano para voltar a registrar laudos.
         </p>
       )}
+      {semConta && (
+        <p className="lf-descricao" style={{ marginBottom: '24px' }}>
+          Já tem conta? <a href={`/app?entrar=1${plano ? `&plano=${plano}` : ''}`} style={{ color: 'var(--accent-text)' }}>Entre para contratar</a>.
+        </p>
+      )}
       <form onSubmit={enviar} className="lf-coluna-secoes contratar-form">
         <Secao titulo="Plano">
-          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={PLANOS} aoMudar={setPlano} />
+          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} />
         </Secao>
         <Secao titulo="Dados da empresa">
           <div className="lf-grade contratar-grade">
@@ -119,16 +159,25 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
             <Campo rotulo={individual ? 'CPF ou CNPJ' : 'CNPJ'} obrigatorio numerico valor={documento} aoMudar={setDocumento} />
             <Campo rotulo="Responsável" obrigatorio valor={responsavel} aoMudar={setResponsavel} />
             <Campo rotulo="Telefone" valor={telefone} aoMudar={setTelefone} />
-            <Campo rotulo="E-mail de cobrança" valor={email} aoMudar={setEmail} />
+            <Campo rotulo={semConta ? 'E-mail' : 'E-mail de cobrança'} obrigatorio={semConta} tipo={semConta ? 'email' : 'text'} valor={email} aoMudar={setEmail} />
             <Campo rotulo="Endereço" valor={endereco} aoMudar={setEndereco} />
           </div>
         </Secao>
         <Secao
           titulo="Pagamento"
-          descricao={linkPagamento
-            ? 'No próximo passo, você paga com cartão na página segura da Stripe. Liberamos o plano depois que o pagamento for confirmado.'
-            : 'Depois do pedido, entramos em contato para combinar o pagamento e liberar o plano.'}
+          descricao={!linkPagamento && !semConta
+            ? 'Depois do pedido, entramos em contato para combinar o pagamento e liberar o plano.'
+            : `No próximo passo, você informa o cartão na página segura da Stripe. A primeira cobrança vem só depois de 30 dias grátis. ${semConta ? 'Em seguida, enviamos para o e-mail acima o link para criar sua senha.' : 'Liberamos o plano assim que a Stripe confirmar.'}`}
         >
+          {semConta && (
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.4, marginBottom: '16px' }}>
+              <input type="checkbox" checked={aceite} onChange={(e) => setAceite(e.target.checked)} style={{ width: '20px', height: '20px', flexShrink: 0 }} />
+              <span>
+                Li e aceito os <a href="/termos-de-uso.html" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-text)' }}>Termos de Uso</a> e a{' '}
+                <a href="/politica-de-privacidade.html" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-text)' }}>Política de Privacidade</a>.
+              </span>
+            </label>
+          )}
           {erro && <p className="lf-alerta" role="alert">{erro}</p>}
           <div className="lf-acoes">
             <button type="button" className="lf-botao" onClick={aoVoltar}>Cancelar</button>

@@ -467,13 +467,16 @@ Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo
 - Texto da página só promete o que está no PRD: sem depoimentos, clientes, números de mercado ou preços inventados.
 - `assets/imagem-1.svg`, `imagem-2.svg` e `imagem-3.svg` são espaços reservados para as 3 imagens definitivas (1200 x 900).
 
-## Contratação e Pagamento (08/11/2026)
+## Contratação e Pagamento (revisto em 09/11/2026)
 
-- Fluxo: card da página inicial, criar acesso, teste de 30 dias sem cartão, contratar plano, dados da empresa, pagamento.
-- Individual, Equipe 3, Equipe 5 e Equipe 10 abrem o link de pagamento da Stripe (`pages/ContratarPage.tsx`), na moeda BRL, com cobrança mensal. O número do pedido vai como `client_reference_id`, para ligar o pagamento à empresa.
+- Fluxo definido pelo dono do produto: card da página inicial, formulário da empresa, pagamento na Stripe, volta à página inicial, e-mail para criar a senha, botão Entrar, login, Obras, painel operacional.
+- A conta só nasce depois do pagamento, criada pelo servidor (`routers/contratacao.py`), quando a Stripe avisa. O link do e-mail cria a senha e confirma o e-mail.
+- Individual, Equipe 3, Equipe 5 e Equipe 10 abrem o link de pagamento da Stripe (`pages/ContratarPage.tsx`), na moeda BRL, com cobrança mensal. O número do pedido vai como `client_reference_id`, para ligar o pagamento ao pedido.
 - Acima de 10 inspetores: sob consulta, sem link. A AXOS entra em contato.
-- O teste de 30 dias é do app, não da Stripe. O cartão só entra na contratação.
-- Enquanto o webhook não estiver ligado, a AXOS confere o pagamento na Stripe e libera o plano no banco (`plan` e `trial_ends_at` nulo).
+- Os 30 dias grátis dos cards são da Stripe: o cartão entra na contratação e a primeira cobrança vem depois do prazo.
+- O servidor só libera o plano com aviso assinado pela Stripe e valor igual ao do plano. Conta ou CNPJ já existentes e valor diferente ficam em análise da AXOS.
+- Assinatura encerrada interrompe laudos novos e mantém os dados.
+- Pedido sem pagamento é apagado depois de 7 dias, quando o pedido seguinte chega.
 - Chave secreta e segredo de webhook da Stripe ficam só no servidor, nunca em variável `VITE_` nem no repositório.
 
 ## Regra Permanente: Testar Sempre
