@@ -695,6 +695,27 @@ select.login-field-graphite option {
 }
 
 /* ── Responsivo do app (computador, tablet e celular) ── */
+/* Verificação pública do laudo (QR do PDF oficial) */
+.verificar-pagina { max-width: 760px; margin: 0 auto; padding: 32px 20px 48px; display: flex; flex-direction: column; gap: 20px; color: var(--text-primary); min-height: 100vh; box-sizing: border-box; }
+.verificar-topo { display: flex; flex-direction: column; align-items: flex-start; gap: 12px; }
+.verificar-topo img { height: 56px; width: auto; }
+.verificar-topo h1 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 22px; font-weight: 600; }
+.verificar-situacao h2 { display: flex; align-items: center; gap: 8px; }
+.verificar-situacao p { margin: 0; font-size: 15px; line-height: 1.5; }
+.verificar-bom { border-color: var(--ok, #3DDC97) !important; }
+.verificar-atencao { border-color: var(--warn, #F5A524) !important; }
+.verificar-ruim { border-color: var(--danger, #FF6B6B) !important; }
+.verificar-dados { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(220px, 100%), 1fr)); gap: 12px 16px; margin: 0; }
+.verificar-dados dt { font-size: 13px; color: var(--text-muted); }
+.verificar-dados dd { margin: 2px 0 0; font-size: 15px; font-weight: 500; overflow-wrap: anywhere; }
+.verificar-hash { grid-column: 1 / -1; }
+.verificar-hash dd { font-family: ui-monospace, 'DM Mono', monospace; font-size: 13px; font-weight: 400; }
+.verificar-arquivo { position: relative; cursor: pointer; }
+.verificar-arquivo input { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+.verificar-arquivo:focus-within { outline: 3px solid var(--card-met-azul); outline-offset: 1px; }
+.verificar-resultado { display: flex; align-items: flex-start; gap: 8px; margin: 0; padding: 10px 12px; border: 1px solid; border-radius: 5px; font-size: 15px; }
+.verificar-rodape { margin: 0; font-size: 13px; color: var(--text-muted); }
+
 .lf-fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .lf-fieldset:disabled { opacity: 0.85; }
 .lf-fluxo { margin-bottom: 24px; }

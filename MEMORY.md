@@ -631,3 +631,9 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
 - `backend/Dockerfile`: instala `fonts-dejavu-core` (sem fonte o PDF sairia sem texto).
 - App: painel do laudo emitido ou substituído tem "Baixar PDF oficial" (e "Gerar PDF oficial" para o revisor quando falta); na lista, "Gerar PDF" de laudo emitido baixa o oficial em vez da impressão provisória.
 - Testes: 9 novos em `tests/test_pdf.py`; 61 passam. Prévia do HTML conferida no navegador. Não testado: o PDF real (WeasyPrint só existe no servidor) e o fluxo completo com conta real.
+
+**Fase 4 feita (verificação pública):**
+- API `routers/verificacao.py`: `GET /api/verificar/{document_id}/{revision}` sem login, com limite de 120 consultas por hora por origem (Redis; o IP não é guardado, só o resumo SHA-256). Responde situação (válido ou substituído, com a revisão vigente), número, revisão, método, data de emissão, empresa emissora (nome e CNPJ) e os SHA-256 do conteúdo e do PDF. Rascunho, revisão em andamento e endereço inválido dão 404. Não expõe pessoas, cliente nem obra. 4 testes novos; 65 passam.
+- Site: `pages/VerificarPage.tsx`, aberta por `main.tsx` quando o endereço começa com `/verificar/` (sem login, fora do `App`). "Conferir arquivo" calcula o SHA-256 do PDF no próprio navegador e compara com o oficial; o arquivo não sai do aparelho. Aviso de que não substitui assinatura ICP-Brasil.
+- Testado no navegador com resposta simulada (a API não roda nesta máquina): válido, substituído, sem conexão, conferência de arquivo igual e alterado (uma letra trocada é detectada); computador, tablet e celular; `/app` continua normal.
+- `docs/conformidade/analise-de-lacunas.md` atualizado com o que mudou em 18/11/2026.

@@ -26,6 +26,7 @@ from app.core.redis import close_redis, ping_redis
 from app.routers.sync import close_arq, router as sync_router
 from app.routers.avanco import router as avanco_router
 from app.routers.contratacao import router as contratacao_router
+from app.routers.verificacao import router as verificacao_router
 
 logger = logging.getLogger(__name__)
 
@@ -91,6 +92,7 @@ app.add_middleware(
 app.include_router(sync_router)
 app.include_router(avanco_router)
 app.include_router(contratacao_router)
+app.include_router(verificacao_router)
 
 # ─────────────────────────────────────────────────────────
 # Health-check

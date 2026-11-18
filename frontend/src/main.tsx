@@ -4,6 +4,10 @@ import { registerSW } from 'virtual:pwa-register'
 import { ThemeProvider } from './contexts/ThemeContext'
 import './index.css'
 import App from './App.tsx'
+import { VerificarPage } from './pages/VerificarPage'
+
+// Verificação pública (QR do PDF oficial): abre sem login
+const paginaPublica = window.location.pathname.startsWith('/verificar/')
 
 // Ativação imediata do Service Worker PWA para operação 99% offline em campo
 registerSW({ immediate: true })
@@ -11,7 +15,7 @@ registerSW({ immediate: true })
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ThemeProvider>
-      <App />
+      {paginaPublica ? <VerificarPage /> : <App />}
     </ThemeProvider>
   </StrictMode>,
 )
