@@ -115,7 +115,7 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
 
   if (carregando) {
     return (
-      <div style={{ padding: '24px 32px', maxWidth: '1280px', margin: '0 auto', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
+      <div style={{ padding: '24px 0', maxWidth: '1280px', margin: '0 auto', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '60px 24px', color: 'var(--text-muted)', fontFamily: FONT }}>
           <div style={{ width: '32px', height: '32px', border: '3px solid rgba(47, 184, 214, 0.2)', borderTopColor: '#2FB8D6', borderRadius: '50%', animation: 'spin 0.8s linear infinite', marginBottom: '12px' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
@@ -126,7 +126,7 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
   }
 
   return (
-    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 32px', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
+    <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '24px 0', minHeight: 'calc(100vh - 200px)', background: 'var(--bg-base)', color: 'var(--text-primary)', fontFamily: FONT }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
         <button
           type="button"
@@ -145,7 +145,7 @@ export const NovaObraPage: React.FC<NovaObraPageProps> = ({ onBack }) => {
         </h1>
       </div>
 
-      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '32px', maxWidth: '640px' }}>
+      <div style={{ background: 'var(--bg-surface)', border: '1px solid var(--border)', borderRadius: '5px', padding: '32px', maxWidth: '1200px' }}>
         <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em', margin: '0 0 24px' }}>
           Cadastro de Obra
         </h2>
