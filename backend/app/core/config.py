@@ -13,7 +13,8 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str  # Chave pública: gravações usam o JWT do usuário por cima dela
     SUPABASE_SERVICE_ROLE_KEY: str  # Nunca exposta ao cliente
-    SUPABASE_JWT_SECRET: str
+    # Só para projetos com assinatura HS256 (legado). Projetos novos usam ES256, validado pela chave pública.
+    SUPABASE_JWT_SECRET: str = ""
 
     # Stripe
     STRIPE_SECRET_KEY: str = ""

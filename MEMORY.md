@@ -581,3 +581,13 @@ Feito direto, sem rodada de aprovação, porque o dono do produto disse que segu
 **Aparelhos:** no campo usam notebook, tablet e iPad, mas o AXOS inteiro deve ser totalmente responsivo também no celular (dono do produto, 18/11/2026). Testar nos três tamanhos.
 
 **Testado** no navegador: os 8 métodos com campos, colunas e sugestões; IRT preenchido, registrado, reaberto e impresso com a tabela de temperaturas; tablet em pé (768 × 1024) e deitado (1024 × 768), celular e computador sem rolagem lateral; croqui desenhado no tamanho de tablet. Não testado: aparelho real (iPad, tablet, celular) e site no ar.
+
+## Preparação para publicar a API (18/11/2026)
+
+- O projeto Supabase `ygijmtzipvsvdcbvurhg` assina o login com **ES256** (chave em `/auth/v1/.well-known/jwks.json`) e usa chaves novas (`sb_publishable_`, `sb_secret_`). A API só aceitava HS256 e recusaria todo inspetor. `app/core/security.py` agora valida ES256/RS256 pela chave pública do projeto (guardada 10 min, nova consulta se a chave mudar) e mantém HS256 se `SUPABASE_JWT_SECRET` existir; essa variável passou a ser opcional. 3 testes novos em `tests/test_auth.py` (50 testes passam).
+- Conferido de fora: o gateway do Supabase aceita a chave nova no `apikey` e no `Authorization`, então a chave secreta funciona como `SUPABASE_SERVICE_ROLE_KEY` sem mudar o código.
+- `/api/sync/reports` grava direto no banco e não depende do Redis; o Redis serve ao limite do formulário de contratação e à fila de PDF.
+- `0010_contratacao_sem_conta.sql` (e a cópia em `instalacao_completa.sql`) pode ser rodado de novo sem erro; 0009 já podia. Testado duas vezes seguidas no banco local, e `npm run test:db` passa.
+- Sem Docker nesta máquina: a imagem não foi montada aqui; só a instalação do `pyproject.toml` foi simulada.
+
+**Pendente:** publicar no EasyPanel (serviço da API pela pasta `backend`, domínio `axosrelatorios.com` com caminho `/api`, porta 8000) e conferir se o EasyPanel mantém o `/api` no caminho.

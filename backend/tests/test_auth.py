@@ -121,6 +121,71 @@ async def test_active_user_authorized_with_tenant_isolation(valid_token):
         app.dependency_overrides.pop(get_arq, None)
 
 
+# ── Projetos novos do Supabase assinam o login com ES256 (chave pública em /auth/v1/.well-known/jwks.json) ──
+
+def _par_es256(kid: str):
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import ec
+    from jose import jwk
+
+    privada = ec.generate_private_key(ec.SECP256R1())
+    pem_privada = privada.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption())
+    pem_publica = privada.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo)
+    publica = jwk.construct(pem_publica, "ES256").to_dict()
+    publica.update({"kid": kid, "use": "sig"})
+    return pem_privada, publica
+
+
+def _token_es256(pem_privada, kid: str) -> str:
+    payload = {"sub": "user-uuid-1234", "aud": "authenticated", "role": "authenticated"}
+    return jwt.encode(payload, pem_privada, algorithm="ES256", headers={"kid": kid})
+
+
+async def _pedir_dlq(token: str, chave_publica):
+    perfil = {"id": "user-uuid-1234", "tenant_id": "tenant-uuid-5678", "role": "supervisor", "can_inspect": False, "active": True, "full_name": "Supervisor"}
+    mock_arq = AsyncMock()
+    mock_arq.keys.return_value = []
+
+    async def override_get_arq():
+        yield mock_arq
+
+    from app.routers.sync import get_arq
+    app.dependency_overrides[get_arq] = override_get_arq
+    try:
+        with patch("app.core.security.fetch_user_profile", new_callable=AsyncMock, return_value=perfil), \
+             patch("app.core.security._chave_publica", new_callable=AsyncMock, return_value=chave_publica):
+            async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
+                return await client.get("/api/sync/dlq", headers={"Authorization": f"Bearer {token}"})
+    finally:
+        app.dependency_overrides.pop(get_arq, None)
+
+
+@pytest.mark.asyncio
+async def test_es256_token_accepted():
+    """Login assinado com ES256 pela chave do projeto é aceito."""
+    privada, publica = _par_es256("k1")
+    response = await _pedir_dlq(_token_es256(privada, "k1"), publica)
+    assert response.status_code == 200
+    assert response.json()["tenant_id"] == "tenant-uuid-5678"
+
+
+@pytest.mark.asyncio
+async def test_es256_token_from_other_key_rejected():
+    """Login assinado por outra chave (forjado) é recusado."""
+    _, publica_do_projeto = _par_es256("k1")
+    privada_falsa, _ = _par_es256("k1")
+    response = await _pedir_dlq(_token_es256(privada_falsa, "k1"), publica_do_projeto)
+    assert response.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_es256_unknown_key_rejected():
+    """Login com chave que o projeto não publica é recusado."""
+    privada, _ = _par_es256("desconhecida")
+    response = await _pedir_dlq(_token_es256(privada, "desconhecida"), None)
+    assert response.status_code == 401
+
+
 @pytest.mark.asyncio
 async def test_docs_hidden_when_debug_false():
     """Documentação /api/docs, /api/redoc e /api/openapi.json oculta em produção (DEBUG=False)."""

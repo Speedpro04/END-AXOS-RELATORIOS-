@@ -2,6 +2,7 @@
 Segurança: Papel e tenant_id lidos da tabela profiles (PostgreSQL/Supabase).
 Validação de JWT e verificação de usuário ativo com efeito imediato.
 """
+import time
 from typing import Annotated, Optional
 import httpx
 from fastapi import Depends, HTTPException, status
@@ -68,6 +69,44 @@ async def fetch_user_profile(user_id: str) -> Optional[dict]:
             return None
 
 
+# Chaves públicas de assinatura do Supabase Auth (projetos novos assinam com ES256).
+# Guardadas por 10 minutos; uma chave desconhecida força nova consulta (troca de chave).
+_JWKS_VALIDADE_S = 600
+_jwks: dict = {"chaves": {}, "lido_em": 0.0}
+
+
+async def _chave_publica(kid: str) -> Optional[dict]:
+    agora = time.monotonic()
+    if kid not in _jwks["chaves"] or agora - _jwks["lido_em"] > _JWKS_VALIDADE_S:
+        url = f"{settings.SUPABASE_URL.rstrip('/')}/auth/v1/.well-known/jwks.json"
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                resp = await client.get(url)
+            if resp.status_code == 200:
+                _jwks["chaves"] = {k.get("kid"): k for k in resp.json().get("keys", [])}
+                _jwks["lido_em"] = agora
+        except httpx.RequestError:
+            pass
+    return _jwks["chaves"].get(kid)
+
+
+async def decodificar_token(token: str) -> dict:
+    """Valida o JWT do Supabase Auth: ES256/RS256 pela chave pública do projeto ou HS256 pelo segredo legado."""
+    cabecalho = jwt.get_unverified_header(token)
+    alg = cabecalho.get("alg")
+    if alg == "HS256":
+        if not settings.SUPABASE_JWT_SECRET:
+            raise JWTError("Segredo HS256 não configurado")
+        chave: object = settings.SUPABASE_JWT_SECRET
+    elif alg in ("ES256", "RS256"):
+        chave = await _chave_publica(cabecalho.get("kid", ""))
+        if not chave:
+            raise JWTError("Chave de assinatura desconhecida")
+    else:
+        raise JWTError("Algoritmo de assinatura não aceito")
+    return jwt.decode(token, chave, algorithms=[alg], options={"verify_aud": True}, audience="authenticated")
+
+
 async def get_current_user(
     creds: Annotated[HTTPAuthorizationCredentials, Depends(bearer)],
 ) -> CurrentUser:
@@ -79,14 +118,7 @@ async def get_current_user(
     token = creds.credentials
 
     try:
-        # Decodifica JWT do Supabase Auth com validação de audiência
-        payload = jwt.decode(
-            token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
-            options={"verify_aud": True},
-            audience="authenticated",
-        )
+        payload = await decodificar_token(token)
         user_id: str = payload.get("sub", "")
         if not user_id:
             raise credentials_exception

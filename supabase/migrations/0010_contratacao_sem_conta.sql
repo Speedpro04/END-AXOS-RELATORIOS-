@@ -10,16 +10,17 @@
 alter table public.pedidos_contratacao
   alter column tenant_id drop not null,
   alter column criado_por drop not null,
-  add column aceite_versao          text check (length(aceite_versao) between 1 and 40),
-  add column pago_em                timestamptz,
-  add column observacao             text,
-  add column stripe_session_id      text unique,
-  add column stripe_customer_id     text,
-  add column stripe_subscription_id text,
+  add column if not exists aceite_versao          text check (length(aceite_versao) between 1 and 40),
+  add column if not exists pago_em                timestamptz,
+  add column if not exists observacao             text,
+  add column if not exists stripe_session_id      text unique,
+  add column if not exists stripe_customer_id     text,
+  add column if not exists stripe_subscription_id text,
+  drop constraint if exists pedidos_sem_conta_dados_check,
   add constraint pedidos_sem_conta_dados_check
     check (tenant_id is not null or pago_em is not null or (email is not null and aceite_versao is not null));
 
-create index pedidos_contratacao_assinatura_idx on public.pedidos_contratacao (stripe_subscription_id)
+create index if not exists pedidos_contratacao_assinatura_idx on public.pedidos_contratacao (stripe_subscription_id)
   where stripe_subscription_id is not null;
 
 comment on column public.pedidos_contratacao.observacao is 'Motivo de o pedido pago depender de análise da AXOS';
