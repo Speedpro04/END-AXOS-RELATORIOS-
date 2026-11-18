@@ -2,6 +2,8 @@ import React, { useState } from 'react'
 import { METHOD_LABELS, type ENDMethod, type InspectionReport } from '../types/inspection'
 import {
   CAMPOS_POR_METODO,
+  TIPOS_INDICACAO,
+  colunasIndicacao,
   type AparelhoEnsaio,
   type DadosPadrao,
   type IdentificacaoEnsaio,
@@ -139,7 +141,7 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
                 c.opcoes ? (
                   <Selecao key={c.chave} rotulo={c.rotulo} valor={extras[c.chave]} vazio="Não informado" opcoes={c.opcoes} aoMudar={(v) => setExtras((x) => ({ ...x, [c.chave]: v }))} />
                 ) : (
-                  <Campo key={c.chave} rotulo={c.rotulo} placeholder={c.placeholder} valor={extras[c.chave]} aoMudar={(v) => setExtras((x) => ({ ...x, [c.chave]: v }))} />
+                  <Campo key={c.chave} rotulo={c.rotulo} placeholder={c.placeholder} numerico={c.numerico} valor={extras[c.chave]} aoMudar={(v) => setExtras((x) => ({ ...x, [c.chave]: v }))} />
                 ),
               )}
             </div>
@@ -164,9 +166,10 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
               campos={(i, alterar) => (
                 <>
                   <Campo rotulo="Peça ou junta" valor={i.identificacao} aoMudar={(v) => alterar({ identificacao: v })} />
-                  <Campo rotulo="Localização" valor={i.localizacao} aoMudar={(v) => alterar({ localizacao: v })} />
-                  <Campo rotulo="Tipo de indicação" valor={i.tipo} aoMudar={(v) => alterar({ tipo: v })} />
-                  <Campo rotulo="Dimensões (mm)" valor={i.dimensoes} aoMudar={(v) => alterar({ dimensoes: v })} />
+                  {colunasIndicacao(metodo).map((c) => (
+                    <Campo key={c.chave} rotulo={c.rotulo} placeholder={c.placeholder} numerico={c.numerico} valor={i[c.chave] ?? ''} aoMudar={(v) => alterar({ [c.chave]: v })} />
+                  ))}
+                  <Campo rotulo="Tipo de indicação" valor={i.tipo} sugestoes={TIPOS_INDICACAO[metodo]} aoMudar={(v) => alterar({ tipo: v })} />
                   <Selecao rotulo="Resultado" valor={i.resultado} vazio="Não informado" opcoes={[{ valor: 'A', rotulo: 'Aprovada' }, { valor: 'R', rotulo: 'Reprovada' }]} aoMudar={(v) => alterar({ resultado: v as IndicacaoPadrao['resultado'] })} />
                 </>
               )}

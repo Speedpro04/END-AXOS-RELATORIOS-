@@ -553,4 +553,31 @@ Bucket privado `report-files`, caminho `<tenant>/<laudo>/<sha256>.<ext>` em `rep
 
 **Testado** no navegador (computador e tamanho de celular): os 14 métodos abrem com croqui; MT preenchido, registrado, reaberto e impresso com croqui; laudo antigo de PT aberto e salvo; UT, PAUT e "Novo laudo" conferidos. Não testado: celular de verdade, impressão em papel/PDF real e site no ar.
 
-**Pendências (fase 2):** campos técnicos e tabela de indicações próprios de cada método (MT, RT, CR/DR, ToFD, ET, ECA, LT, LT Vácuo, EA, IRT, ACFM, TFM; revisar VT e PT), validados pelo dono do produto. Laudos antigos de métodos que não são VT guardam campos do VT que não aparecem mais na tela (ficam nos dados). `USPage`, `MEPage`, `EVSPage`, `NR13Page`, `PMPage` e `PinturaPage` seguem sem acesso: decidir se viram métodos ou são apagadas. Gerar a imagem do croqui leva alguns segundos em aparelho lento.
+**Fase 2 concluída** para os 14 métodos (ver seções seguintes). Laudos antigos de métodos que não são VT guardam campos do VT que não aparecem mais na tela (ficam nos dados). `USPage`, `MEPage`, `EVSPage`, `NR13Page`, `PMPage` e `PinturaPage` seguem sem acesso: decidir se viram métodos ou são apagadas. Gerar a imagem do croqui leva alguns segundos em aparelho lento.
+
+## Fase 2: MT, PT e VT (18/11/2026)
+
+Proposta baseada na ASME V (art. 7, 6 e 9) e nas Petrobras N-1598 e N-1596, aprovada pelo dono do produto sem alterações. Em `CAMPOS_POR_METODO` (`types/laudoEnsaio.ts`): MT ganhou 12 campos (técnica de magnetização, corrente, partículas, marca e lote, contraste, concentração, verificação do campo, força de levantamento, espaçamento, luz branca, UV-A, desmagnetização); PT ganhou tipo de penetrante, método de remoção, limpeza prévia e UV-A (chaves antigas mantidas). `TIPOS_INDICACAO` dá sugestões ao "Tipo de indicação" (MT e PT: linear, arredondada; VT: descontinuidades de solda). Escolhas saem por extenso na impressão.
+
+**Testado** no navegador (computador e tamanho de celular): MT preenchido, registrado, reaberto e impresso; campos e sugestões de PT e VT conferidos. Não testado: celular de verdade e site no ar.
+
+**Observação:** no MT, o campo geral "Técnica" convive com "Técnica de magnetização"; serve para contínua ou residual, se o dono do produto quiser.
+
+## Fase 2: RT, CR/DR e ToFD (18/11/2026)
+
+Proposta baseada na ASME V (art. 2 e apêndices de radiografia digital; art. 4, apêndice de ToFD), Petrobras N-1595, ISO 17636-2 e ISO 10863, aprovada pelo dono do produto sem alterações. RT: 16 campos (fonte, atividade ou tensão, ponto focal, tempo, técnica de exposição, distância fonte-filme, espessura, filme, filmes por chassi, écran, IQI e posição, fio essencial, densidade, densitômetro, penumbra). CR/DR: mesma base com detector, leitor, pixel, duplo fio, SNRn e software no lugar do filme. ToFD: 12 campos (sondas, ângulo, PCS, foco, pares e zonas, varredura, passo, acoplante, bloco, ganho, espessura, software).
+- Tabela de indicações com colunas por método: `colunasIndicacao()` em `types/laudoEnsaio.ts` (padrão: localização e dimensões; RT: localização com filme e posição; ToFD: posição inicial, comprimento, profundidade e altura). Tela e impressão usam a mesma ordem. `CampoMetodo.numerico` abre o teclado numérico no celular.
+- Sugestões de descontinuidades de solda no tipo de indicação de RT, CR/DR e ToFD.
+
+**Testado** no navegador (computador e tamanho de celular): campos de RT, CR/DR e ToFD conferidos; ToFD preenchido, registrado, reaberto e impresso com a tabela própria; MT sem mudança. Não testado: celular de verdade e site no ar.
+
+## Fase 2: ET, ECA, LT, LT Vácuo, EA, IRT, ACFM e TFM (18/11/2026)
+
+Feito direto, sem rodada de aprovação, porque o dono do produto disse que segue a sugestão ("confio em vc"); a lista foi apresentada a ele no fim. Base: ASME V (art. 8, 10 e 12, apêndice de TFM do art. 4), ISO 18434-1, ASTM E1934, ASTM E2928 e ISO 18563-3.
+- Campos próprios: ET 8, ECA 10, LT 8, LT Vácuo 7, EA 9, IRT 11, ACFM 5, TFM 12 (constantes compartilhadas em `types/laudoEnsaio.ts`: bloco de calibração, revestimento, frequência, ganho, rotação de fase, configuração da sonda, solução de bolhas, passo).
+- Colunas próprias de indicação: TFM igual ao ToFD (`DIMENSIONAMENTO_ALTURA`); EA: localização e classificação da fonte; IRT: temperatura máxima, de referência e ΔT; ACFM: comprimento e profundidade estimada.
+- Sugestões de tipo de indicação para todos os 14 métodos.
+
+**Aparelhos:** no campo usam notebook, tablet e iPad, mas o AXOS inteiro deve ser totalmente responsivo também no celular (dono do produto, 18/11/2026). Testar nos três tamanhos.
+
+**Testado** no navegador: os 8 métodos com campos, colunas e sugestões; IRT preenchido, registrado, reaberto e impresso com a tabela de temperaturas; tablet em pé (768 × 1024) e deitado (1024 × 768), celular e computador sem rolagem lateral; croqui desenhado no tamanho de tablet. Não testado: aparelho real (iPad, tablet, celular) e site no ar.

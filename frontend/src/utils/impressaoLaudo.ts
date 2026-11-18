@@ -2,6 +2,7 @@
 import type { InspectionReport } from '../types/inspection'
 import {
   CAMPOS_POR_METODO,
+  colunasIndicacao,
   TIPOS_DEFEITO,
   resumirMedicoes,
   type AparelhoEnsaio,
@@ -167,10 +168,11 @@ function secoesPadrao(t: Partial<DadosPadrao> & Record<string, unknown>, metodo:
     ...extras,
   ], esc)
   html += '<h2>Registro dos resultados</h2>'
+  const colunas = colunasIndicacao(metodo)
   html += t.indicacoes?.length
     ? tabela(
-        ['Item', 'Peça ou junta', 'Localização', 'Tipo de indicação', 'Dimensões (mm)', 'Resultado'],
-        t.indicacoes.map((i, n) => [String(n + 1), i.identificacao, i.localizacao, i.tipo, i.dimensoes, resultado(i.resultado)]),
+        ['Item', 'Peça ou junta', ...colunas.map((c) => c.rotulo), 'Tipo de indicação', 'Resultado'],
+        t.indicacoes.map((i, n) => [String(n + 1), i.identificacao, ...colunas.map((c) => i[c.chave]), i.tipo, resultado(i.resultado)]),
         esc,
       )
     : '<p>Nenhuma indicação registrada.</p>'
