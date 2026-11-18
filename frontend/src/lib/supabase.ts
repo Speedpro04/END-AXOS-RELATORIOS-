@@ -1,12 +1,23 @@
 import { createClient, type Session } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
+// Aceita o endereço como o painel do Supabase mostra (com /rest/v1/ no fim), com espaço ou barra sobrando
+export const supabaseUrl = (import.meta.env.VITE_SUPABASE_URL || '').trim().replace(/\/rest\/v1\/?$/, '').replace(/\/+$/, '')
+export const supabaseAnonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY || '').trim()
+
+function projetoDoEndereco(url: string): string {
+  try {
+    return new URL(url).hostname.split('.')[0]
+  } catch {
+    return 'sem-configuracao'
+  }
+}
 
 // O nome que a biblioteca já usa por padrão: quem está logado continua logado
-export const CHAVE_SESSAO = `sb-${new URL(supabaseUrl).hostname.split('.')[0]}-auth-token`
+export const CHAVE_SESSAO = `sb-${projetoDoEndereco(supabaseUrl)}-auth-token`
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Sem endereço válido o site não pode travar em branco: a tela de login mostra o aviso de configuração
+const enderecoValido = projetoDoEndereco(supabaseUrl) !== 'sem-configuracao'
+export const supabase = createClient(enderecoValido ? supabaseUrl : 'https://sem-configuracao.invalid', supabaseAnonKey || 'sem-chave', {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

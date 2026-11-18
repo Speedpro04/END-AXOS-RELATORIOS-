@@ -590,4 +590,17 @@ Feito direto, sem rodada de aprovação, porque o dono do produto disse que segu
 - `0010_contratacao_sem_conta.sql` (e a cópia em `instalacao_completa.sql`) pode ser rodado de novo sem erro; 0009 já podia. Testado duas vezes seguidas no banco local, e `npm run test:db` passa.
 - Sem Docker nesta máquina: a imagem não foi montada aqui; só a instalação do `pyproject.toml` foi simulada.
 
-**Pendente:** publicar no EasyPanel (serviço da API pela pasta `backend`, domínio `axosrelatorios.com` com caminho `/api`, porta 8000) e conferir se o EasyPanel mantém o `/api` no caminho.
+**API publicada (18/11/2026):** serviço separado no EasyPanel, Caminho de Build `/backend`, domínio `axosrelatorios.com`, caminho público `/api` com destino porta 8000 e caminho `/api` (o `/api` chega inteiro à API). Variáveis da API sem prefixo `VITE_` (o primeiro Deploy caiu com 502 porque estavam como `VITE_...`). Conferido no ar: `/api/sync/healthz` responde, sem login e com login falso dá 401, `/api/docs` escondido (404), CORS libera só `https://axosrelatorios.com`, site normal.
+- Incidente no mesmo dia: o Deploy do site foi feito sem as variáveis `VITE_` (página em branco, "Invalid URL") e depois com `VITE_SUPABASE_URL` terminando em `/rest/v1/` ("Falha ao carregar dados do usuário"). Corrigido pelo dono do produto; o app abriu normal com login real. Regra: site usa `VITE_SUPABASE_URL` (só até `.supabase.co`), `VITE_SUPABASE_ANON_KEY` e `VITE_API_URL`; API usa `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `FRONTEND_URL` e `REDIS_URL`, sem `VITE_`.
+- Não testado no ar: envio real de laudo com login de verdade (ES256) e fotos para o Storage. Lembrar: laudo sem obra não sobe.
+
+## Varredura completa no ar e no código (18/11/2026)
+
+**Aprovado:** páginas no ar; http vira https; certificado Let's Encrypt até 06/02/2027; arquivos sensíveis (`/.env`, `/.git/config`, SQL) não são servidos (cai na página do app); API recusa sem login em todas as rotas protegidas, valida o formulário de contratação e esconde a documentação; banco visto como visitante com a chave pública: 22 tabelas e 12 funções fechadas, buckets privados; tipos, 50 testes da API e testes do banco passam; `npm audit` sem falhas; nenhum `.env` nem chave secreta no repositório. A sigla proibida aparece só como bytes ao acaso em `landing/assets/fotos/liquido-penetrante.webp` (imagem, não é texto).
+
+**Pendências por gravidade:**
+- Importante: webhook da Stripe responde 503 porque a API não tem `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET`; quem pagar pelo card da LP não recebe conta. O dono do produto vai finalizar os pagamentos depois.
+- Importante: envio real de laudo e fotos ao servidor ainda não testado com conta de verdade.
+- Importante: sem e-mail próprio (SMTP); o cadastro público do Supabase fica aberto (o convite da equipe usa `signUp`), então o limite de e-mails padrão pode ser consumido por abuso.
+- Feito em seguida (falta Deploy e conferir no ar): `frontend/nginx.conf` com HSTS de 1 ano e CSP em modo de observação (`Content-Security-Policy-Report-Only`, porque a LP tem 3 scripts escritos na página), `/favicon.ico` entregando o `favicon.png` e manifest com tipo `application/manifest+json`. `lib/supabase.ts` limpa o endereço (`/rest/v1/`, espaço, barra no fim) e, sem endereço válido, o site mostra o aviso de configuração em vez de ficar em branco; `AuthContext` usa os mesmos valores. Sem nginx nesta máquina: a configuração só foi revisada à mão.
+- Melhoria ainda aberta: `www.axosrelatorios.com` não abre (domínio no EasyPanel); páginas inexistentes respondem 200; API mostra `Server: uvicorn`; ativar a CSP de verdade depois de tirar os scripts da LP para arquivos.

@@ -1,11 +1,8 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from 'react'
 import { isAuthRetryableFetchError, type Session, type User } from '@supabase/supabase-js'
-import { CHAVE_SESSAO, lerSessaoGuardada, supabase } from '../lib/supabase'
+import { CHAVE_SESSAO, lerSessaoGuardada, supabase, supabaseAnonKey, supabaseUrl } from '../lib/supabase'
 import { db, type CopiaDaConta } from '../services/dbDexie'
 import { mensagemErroAuth } from '../utils/errosAuth'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
 export type AppRole = 'admin' | 'supervisor' | 'inspector'
 
