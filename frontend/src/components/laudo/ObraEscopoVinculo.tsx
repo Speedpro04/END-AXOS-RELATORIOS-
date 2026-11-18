@@ -114,7 +114,9 @@ export const ObraEscopoVinculo: React.FC<ObraEscopoVinculoProps> = ({
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        {/* As 3 quantidades dividem a linha de baixo e encolhem junto com a coluna */}
+        <div className="campos-vinculo-qtd">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Qtde inspecionada</label>
           <input
             type="number"
@@ -130,7 +132,7 @@ export const ObraEscopoVinculo: React.FC<ObraEscopoVinculoProps> = ({
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Qtde aprovada</label>
           <input
             type="number"
@@ -146,7 +148,7 @@ export const ObraEscopoVinculo: React.FC<ObraEscopoVinculoProps> = ({
           />
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', minWidth: 0 }}>
           <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Qtde reprovada</label>
           <input
             type="number"
@@ -160,6 +162,7 @@ export const ObraEscopoVinculo: React.FC<ObraEscopoVinculoProps> = ({
             disabled={desabilitado || !linhaId || carregando}
             style={{ width: '100%', padding: '8px 10px', borderRadius: '5px', border: '1px solid var(--border)', background: 'var(--bg-surface)', color: 'var(--text-primary)', fontSize: '13px' }}
           />
+        </div>
         </div>
       </div>
 

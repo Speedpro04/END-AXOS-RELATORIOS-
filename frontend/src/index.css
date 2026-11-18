@@ -697,7 +697,8 @@ select.login-field-graphite option {
 /* ── Responsivo do app (computador, tablet e celular) ── */
 .laudo-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; }
 .campos-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.campos-vinculo { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, 140px); gap: 12px; align-items: end; }
+.campos-vinculo { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.campos-vinculo-qtd { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; align-items: end; }
 .catalogo-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 
 @media (max-width: 1100px) {
@@ -706,7 +707,6 @@ select.login-field-graphite option {
 
 @media (max-width: 960px) {
   .laudo-grid { grid-template-columns: minmax(0, 1fr); }
-  .campos-vinculo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .app-main { padding: 16px !important; }
   .app-main > div { padding: 0 !important; min-height: 0 !important; }
   .app-abas { padding: 0 12px !important; }
@@ -721,5 +721,5 @@ select.login-field-graphite option {
   .tenant-principal > div { flex: 1 1 100%; }
   .tenant-acoes { margin-left: 0; }
   .tenant-usuario { flex: 1 1 100%; flex-direction: row !important; align-items: center !important; gap: 8px; margin-right: 0 !important; }
-  .campos-2, .campos-vinculo, .catalogo-grid { grid-template-columns: minmax(0, 1fr); }
+  .campos-2, .catalogo-grid { grid-template-columns: minmax(0, 1fr); }
 }
