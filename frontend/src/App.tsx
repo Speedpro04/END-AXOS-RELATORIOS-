@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { TenantHeader } from './components/TenantHeader'
 import { TenantFooter } from './components/TenantFooter'
-import { InspectionModal } from './components/InspectionModal'
 import { DEFAULT_TENANT, type TenantProfile } from './types/tenant'
-import type { ENDMethod, InspectionReport } from './types/inspection'
+import { METHOD_LABELS, type ENDMethod, type InspectionReport } from './types/inspection'
 import { buildReportCode } from './utils/buildReportCode'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { ObraProvider, useObra } from './contexts/ObraContext'
@@ -15,28 +14,15 @@ import type { LocalReport } from './types/sync'
 
 // Páginas Dedicadas
 import { HubPage } from './pages/HubPage'
-import { PTPage } from './pages/PTPage'
-import { MTPage } from './pages/MTPage'
-import { VTPage } from './pages/VTPage'
 import { UTPage } from './pages/UTPage'
-import { RTPage } from './pages/RTPage'
-import { ETPage } from './pages/ETPage'
-import { LTPage } from './pages/LTPage'
-import { LT_VACUOPage } from './pages/LT_VACUOPage'
 import { PAUTPage } from './pages/PAUTPage'
-import { TOFDPage } from './pages/TOFDPage'
-import { CRDRPage } from './pages/CRDRPage'
-import { ECAPage } from './pages/ECAPage'
-import { EAPage } from './pages/EAPage'
-import { IRTPage } from './pages/IRTPage'
-import { ACFMPage } from './pages/ACFMPage'
-import { TFMPage } from './pages/TFMPage'
+import { LaudoPadraoPage } from './pages/LaudoPadraoPage'
 import { LoginPage } from './pages/LoginPage'
 import { ContratarPage, diasDeTeste, lembrarPlanoDaUrl } from './pages/ContratarPage'
 import { EquipePage } from './pages/EquipePage'
 
-// Métodos com formulário próprio: abrem e editam na página, não na janela geral
-const FORMULARIO_PROPRIO: string[] = ['UT', 'PAUT']
+// UT e PAUT têm formulário próprio; os demais métodos usam o formulário padrão
+const METODOS_PADRAO: ENDMethod[] = (Object.keys(METHOD_LABELS) as ENDMethod[]).filter((m) => m !== 'UT' && m !== 'PAUT')
 
 // Plano escolhido nos cards da página inicial
 lembrarPlanoDaUrl()
@@ -182,9 +168,7 @@ function AppContent() {
 
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine)
 
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingReport, setEditingReport] = useState<InspectionReport | null>(null)
-  const [modalMethod, setModalMethod] = useState<ENDMethod | undefined>(undefined)
 
   const handleLogout = async () => {
     await signOut()
@@ -215,8 +199,8 @@ function AppContent() {
 
   // Saiu do formulário sem salvar: o próximo laudo não pode herdar a edição
   useEffect(() => {
-    if (editingReport && !isModalOpen && editingReport.method !== currentPage) setEditingReport(null)
-  }, [currentPage, editingReport, isModalOpen])
+    if (editingReport && editingReport.method !== currentPage) setEditingReport(null)
+  }, [currentPage, editingReport])
 
   const diasRestantes = diasDeTeste(authTenant?.plan, authTenant?.trial_ends_at)
   const testeEncerrado = diasRestantes !== null && diasRestantes <= 0
@@ -244,12 +228,12 @@ function AppContent() {
           code: 'RASCUNHO', // número definitivo atribuído pelo servidor na emissão
           method: reportData.method || 'VT',
           title: reportData.title || 'Laudo Técnico END',
-          equipmentTag: reportData.equipmentTag || 'TAG-PENDENTE',
-          unitArea: reportData.unitArea || 'Área Industrial',
-          inspectorName: reportData.inspectorName || 'Inspetor',
-          inspectorSNQC: reportData.inspectorSNQC || 'SNQC',
-          normProcedure: reportData.normProcedure || 'Norma',
-          acceptanceCriteria: reportData.acceptanceCriteria || 'Critério',
+          equipmentTag: reportData.equipmentTag || '',
+          unitArea: reportData.unitArea || '',
+          inspectorName: reportData.inspectorName || '',
+          inspectorSNQC: reportData.inspectorSNQC || '',
+          normProcedure: reportData.normProcedure || '',
+          acceptanceCriteria: reportData.acceptanceCriteria || '',
           date: reportData.date || agora.split('T')[0],
           status: 'rascunho',
           findingsCount: reportData.findingsCount || 0,
@@ -528,24 +512,17 @@ function AppContent() {
             onVoltarObras={() => setCurrentPage('OBRAS')}
             onSelectModel={(modelId) => {
               if (testeEncerrado) return setCurrentPage('CONTRATAR')
-              if (obraSelecionada && !FORMULARIO_PROPRIO.includes(modelId)) {
-                setModalMethod(modelId as ENDMethod)
-                setIsModalOpen(true)
-                setEditingReport(null)
-              } else {
-                setCurrentPage(modelId)
-              }
+              setEditingReport(null)
+              setCurrentPage(modelId)
             }}
             onNewReport={() => {
               if (testeEncerrado) return setCurrentPage('CONTRATAR')
-              setEditingReport(null)
-              setModalMethod(undefined)
-              setIsModalOpen(true)
+              // Novo laudo começa pela escolha do método no catálogo
+              document.getElementById('catalogo-modelos')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
             }}
             onEditReport={(report) => {
               setEditingReport(report)
-              if (FORMULARIO_PROPRIO.includes(report.method)) setCurrentPage(report.method)
-              else setIsModalOpen(true)
+              setCurrentPage(report.method)
             }}
             onDeleteReport={handleDeleteReport}
           />
@@ -563,68 +540,24 @@ function AppContent() {
           <ObraContextoPage onBack={() => setCurrentPage('OBRAS')} />
         )}
 
-        {currentPage === 'VT' && (
-          <VTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'PT' && (
-          <PTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'MT' && (
-          <MTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
         {currentPage === 'UT' && (
           <UTPage key={editingReport?.id ?? 'novo'} initialReport={editingReport} siteId={obraSelecionada?.id} onBack={voltarDoFormulario} onSave={handleSaveReport} />
-        )}
-        {currentPage === 'RT' && (
-          <RTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'ET' && (
-          <ETPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'LT' && (
-          <LTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'LT_VACUO' && (
-          <LT_VACUOPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
         )}
         {currentPage === 'PAUT' && (
           <PAUTPage key={editingReport?.id ?? 'novo'} initialReport={editingReport} siteId={obraSelecionada?.id} onBack={voltarDoFormulario} onSave={handleSaveReport} />
         )}
-        {currentPage === 'TOFD' && (
-          <TOFDPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'CRDR' && (
-          <CRDRPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'ECA' && (
-          <ECAPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'EA' && (
-          <EAPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'IRT' && (
-          <IRTPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'ACFM' && (
-          <ACFMPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
-        )}
-        {currentPage === 'TFM' && (
-          <TFMPage onBack={() => setCurrentPage('HUB')} onSave={handleSaveReport} tenant={tenant} tenantName={tenant.tradeName} />
+        {METODOS_PADRAO.includes(currentPage as ENDMethod) && (
+          <LaudoPadraoPage
+            key={`${currentPage}-${editingReport?.id ?? 'novo'}`}
+            metodo={currentPage as ENDMethod}
+            initialReport={editingReport}
+            siteId={obraSelecionada?.id}
+            onBack={voltarDoFormulario}
+            onSave={handleSaveReport}
+          />
         )}
       </main>
 
-      {/* MODAL GERAL DE LAUDO (ACESSO RÁPIDO) */}
-      <InspectionModal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false)
-          setEditingReport(null)
-        }}
-        onSave={handleSaveReport}
-        initialReport={editingReport}
-        initialMethod={modalMethod}
-        siteId={obraSelecionada?.id}
-      />
 
       {/* FOOTER DISCRETO DA AXOS */}
       <TenantFooter />

@@ -1,5 +1,6 @@
-// Dados técnicos dos laudos de Ultrassom (UT) e Phased Array (PAUT).
+// Dados técnicos dos laudos: UT e PAUT com formulário próprio, os demais métodos no formulário padrão.
 // Valores numéricos ficam como texto: o inspetor digita "4,9" e nada se perde ao reabrir.
+import type { ENDMethod } from './inspection'
 
 export interface FotoLaudo {
   anexoId: string
@@ -112,6 +113,56 @@ export interface DadosPaut extends IdentificacaoEnsaio, AparelhoEnsaio {
   espessuraMinima: string
   medicoes: string[]
   fotos: FotoLaudo[]
+}
+
+// ── Formulário padrão (os métodos sem formulário detalhado) ──
+
+export interface IndicacaoPadrao {
+  id: string
+  identificacao: string
+  localizacao: string
+  tipo: string
+  dimensoes: string
+  resultado: ResultadoIndicacao
+}
+
+export interface DadosPadrao extends IdentificacaoEnsaio, AparelhoEnsaio {
+  esquema: 'padrao-v1'
+  temperatura: string
+  condicaoSuperficie: string
+  tecnica: string
+  indicacoes: IndicacaoPadrao[]
+  recomendacao: string
+  sit: string
+  rnc: string
+  fotos: FotoLaudo[]
+}
+
+/** Campo técnico próprio de um método. A chave é a mesma já usada em laudos antigos. */
+export interface CampoMetodo {
+  chave: string
+  rotulo: string
+  placeholder?: string
+  opcoes?: Array<{ valor: string; rotulo: string }>
+}
+
+export const CAMPOS_POR_METODO: Partial<Record<ENDMethod, CampoMetodo[]>> = {
+  VT: [
+    { chave: 'modalidade', rotulo: 'Modalidade', opcoes: [{ valor: 'direta', rotulo: 'Direta' }, { valor: 'remota', rotulo: 'Remota (boroscópio ou drone)' }] },
+    { chave: 'iluminacao', rotulo: 'Iluminação (lux)', placeholder: 'Ex: 500 lux' },
+    { chave: 'distancia', rotulo: 'Distância e ângulo de observação', placeholder: 'Ex: 300 mm / 90°' },
+    { chave: 'instrumentos', rotulo: 'Instrumentos auxiliares', placeholder: 'Ex: lupa, espelho, calibre' },
+    { chave: 'checklist', rotulo: 'Itens verificados', placeholder: 'Ex: reforço, mordedura, desalinhamento' },
+  ],
+  PT: [
+    { chave: 'penetrantBrand', rotulo: 'Penetrante (marca e lote)', placeholder: 'Ex: VP-30, lote 123' },
+    { chave: 'cleanerBrand', rotulo: 'Removedor (marca e lote)' },
+    { chave: 'developerBrand', rotulo: 'Revelador (marca e lote)', placeholder: 'Ex: D-70, lote 456' },
+    { chave: 'dwellTime', rotulo: 'Tempo de penetração', placeholder: 'Ex: 20 min' },
+    { chave: 'developerTime', rotulo: 'Tempo de revelação', placeholder: 'Ex: 15 min' },
+    { chave: 'lightIntensity', rotulo: 'Iluminação', placeholder: 'Ex: 1250 lux, luz branca' },
+    { chave: 'indications', rotulo: 'Descrição das indicações' },
+  ],
 }
 
 export const TIPOS_DEFEITO: Array<{ valor: TipoDefeito; rotulo: string }> = [

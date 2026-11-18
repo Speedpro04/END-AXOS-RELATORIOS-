@@ -147,7 +147,7 @@ export const HubPage: React.FC<HubPageProps> = ({
       </h1>
 
       {/* ── SEÇÃO 1: Catálogo de Modelos ── */}
-      <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <section id="catalogo-modelos" style={{ display: 'flex', flexDirection: 'column', gap: '16px', scrollMarginTop: '16px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
           <button
             type="button"

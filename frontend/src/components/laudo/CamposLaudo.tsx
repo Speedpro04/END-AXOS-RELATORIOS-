@@ -1,5 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react'
-import { ArrowLeft, ImagePlus, Plus, Trash2 } from 'lucide-react'
+import { ArrowLeft, ImagePlus, PenLine, Plus, Trash2 } from 'lucide-react'
+import { DesenhoCroqui } from './DesenhoCroqui'
 import { METHOD_LABELS, type ENDMethod, type InspectionReport } from '../../types/inspection'
 import type { FotoLaudo, IdentificacaoEnsaio } from '../../types/laudoEnsaio'
 import { hashDaFoto, imagemUsadaEmOutroLaudo, lerAnexo, removerAnexo, salvarAnexo } from '../../services/anexos'
@@ -302,12 +303,12 @@ export function useFotos(salvas: FotoLaudo[] | undefined) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const adicionar = async (arquivos: FileList | null, laudoId: string) => {
+  const adicionar = async (arquivos: FileList | File[] | null, laudoId: string, legenda = '') => {
     for (const arquivo of Array.from(arquivos ?? [])) {
       const url = URL.createObjectURL(arquivo)
       urls.current.push(url)
       const id = crypto.randomUUID()
-      setFotos((atual) => [...atual, { id, arquivo, url, legenda: '' }])
+      setFotos((atual) => [...atual, { id, arquivo, url, legenda }])
       try {
         const repetida = await imagemUsadaEmOutroLaudo(await hashDaFoto(arquivo), laudoId)
         if (repetida) setFotos((atual) => atual.map((f) => (f.id === id ? { ...f, repetida: true } : f)))
@@ -357,6 +358,7 @@ export const BlocoFotos: React.FC<{
   sugestoes: string[]
 }> = ({ titulo = 'Evidências', descricao, laudoId, controle, sugestoes }) => {
   const entrada = useRef<HTMLInputElement>(null)
+  const [desenhando, setDesenhando] = useState(false)
   return (
     <Secao titulo={titulo} descricao={descricao}>
       <div className="lf-fotos">
@@ -385,9 +387,23 @@ export const BlocoFotos: React.FC<{
           e.target.value = ''
         }}
       />
-      <button type="button" className="lf-botao" onClick={() => entrada.current?.click()}>
-        <ImagePlus size={16} strokeWidth={1.75} /> Adicionar imagem
-      </button>
+      <div className="lf-fotos-botoes">
+        <button type="button" className="lf-botao" onClick={() => entrada.current?.click()}>
+          <ImagePlus size={16} strokeWidth={1.75} /> Adicionar imagem
+        </button>
+        <button type="button" className="lf-botao" onClick={() => setDesenhando(true)}>
+          <PenLine size={16} strokeWidth={1.75} /> Desenhar croqui
+        </button>
+      </div>
+      {desenhando && (
+        <DesenhoCroqui
+          aoFechar={() => setDesenhando(false)}
+          aoSalvar={(arquivo) => {
+            setDesenhando(false)
+            void controle.adicionar([arquivo], laudoId, sugestoes.find((s) => /croqui|desenho/i.test(s)) ?? 'Croqui')
+          }}
+        />
+      )}
     </Secao>
   )
 }

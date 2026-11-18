@@ -1,9 +1,11 @@
 // Monta as seções técnicas do laudo para a impressão em PDF.
 import type { InspectionReport } from '../types/inspection'
 import {
+  CAMPOS_POR_METODO,
   TIPOS_DEFEITO,
   resumirMedicoes,
   type AparelhoEnsaio,
+  type DadosPadrao,
   type DadosPaut,
   type DadosUt,
   type FotoLaudo,
@@ -153,6 +155,33 @@ function secoesPaut(t: Partial<DadosPaut>, esc: Esc): string {
   return html
 }
 
+function secoesPadrao(t: Partial<DadosPadrao> & Record<string, unknown>, metodo: InspectionReport['method'], esc: Esc): string {
+  const extras = (CAMPOS_POR_METODO[metodo] ?? []).map(({ chave, rotulo, opcoes }): [string, string | undefined] => {
+    const valor = typeof t[chave] === 'string' ? (t[chave] as string) : ''
+    return [rotulo, opcoes?.find((o) => o.valor === valor)?.rotulo ?? valor]
+  })
+  let html = '<h2>Condições do ensaio</h2>' + grade([
+    ['Temperatura da superfície', t.temperatura && `${t.temperatura} °C`],
+    ['Condição da superfície', t.condicaoSuperficie],
+    ['Técnica', t.tecnica],
+    ...extras,
+  ], esc)
+  html += '<h2>Registro dos resultados</h2>'
+  html += t.indicacoes?.length
+    ? tabela(
+        ['Item', 'Peça ou junta', 'Localização', 'Tipo de indicação', 'Dimensões (mm)', 'Resultado'],
+        t.indicacoes.map((i, n) => [String(n + 1), i.identificacao, i.localizacao, i.tipo, i.dimensoes, resultado(i.resultado)]),
+        esc,
+      )
+    : '<p>Nenhuma indicação registrada.</p>'
+  html += grade([
+    ['Recomendação de ensaio complementar', t.recomendacao],
+    ['SIT nº', t.sit],
+    ['RNC nº', t.rnc],
+  ], esc)
+  return html
+}
+
 async function secaoFotos(fotos: FotoLaudo[] | undefined, esc: Esc): Promise<string> {
   if (!fotos?.length) return ''
   const itens: string[] = []
@@ -169,11 +198,14 @@ async function secaoFotos(fotos: FotoLaudo[] | undefined, esc: Esc): Promise<str
 
 const LEGENDA = 'AP: aprovado. RP: reprovado. FP: falta de penetração. FF: falta de fusão. PO: poro ou porosidade. TL: trinca longitudinal. TT: trinca transversal. IE: inclusão de escória. GR: ganho de referência. GA: ganho auxiliar. GC: ganho corrigido. GV: ganho de varredura.'
 
-/** Seções técnicas de laudos UT e PAUT. Outros métodos ainda não têm esse detalhamento. */
+/** Seções técnicas do laudo: UT e PAUT com formulário próprio, os demais no formulário padrão. */
 export async function htmlTecnico(report: InspectionReport, esc: Esc): Promise<string> {
   const t = report.technicalData ?? {}
-  if (t.esquema !== 'ut-solda-v1' && t.esquema !== 'paut-v1') return ''
-  const especifico = t.esquema === 'ut-solda-v1' ? secoesUt(t as DadosUt, esc) : secoesPaut(t as DadosPaut, esc)
+  if (t.esquema !== 'ut-solda-v1' && t.esquema !== 'paut-v1' && t.esquema !== 'padrao-v1') return ''
+  const especifico =
+    t.esquema === 'ut-solda-v1' ? secoesUt(t as DadosUt, esc)
+      : t.esquema === 'paut-v1' ? secoesPaut(t as DadosPaut, esc)
+        : secoesPadrao(t as Partial<DadosPadrao> & Record<string, unknown>, report.method, esc)
   const observacoes = t.observacoes ? `<h2>Observações</h2><p>${esc(t.observacoes as string)}</p>` : ''
   return `
     <h2>Identificação do ensaio</h2>
@@ -182,7 +214,7 @@ export async function htmlTecnico(report: InspectionReport, esc: Esc): Promise<s
     ${especifico}
     ${observacoes}
     ${await secaoFotos(t.fotos as FotoLaudo[] | undefined, esc)}
-    <p style="font-size:9px;color:#555;margin-top:10px">${LEGENDA}</p>
+    ${t.esquema === 'padrao-v1' ? '' : `<p style="font-size:9px;color:#555;margin-top:10px">${LEGENDA}</p>`}
     <table class="assinaturas" style="margin-top:12px">
       <tr>
         <td><span class="rotulo">Inspetor</span>${esc(report.inspectorName)}<br>${esc(report.inspectorSNQC)}</td>

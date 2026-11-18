@@ -541,3 +541,16 @@ Bucket privado `report-files`, caminho `<tenant>/<laudo>/<sha256>.<ext>` em `rep
 - Quando o envio do laudo para revisão (`submit`) for ligado na tela, ele precisa esperar a fila de fotos zerar: com o laudo enviado, a RLS recusa foto nova.
 - `SyncStatusIndicator` não é usado em nenhuma tela. O contador de pendências, que agora inclui fotos, aparece no cabeçalho (`TenantHeader`), com ou sem internet.
 - Conferir o espaço de arquivos do plano do Supabase antes de vender.
+
+## Croqui e Formulário Padrão dos 14 Métodos (18/11/2026)
+
+**Croqui:** `components/laudo/DesenhoCroqui.tsx` abre em tela cheia pelo botão "Desenhar croqui" do `BlocoFotos` (lápis em 3 cores, 2 espessuras, borracha, desfazer, limpar, quadriculado). Salva PNG de até 1600 px que entra como foto do laudo (mesmo caminho das fotos: aparelho, fila de envio e impressão).
+
+**Fase 1 da padronização:** os 14 métodos sem formulário próprio (todos menos UT e PAUT) usam `pages/LaudoPadraoPage.tsx`, esquema `padrao-v1` em `types/laudoEnsaio.ts`: identificação, condições do ensaio, aparelho, indicações (peça, localização, tipo, dimensões, resultado), fotos e croqui, responsável, medição da obra e conclusão. Campos próprios por método em `CAMPOS_POR_METODO` (por enquanto VT e PT, com as mesmas chaves dos laudos antigos). Impressão em `utils/impressaoLaudo.ts` (`secoesPadrao`).
+- Removidos: as 14 páginas antigas (cópias do VT, gravavam `metodo: 'Visual'` em todos) e `InspectionModal.tsx` (janela geral; descartava os campos de RT, ET e LT e apagava o vínculo com a obra ao editar). "Novo laudo" no histórico rola até o catálogo; editar abre o formulário do método.
+- `App.tsx` não inventa mais valores ao salvar (antes gravava "TAG-PENDENTE", "Área Industrial", "Critério" etc.). Laudos antigos guardados mantêm o que já tinham.
+- Laudo antigo abre no formulário novo: campos do PT voltam (temperatura vinha em `surfaceTemp`), contagem de indicações é mantida e o `metodo: 'Visual'` some ao salvar.
+
+**Testado** no navegador (computador e tamanho de celular): os 14 métodos abrem com croqui; MT preenchido, registrado, reaberto e impresso com croqui; laudo antigo de PT aberto e salvo; UT, PAUT e "Novo laudo" conferidos. Não testado: celular de verdade, impressão em papel/PDF real e site no ar.
+
+**Pendências (fase 2):** campos técnicos e tabela de indicações próprios de cada método (MT, RT, CR/DR, ToFD, ET, ECA, LT, LT Vácuo, EA, IRT, ACFM, TFM; revisar VT e PT), validados pelo dono do produto. Laudos antigos de métodos que não são VT guardam campos do VT que não aparecem mais na tela (ficam nos dados). `USPage`, `MEPage`, `EVSPage`, `NR13Page`, `PMPage` e `PinturaPage` seguem sem acesso: decidir se viram métodos ou são apagadas. Gerar a imagem do croqui leva alguns segundos em aparelho lento.
