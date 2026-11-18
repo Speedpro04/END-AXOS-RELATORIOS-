@@ -2,7 +2,7 @@ export type ENDMethod =
   | 'VT' | 'PT' | 'MT' | 'UT' | 'RT' | 'ET' | 'LT' | 'LT_VACUO'
   | 'PAUT' | 'TOFD' | 'CRDR' | 'ECA' | 'EA' | 'IRT' | 'ACFM' | 'TFM'
 
-export type ReportStatus = 'rascunho' | 'enviado' | 'aprovado' | 'reprovado' | 'issued'
+export type ReportStatus = 'rascunho' | 'enviado' | 'aprovado' | 'reprovado' | 'issued' | 'devolvido' | 'substituido'
 
 export interface InspectionReport {
   id: string

@@ -64,8 +64,24 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
     return matchesSearch && matchesMethod && matchesStatus
   })
 
+  const selo = (cor: string, fundo: string, texto: string) => (
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[13px] font-medium"
+      style={{ borderRadius: '5px', background: fundo, color: cor, border: `1px solid ${cor}`, fontFamily: FONT }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: cor }} />
+      {texto}
+    </span>
+  )
+
   const renderStatusBadge = (status: ReportStatus) => {
     switch (status) {
+      case 'issued':
+        return selo('var(--card-met-azul, #2FB8D6)', 'rgba(47, 184, 214, 0.12)', 'Emitido')
+      case 'devolvido':
+        return selo('var(--danger, #FF6B6B)', 'rgba(255, 107, 107, 0.1)', 'Devolvido')
+      case 'substituido':
+        return selo('var(--text-muted, #8A93A6)', 'transparent', 'Substituído')
       case 'aprovado':
         return (
           <span
@@ -79,7 +95,7 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
             }}
           >
             <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: 'var(--ok, #3DDC97)' }} />
-            Conforme
+            Aprovado
           </span>
         )
       case 'enviado':
@@ -550,10 +566,13 @@ th { background: #f2f2f2; }
                 outline: 'none',
               }}
             >
-              <option value="ALL">Todos os Vereditos</option>
+              <option value="ALL">Todas as situações</option>
               <option value="rascunho">Rascunhos (Coleta)</option>
               <option value="enviado">Em Revisão</option>
-              <option value="aprovado">Conformes</option>
+              <option value="devolvido">Devolvidos</option>
+              <option value="aprovado">Aprovados</option>
+              <option value="issued">Emitidos</option>
+              <option value="substituido">Substituídos</option>
               <option value="reprovado">Não Conformes</option>
             </select>
             <button
@@ -681,10 +700,13 @@ th { background: #f2f2f2; }
               className="text-[13px] bg-transparent font-medium cursor-pointer"
               style={{ fontFamily: FONT, color: 'var(--text-primary)', outline: 'none' }}
             >
-              <option value="ALL">Todos os Vereditos</option>
+              <option value="ALL">Todas as situações</option>
               <option value="rascunho">Rascunhos (Coleta)</option>
               <option value="enviado">Em Revisão</option>
-              <option value="aprovado">Conformes</option>
+              <option value="devolvido">Devolvidos</option>
+              <option value="aprovado">Aprovados</option>
+              <option value="issued">Emitidos</option>
+              <option value="substituido">Substituídos</option>
               <option value="reprovado">Não Conformes</option>
             </select>
           </div>

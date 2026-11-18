@@ -47,7 +47,7 @@ const ENTITY_PRIORITY: Record<OutboxItem['entity'], number> = {
   report: 5,
 };
 
-const SERVER_STATUS: Record<string, ServerStatus> = {
+export const SERVER_STATUS: Record<string, ServerStatus> = {
   draft: 'rascunho',
   submitted: 'enviado',
   returned: 'returned',
@@ -56,13 +56,13 @@ const SERVER_STATUS: Record<string, ServerStatus> = {
   superseded: 'superseded',
 };
 
-const SCREEN_STATUS: Record<string, ReportStatus> = {
+export const SCREEN_STATUS: Record<string, ReportStatus> = {
   draft: 'rascunho',
   submitted: 'enviado',
-  returned: 'rascunho',
+  returned: 'devolvido',
   approved: 'aprovado',
   issued: 'issued',
-  superseded: 'issued',
+  superseded: 'substituido',
 };
 
 interface ServerItemResult {

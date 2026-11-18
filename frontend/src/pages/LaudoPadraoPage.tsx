@@ -11,6 +11,7 @@ import {
 } from '../types/laudoEnsaio'
 import { useAuth } from '../contexts/AuthContext'
 import { ObraEscopoVinculo } from '../components/laudo/ObraEscopoVinculo'
+import { FluxoLaudo } from '../components/laudo/FluxoLaudo'
 import {
   BlocoConclusao,
   BlocoFotos,
@@ -69,6 +70,7 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
   )
   const fotos = useFotos(salvo?.fotos)
   const [salvando, setSalvando] = useState(false)
+  const [bloqueado, setBloqueado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const rotulo = METHOD_LABELS[metodo]
@@ -129,7 +131,9 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
   return (
     <div className="lf-pagina">
       <CabecalhoLaudo metodo={metodo} titulo={`${initialReport ? 'Laudo' : 'Novo laudo'}: ${rotulo.full}`} aoVoltar={onBack} />
-      <form onSubmit={salvar} className="laudo-grid">
+      <FluxoLaudo laudoId={base.id} onBloqueio={setBloqueado} />
+      <form onSubmit={salvar}>
+        <fieldset className="laudo-grid lf-fieldset" disabled={bloqueado}>
         <div className="lf-coluna-secoes">
           <BlocoIdentificacao base={base} aoMudarBase={mudarBase} ident={ident} aoMudarIdent={(p) => setIdent((i) => ({ ...i, ...p }))} />
 
@@ -205,6 +209,7 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
             <Campo rotulo="RNC nº" valor={dados.rnc} aoMudar={(v) => mudar({ rnc: v })} />
           </BlocoConclusao>
         </div>
+        </fieldset>
       </form>
     </div>
   )

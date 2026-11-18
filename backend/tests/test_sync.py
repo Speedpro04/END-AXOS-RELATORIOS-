@@ -60,6 +60,12 @@ def wrong_audience_token():
 # ---------------------------------------------------------------------------
 # Mock do cliente Supabase (síncrono, como o cliente real)
 # ---------------------------------------------------------------------------
+def _casa(row, col, val):
+    if isinstance(val, tuple) and len(val) == 2 and val[0] == "__in__":
+        return row.get(col) in val[1]
+    return row.get(col) == val
+
+
 class MockSupabaseTable:
     def __init__(self, table_name, data_store):
         self.table_name = table_name
@@ -81,6 +87,10 @@ class MockSupabaseTable:
 
     def is_(self, col, val):
         self._filters.append((col, val))
+        return self
+
+    def in_(self, col, vals):
+        self._filters.append((col, ("__in__", tuple(vals))))
         return self
 
     def single(self):
@@ -116,7 +126,7 @@ class MockSupabaseTable:
         if self._pending_update is not None:
             updated = []
             for row in store:
-                if all(row.get(col) == val for col, val in self._pending_eq_filters):
+                if all(_casa(row, col, val) for col, val in self._pending_eq_filters):
                     row.update(self._pending_update)
                     updated.append(dict(row))
             self._pending_update = None
@@ -126,7 +136,7 @@ class MockSupabaseTable:
         # Select
         results = []
         for row in store:
-            if all(row.get(col) == val for col, val in self._filters):
+            if all(_casa(row, col, val) for col, val in self._filters):
                 results.append(row)
         if self._limit_count:
             results = results[: self._limit_count]
@@ -680,3 +690,28 @@ async def test_report_keeps_only_own_qualification(http_client, client, inspecto
     assert gravados["laudo-q-ok"] == "q-propria-pt"
     assert gravados["laudo-q-outro"] is None
     assert gravados["laudo-q-metodo"] is None
+
+
+# ---------------------------------------------------------------------------
+# Laudo devolvido pelo revisor pode ser reenviado para revisão
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_returned_report_can_be_resubmitted(http_client, client, inspector_token):
+    client["work_orders"].append({
+        "id": "work-order-uuid-dev", "tenant_id": "tenant-uuid-5678", "client_id": "client-uuid-dev", "code": "OS-DEV",
+    })
+    client["reports"].append({
+        "id": "laudo-devolvido", "tenant_id": "tenant-uuid-5678", "work_order_id": "work-order-uuid-dev",
+        "inspector_id": "user-uuid-inspector", "status": "returned", "client_revision": 1,
+    })
+    items = [{
+        "client_id": "laudo-devolvido", "client_revision": 2, "method": "PT",
+        "work_order_id": "work-order-uuid-dev", "equipment_tag": "TAG-DEV",
+        "inspection_date": "2026-11-18", "technical_data": {}, "administrative_data": {}, "submit": True,
+    }]
+    async with http_client as c:
+        r = await c.post("/api/sync/reports", headers={"Authorization": f"Bearer {inspector_token}"}, json={"items": items})
+    assert r.status_code == 200
+    item = r.json()["items"][0]
+    assert item["ok"] is True, item
+    assert [x for x in client["reports"] if x["id"] == "laudo-devolvido"][0]["status"] == "submitted"

@@ -721,15 +721,16 @@ async def _process_report(
 
         # Se submit=true, transição draft → submitted (gatilhos rodam)
         if item.get("submit"):
+            # Rascunho ou devolvido pelo revisor podem ir para revisão
             submit_res = sb.table("reports").update({
                 "status": "submitted",
-            }).eq("id", server_id).eq("status", "draft").execute()
+            }).eq("id", server_id).in_("status", ["draft", "returned"]).execute()
 
             if not submit_res.data:
                 # Pode ser LOCKED (não é draft) ou outra exceção do trigger
                 return SyncItemResponse(
                     client_id=client_id, ok=False, error_code="LOCKED",
-                    message="Não foi possível submeter o laudo (não está em rascunho)",
+                    message="Não foi possível submeter o laudo (não está em rascunho nem devolvido)",
                 )
 
             # Após submeter, buscar número do laudo se já foi emitido (improvável no mesmo request)

@@ -13,6 +13,7 @@ import {
 } from '../types/laudoEnsaio'
 import { useAuth } from '../contexts/AuthContext'
 import { ObraEscopoVinculo } from '../components/laudo/ObraEscopoVinculo'
+import { FluxoLaudo } from '../components/laudo/FluxoLaudo'
 import {
   AreaTexto,
   BlocoConclusao,
@@ -76,6 +77,7 @@ export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialRepo
   const fotos = useFotos(salvo?.fotos)
   const [colagem, setColagem] = useState('')
   const [salvando, setSalvando] = useState(false)
+  const [bloqueado, setBloqueado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const mudarBase = (parcial: Partial<typeof base>) => setBase((b) => ({ ...b, ...parcial }))
@@ -140,7 +142,9 @@ export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialRepo
   return (
     <div className="lf-pagina">
       <CabecalhoLaudo metodo={METHOD} titulo={`${initialReport ? 'Laudo' : 'Novo laudo'}: ${METHOD_LABELS[METHOD].full}`} aoVoltar={onBack} />
-      <form onSubmit={salvar} className="laudo-grid">
+      <FluxoLaudo laudoId={base.id} onBloqueio={setBloqueado} />
+      <form onSubmit={salvar}>
+        <fieldset className="laudo-grid lf-fieldset" disabled={bloqueado}>
         <div className="lf-coluna-secoes">
           <Secao titulo="Tipo de ensaio">
             <div className="lf-grade">
@@ -289,6 +293,7 @@ export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialRepo
           )}
           <BlocoConclusao base={base} aoMudar={mudarBase} temReprovada={temReprovada} aviso={emSolda ? undefined : 'Atenção: há ponto abaixo da espessura mínima, mas o laudo está como aprovado.'} erro={erro} salvando={salvando} aoCancelar={onBack} />
         </div>
+        </fieldset>
       </form>
     </div>
   )

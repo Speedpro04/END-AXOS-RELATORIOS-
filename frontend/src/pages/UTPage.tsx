@@ -10,6 +10,7 @@ import {
 } from '../types/laudoEnsaio'
 import { useAuth } from '../contexts/AuthContext'
 import { ObraEscopoVinculo } from '../components/laudo/ObraEscopoVinculo'
+import { FluxoLaudo } from '../components/laudo/FluxoLaudo'
 import {
   BlocoConclusao,
   BlocoFotos,
@@ -74,6 +75,7 @@ export const UTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialReport
   })
   const fotos = useFotos(salvo?.fotos)
   const [salvando, setSalvando] = useState(false)
+  const [bloqueado, setBloqueado] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
   const mudarBase = (parcial: Partial<typeof base>) => setBase((b) => ({ ...b, ...parcial }))
@@ -128,7 +130,9 @@ export const UTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialReport
   return (
     <div className="lf-pagina">
       <CabecalhoLaudo metodo={METHOD} titulo={`${initialReport ? 'Laudo' : 'Novo laudo'}: ${METHOD_LABELS[METHOD].full}`} aoVoltar={onBack} />
-      <form onSubmit={salvar} className="laudo-grid">
+      <FluxoLaudo laudoId={base.id} onBloqueio={setBloqueado} />
+      <form onSubmit={salvar}>
+        <fieldset className="laudo-grid lf-fieldset" disabled={bloqueado}>
         <div className="lf-coluna-secoes">
           <BlocoIdentificacao base={base} aoMudarBase={mudarBase} ident={ident} aoMudarIdent={(p) => setIdent((i) => ({ ...i, ...p }))} />
 
@@ -251,6 +255,7 @@ export const UTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialReport
             <Campo rotulo="RNC nº" valor={dados.rnc} aoMudar={(v) => mudar({ rnc: v })} />
           </BlocoConclusao>
         </div>
+        </fieldset>
       </form>
     </div>
   )
