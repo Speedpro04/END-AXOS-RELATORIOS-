@@ -160,6 +160,7 @@ async function buildPayload(item: OutboxItem): Promise<Record<string, unknown> |
         inspection_date: report.data.date,
         technical_data: { ...technicalData, veredito: report.verdict },
         administrative_data: { laudo },
+        qualification_id: report.data.qualificationId ?? null,
         vinculo: vinculoValido
           ? {
               linha_id: linhaId,

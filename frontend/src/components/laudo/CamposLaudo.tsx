@@ -4,6 +4,8 @@ import { DesenhoCroqui } from './DesenhoCroqui'
 import { METHOD_LABELS, type ENDMethod, type InspectionReport } from '../../types/inspection'
 import type { FotoLaudo, IdentificacaoEnsaio } from '../../types/laudoEnsaio'
 import { hashDaFoto, imagemUsadaEmOutroLaudo, lerAnexo, removerAnexo, salvarAnexo } from '../../services/anexos'
+import { descreverQualificacao, minhasQualificacoes, qualificacaoValida, type Qualificacao } from '../../services/qualificacoes'
+import { useAuth } from '../../contexts/AuthContext'
 
 // ── Campos ──
 
@@ -128,6 +130,7 @@ export interface BaseLaudo {
   data: string
   inspetor: string
   snqc: string
+  qualificacaoId: string | null
   veredito: 'rascunho' | 'aprovado' | 'reprovado'
   parecer: string
   observacoes: string
@@ -149,6 +152,7 @@ export function baseInicial(metodo: ENDMethod, inicial: InspectionReport | null 
     data: inicial?.date ?? new Date().toISOString().slice(0, 10),
     inspetor: inicial?.inspectorName ?? nomeUsuario ?? '',
     snqc: inicial?.inspectorSNQC ?? '',
+    qualificacaoId: inicial?.qualificationId ?? null,
     veredito: status === 'aprovado' || status === 'reprovado' ? status : 'rascunho',
     parecer: inicial?.summary ?? '',
     observacoes: (inicial?.technicalData?.observacoes as string) ?? '',
@@ -209,14 +213,48 @@ export const BlocoIdentificacao: React.FC<{
   </Secao>
 )
 
-export const BlocoResponsavel: React.FC<{ base: BaseLaudo; aoMudar: (parcial: Partial<BaseLaudo>) => void; exemploSnqc: string }> = ({ base, aoMudar, exemploSnqc }) => (
-  <Secao titulo="Responsável técnico">
-    <div className="lf-coluna">
-      <Campo rotulo="Inspetor" obrigatorio valor={base.inspetor} aoMudar={(v) => aoMudar({ inspetor: v })} />
-      <Campo rotulo="Registro SNQC" obrigatorio placeholder={exemploSnqc} valor={base.snqc} aoMudar={(v) => aoMudar({ snqc: v })} />
-    </div>
-  </Secao>
-)
+export const BlocoResponsavel: React.FC<{ base: BaseLaudo; aoMudar: (parcial: Partial<BaseLaudo>) => void; exemploSnqc: string; metodo: ENDMethod }> = ({ base, aoMudar, exemploSnqc, metodo }) => {
+  const { user } = useAuth()
+  const [qualificacoes, setQualificacoes] = useState<Qualificacao[] | null>(null)
+
+  useEffect(() => {
+    if (!user?.id) return
+    let ativo = true
+    void minhasQualificacoes(user.id).then((lista) => { if (ativo) setQualificacoes(lista.filter((q) => q.method === metodo)) })
+    return () => { ativo = false }
+  }, [user?.id, metodo])
+
+  const escolhida = qualificacoes?.find((q) => q.id === base.qualificacaoId)
+  const vencida = escolhida && !qualificacaoValida(escolhida, base.data)
+
+  return (
+    <Secao titulo="Responsável técnico">
+      <div className="lf-coluna">
+        <Campo rotulo="Inspetor" obrigatorio valor={base.inspetor} aoMudar={(v) => aoMudar({ inspetor: v })} />
+        {qualificacoes && qualificacoes.length > 0 && (
+          <Selecao
+            rotulo="Qualificação usada neste laudo"
+            valor={base.qualificacaoId ?? ''}
+            vazio="Escolha a qualificação"
+            opcoes={qualificacoes.map((q) => ({
+              valor: q.id,
+              rotulo: `${descreverQualificacao(q)}, válida até ${q.valid_until.split('-').reverse().join('/')}${qualificacaoValida(q, base.data) ? '' : ' (vencida)'}`,
+            }))}
+            aoMudar={(id) => {
+              const q = qualificacoes.find((x) => x.id === id)
+              aoMudar({ qualificacaoId: id || null, ...(q ? { snqc: descreverQualificacao(q) } : {}) })
+            }}
+          />
+        )}
+        {vencida && <p className="lf-alerta" role="alert">Esta qualificação está vencida na data do ensaio. O laudo não poderá ser enviado para revisão com ela.</p>}
+        {qualificacoes && qualificacoes.length === 0 && (
+          <p className="lf-descricao">Você não tem qualificação de {METHOD_LABELS[metodo].label} cadastrada. Peça ao administrador para cadastrar em Equipe; sem ela o laudo não pode ser enviado para revisão.</p>
+        )}
+        <Campo rotulo="Registro SNQC" obrigatorio placeholder={exemploSnqc} valor={base.snqc} aoMudar={(v) => aoMudar({ snqc: v })} />
+      </div>
+    </Secao>
+  )
+}
 
 export const BlocoConclusao: React.FC<{
   base: BaseLaudo

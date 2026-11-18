@@ -116,6 +116,7 @@ export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialRepo
         unitArea: base.local,
         inspectorName: base.inspetor,
         inspectorSNQC: base.snqc,
+        qualificationId: base.qualificacaoId,
         normProcedure: base.norma,
         acceptanceCriteria: base.criterio,
         status: base.veredito,
@@ -273,7 +274,7 @@ export const PAUTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialRepo
         </div>
 
         <div className="lf-coluna-secoes">
-          <BlocoResponsavel base={base} aoMudar={mudarBase} exemploSnqc="Ex: SNQC 00000 US-N2 / Phased Array" />
+          <BlocoResponsavel base={base} aoMudar={mudarBase} metodo={METHOD} exemploSnqc="Ex: SNQC 00000 US-N2 / Phased Array" />
           {siteId && (
             <Secao titulo="Medição da obra">
               <ObraEscopoVinculo

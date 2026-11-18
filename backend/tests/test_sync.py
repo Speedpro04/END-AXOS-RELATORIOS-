@@ -646,3 +646,37 @@ def test_user_client_uses_user_token():
     real = importlib.reload(sync_mod)._supabase_user_client
     sb = real("token-do-usuario")
     assert sb.options.headers["Authorization"] == "Bearer token-do-usuario"
+
+
+# ---------------------------------------------------------------------------
+# Qualificação SNQC do laudo: só a do próprio inspetor, do mesmo método
+# ---------------------------------------------------------------------------
+@pytest.mark.asyncio
+async def test_report_keeps_only_own_qualification(http_client, client, inspector_token):
+    client["work_orders"].append({
+        "id": "work-order-uuid-q", "tenant_id": "tenant-uuid-5678", "client_id": "client-uuid-q", "code": "OS-Q",
+    })
+    client["qualifications"] = [
+        {"id": "q-propria-pt", "tenant_id": "tenant-uuid-5678", "user_id": "user-uuid-inspector", "method": "PT"},
+        {"id": "q-propria-mt", "tenant_id": "tenant-uuid-5678", "user_id": "user-uuid-inspector", "method": "MT"},
+        {"id": "q-de-outro", "tenant_id": "tenant-uuid-5678", "user_id": "user-uuid-supervisor", "method": "PT"},
+    ]
+
+    def laudo(client_id, qualificacao):
+        return {
+            "client_id": client_id, "client_revision": 1, "method": "PT",
+            "work_order_id": "work-order-uuid-q", "equipment_tag": "TAG-Q",
+            "inspection_date": "2026-11-18", "technical_data": {}, "administrative_data": {},
+            "qualification_id": qualificacao,
+        }
+
+    items = [laudo("laudo-q-ok", "q-propria-pt"), laudo("laudo-q-outro", "q-de-outro"), laudo("laudo-q-metodo", "q-propria-mt")]
+    async with http_client as c:
+        r = await c.post("/api/sync/reports", headers={"Authorization": f"Bearer {inspector_token}"}, json={"items": items})
+    assert r.status_code == 200
+    assert all(i["ok"] for i in r.json()["items"])
+
+    gravados = {row["id"]: row.get("qualification_id") for row in client["reports"]}
+    assert gravados["laudo-q-ok"] == "q-propria-pt"
+    assert gravados["laudo-q-outro"] is None
+    assert gravados["laudo-q-metodo"] is None

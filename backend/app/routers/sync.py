@@ -123,6 +123,7 @@ class SyncReportItem(SyncItemBase):
     administrative_data: dict[str, Any] = Field(default_factory=dict)
     submit: bool = False
     vinculo: dict[str, Any] | None = None  # linha_id e quantidades de escopo (opcional)
+    qualification_id: str | None = None  # qualificação SNQC do inspetor usada no laudo
 
 
 class SyncEscopoLinhaItem(SyncItemBase):
@@ -666,6 +667,18 @@ async def _process_report(
         )
     template_id = template_res.data[0]["id"]
 
+    # Qualificação só vale se for do próprio inspetor, deste tenant e do mesmo método.
+    # Inválida fica vazia: o rascunho continua sincronizando e o envio para revisão volta a exigir.
+    qualification_id = item.get("qualification_id")
+    if qualification_id:
+        qualif = (
+            sb.table("qualifications").select("id")
+            .eq("id", qualification_id).eq("tenant_id", tenant_id)
+            .eq("user_id", user_id).eq("method", item["method"]).execute()
+        )
+        if not qualif.data:
+            qualification_id = None
+
     # Cria ou atualiza o laudo
     try:
         if existing.data and len(existing.data) > 0:
@@ -675,6 +688,7 @@ async def _process_report(
                 "inspection_date": item["inspection_date"],
                 "technical_data": item["technical_data"],
                 "administrative_data": item["administrative_data"],
+                "qualification_id": qualification_id,
                 "client_revision": client_revision,
             }).eq("id", client_id).execute()
         else:
@@ -691,6 +705,7 @@ async def _process_report(
                 "inspection_date": item["inspection_date"],
                 "technical_data": item["technical_data"],
                 "administrative_data": item["administrative_data"],
+                "qualification_id": qualification_id,
             }).execute()
 
         if not res.data:

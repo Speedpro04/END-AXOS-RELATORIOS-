@@ -104,6 +104,7 @@ export const UTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialReport
         unitArea: base.local,
         inspectorName: base.inspetor,
         inspectorSNQC: base.snqc,
+        qualificationId: base.qualificacaoId,
         normProcedure: base.norma,
         acceptanceCriteria: base.criterio,
         status: base.veredito,
@@ -231,7 +232,7 @@ export const UTPage: React.FC<LaudoPageProps> = ({ onBack, onSave, initialReport
         </div>
 
         <div className="lf-coluna-secoes">
-          <BlocoResponsavel base={base} aoMudar={mudarBase} exemploSnqc="Ex: SNQC 00000 US-N2" />
+          <BlocoResponsavel base={base} aoMudar={mudarBase} metodo={METHOD} exemploSnqc="Ex: SNQC 00000 US-N2" />
           {siteId && (
             <Secao titulo="Medição da obra">
               <ObraEscopoVinculo

@@ -1,9 +1,11 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { Check, Copy, UserPlus } from 'lucide-react'
+import { BadgeCheck, Check, Copy, UserPlus } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Campo, Secao, Selecao } from '../components/laudo/CamposLaudo'
 import { mensagemErroAuth } from '../utils/errosAuth'
+import { METHOD_LABELS, type ENDMethod } from '../types/inspection'
+import { cadastrarQualificacao, descreverQualificacao, qualificacaoValida, qualificacoesDaEquipe, removerQualificacao, type Qualificacao } from '../services/qualificacoes'
 
 interface Membro {
   id: string
@@ -26,6 +28,10 @@ const NOME_FUNCAO: Record<Membro['role'], string> = {
 }
 
 const dataCurta = (iso: string) => new Date(iso).toLocaleDateString('pt-BR')
+const dataDoDia = (aaaammdd: string) => aaaammdd.split('-').reverse().join('/')
+const diasAte = (aaaammdd: string) => Math.ceil((new Date(`${aaaammdd}T23:59:59`).getTime() - Date.now()) / 86_400_000)
+const METODOS = Object.entries(METHOD_LABELS).map(([valor, m]) => ({ valor, rotulo: `${m.label}, ${m.full}` }))
+const QUALIFICACAO_VAZIA = { userId: '', method: '', level: '2', certNumber: '', issuer: '', validUntil: '' }
 
 export const EquipePage: React.FC = () => {
   const { user, profile } = useAuth()
@@ -38,6 +44,9 @@ export const EquipePage: React.FC = () => {
   const [erro, setErro] = useState<string | null>(null)
   const [link, setLink] = useState<{ endereco: string; email: string } | null>(null)
   const [copiado, setCopiado] = useState(false)
+  const [qualificacoes, setQualificacoes] = useState<Qualificacao[]>([])
+  const [novaQualif, setNovaQualif] = useState(QUALIFICACAO_VAZIA)
+  const [salvandoQualif, setSalvandoQualif] = useState(false)
 
   const carregar = useCallback(async () => {
     setCarregando(true)
@@ -55,6 +64,11 @@ export const EquipePage: React.FC = () => {
     } else {
       setMembros((m.data ?? []) as Membro[])
       setConvites((c.data ?? []) as Convite[])
+    }
+    try {
+      setQualificacoes(await qualificacoesDaEquipe())
+    } catch {
+      setErro('Não foi possível carregar as qualificações. Confira a conexão e tente novamente.')
     }
     setCarregando(false)
   }, [])
@@ -101,6 +115,45 @@ export const EquipePage: React.FC = () => {
     if (error) return setErro(mensagemErroAuth(error.message, 'Não foi possível alterar o acesso. Tente novamente.'))
     void carregar()
   }
+
+  const salvarQualificacao = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!profile?.tenant_id) return
+    setErro(null)
+    setSalvandoQualif(true)
+    try {
+      await cadastrarQualificacao({
+        tenant_id: profile.tenant_id,
+        user_id: novaQualif.userId,
+        method: novaQualif.method as ENDMethod,
+        level: Number(novaQualif.level),
+        cert_number: novaQualif.certNumber.trim(),
+        issuer: novaQualif.issuer.trim(),
+        valid_until: novaQualif.validUntil,
+      })
+      setNovaQualif(QUALIFICACAO_VAZIA)
+      setQualificacoes(await qualificacoesDaEquipe())
+    } catch (err) {
+      setErro(mensagemErroAuth((err as { message?: string })?.message, 'Não foi possível cadastrar a qualificação. Confira os dados e tente novamente.'))
+    } finally {
+      setSalvandoQualif(false)
+    }
+  }
+
+  const apagarQualificacao = async (q: Qualificacao) => {
+    setErro(null)
+    try {
+      await removerQualificacao(q.id)
+      setQualificacoes(await qualificacoesDaEquipe())
+    } catch (err) {
+      const usada = (err as { code?: string })?.code === '23503'
+      setErro(usada
+        ? 'Esta qualificação já foi usada em laudo e fica guardada no histórico. Ela não pode ser removida.'
+        : 'Não foi possível remover a qualificação. Tente novamente.')
+    }
+  }
+
+  const nomeDe = (id: string) => membros.find((m) => m.id === id)?.full_name ?? 'Pessoa removida'
 
   if (profile?.role !== 'admin') {
     return (
@@ -161,6 +214,44 @@ export const EquipePage: React.FC = () => {
                   <button type="button" className="lf-botao" onClick={() => void cancelar(c.id)} aria-label={`Cancelar convite de ${c.email}`}>Cancelar convite</button>
                 </li>
               ))}
+            </ul>
+          )}
+        </Secao>
+
+        <Secao titulo="Qualificações (SNQC)" descricao="Certificado de cada pessoa por método. O laudo só pode ser enviado para revisão com a qualificação do próprio inspetor, do mesmo método e válida na data do ensaio.">
+          <form onSubmit={salvarQualificacao} className="lf-coluna">
+            <div className="lf-grade">
+              <Selecao rotulo="Pessoa" valor={novaQualif.userId} vazio="Escolha a pessoa" aoMudar={(v) => setNovaQualif((q) => ({ ...q, userId: v }))}
+                opcoes={membros.filter((m) => m.active).map((m) => ({ valor: m.id, rotulo: m.full_name }))} />
+              <Selecao rotulo="Método" valor={novaQualif.method} vazio="Escolha o método" aoMudar={(v) => setNovaQualif((q) => ({ ...q, method: v }))} opcoes={METODOS} />
+              <Selecao rotulo="Nível" valor={novaQualif.level} aoMudar={(v) => setNovaQualif((q) => ({ ...q, level: v }))}
+                opcoes={[{ valor: '1', rotulo: 'Nível 1' }, { valor: '2', rotulo: 'Nível 2' }, { valor: '3', rotulo: 'Nível 3' }]} />
+              <Campo rotulo="Número do certificado" obrigatorio valor={novaQualif.certNumber} aoMudar={(v) => setNovaQualif((q) => ({ ...q, certNumber: v }))} />
+              <Campo rotulo="Órgão certificador" obrigatorio placeholder="Ex: SNQC" valor={novaQualif.issuer} aoMudar={(v) => setNovaQualif((q) => ({ ...q, issuer: v }))} />
+              <Campo rotulo="Válido até" tipo="date" obrigatorio valor={novaQualif.validUntil} aoMudar={(v) => setNovaQualif((q) => ({ ...q, validUntil: v }))} />
+            </div>
+            <button type="submit" className="lf-botao lf-botao-primario" disabled={salvandoQualif || !novaQualif.userId || !novaQualif.method}>
+              <BadgeCheck size={16} strokeWidth={1.75} /> {salvandoQualif ? 'Salvando...' : 'Cadastrar qualificação'}
+            </button>
+          </form>
+          {carregando ? <p className="lf-descricao">Carregando...</p> : qualificacoes.length === 0 ? (
+            <p className="lf-descricao">Nenhuma qualificação cadastrada.</p>
+          ) : (
+            <ul className="lf-lista">
+              {qualificacoes.map((q) => {
+                const dias = diasAte(q.valid_until)
+                return (
+                  <li key={q.id}>
+                    <div>
+                      <strong>{nomeDe(q.user_id)}: {METHOD_LABELS[q.method]?.label ?? q.method}</strong>
+                      <span className="lf-descricao">{descreverQualificacao(q)}, {q.issuer}, válida até {dataDoDia(q.valid_until)}</span>
+                      {!qualificacaoValida(q) && <span className="lf-alerta" role="status">Vencida</span>}
+                      {qualificacaoValida(q) && dias <= 30 && <span className="lf-descricao"><strong>Vence em {dias} {dias === 1 ? 'dia' : 'dias'}</strong></span>}
+                    </div>
+                    <button type="button" className="lf-botao" onClick={() => void apagarQualificacao(q)} aria-label={`Remover qualificação ${q.cert_number} de ${nomeDe(q.user_id)}`}>Remover</button>
+                  </li>
+                )
+              })}
             </ul>
           )}
         </Secao>

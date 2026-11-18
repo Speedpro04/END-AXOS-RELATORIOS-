@@ -105,6 +105,7 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
         unitArea: base.local,
         inspectorName: base.inspetor,
         inspectorSNQC: base.snqc,
+        qualificationId: base.qualificacaoId,
         normProcedure: base.norma,
         acceptanceCriteria: base.criterio,
         status: base.veredito,
@@ -185,7 +186,7 @@ export const LaudoPadraoPage: React.FC<LaudoPadraoProps> = ({ metodo, onBack, on
         </div>
 
         <div className="lf-coluna-secoes">
-          <BlocoResponsavel base={base} aoMudar={mudarBase} exemploSnqc={`Ex: SNQC 00000 ${rotulo.label}-N2`} />
+          <BlocoResponsavel base={base} aoMudar={mudarBase} metodo={metodo} exemploSnqc={`Ex: SNQC 00000 ${rotulo.label}-N2`} />
           {siteId && (
             <Secao titulo="Medição da obra">
               <ObraEscopoVinculo

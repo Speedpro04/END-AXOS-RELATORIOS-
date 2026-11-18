@@ -22,6 +22,8 @@ export interface InspectionReport {
   technicalData: Record<string, any>
   createdAt: string
   updatedAt: string
+  // Qualificação SNQC do inspetor usada no laudo (exigida para enviar à revisão)
+  qualificationId?: string | null
   // Vínculo com escopo de obra (opcional)
   linhaId?: string | null
   quantidadeInspecionada?: number

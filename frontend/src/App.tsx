@@ -232,6 +232,7 @@ function AppContent() {
           unitArea: reportData.unitArea || '',
           inspectorName: reportData.inspectorName || '',
           inspectorSNQC: reportData.inspectorSNQC || '',
+          qualificationId: reportData.qualificationId ?? null,
           normProcedure: reportData.normProcedure || '',
           acceptanceCriteria: reportData.acceptanceCriteria || '',
           date: reportData.date || agora.split('T')[0],
