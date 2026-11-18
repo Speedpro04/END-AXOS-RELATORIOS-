@@ -19,14 +19,16 @@ from typing import Annotated, Any
 
 from arq import ArqRedis, create_pool
 from arq.jobs import Job
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Response, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 from supabase import ClientOptions, create_client
 
 from app.core.config import settings
 from app.core.security import CurrentUserDep
-from app.queues.enqueue import enqueue_generate_pdf, get_arq_redis_settings
+from app.queues.enqueue import get_arq_redis_settings
+from app.pdf.laudo_pdf import ErroPdf, gerar_pdf_oficial, sha256_hex
 
 logger = logging.getLogger(__name__)
 
@@ -903,6 +905,15 @@ async def sync_healthz() -> dict[str, str]:
 # Emissão de laudo – gera PDF e marca como emitido (imutável)
 # ─────────────────────────────────────────────────────────
 
+def _supabase_admin() -> Any:
+    """Chave de serviço: só para Storage e PDF oficial, depois de conferir o acesso do usuário."""
+    return create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_ROLE_KEY)
+
+
+async def _gerar_pdf(report_id: str, tenant_id: str) -> dict[str, Any]:
+    return await run_in_threadpool(gerar_pdf_oficial, _supabase_admin(), report_id, tenant_id, settings.QR_BASE_URL)
+
+
 class EmitResponse(BaseModel):
     ok: bool
     report_id: str
@@ -913,7 +924,7 @@ class EmitResponse(BaseModel):
 
 @router.post(
     "/emitir/{report_id}",
-    summary="Emite um laudo aprovado (approved → issued) e enfileira o PDF",
+    summary="Emite um laudo aprovado (approved → issued) e gera o PDF oficial",
 )
 async def emitir_laudo(
     report_id: str,
@@ -942,19 +953,60 @@ async def emitir_laudo(
     if not emitido.data:
         raise HTTPException(status_code=409, detail="Não foi possível emitir o laudo")
 
-    # Laudo já emitido: falha na fila não desfaz a emissão, o PDF pode ser gerado depois
-    pdf_job_id: str | None = None
-    message = "Laudo emitido. PDF em geração."
+    # Laudo já emitido: falha no PDF não desfaz a emissão; o revisor pode gerar de novo depois
+    message = "Laudo emitido. PDF oficial gerado."
     try:
-        pdf_job_id = await enqueue_generate_pdf(await get_arq(), report_id, current_user.tenant_id)
+        await _gerar_pdf(report_id, current_user.tenant_id)
+    except ErroPdf as exc:
+        logger.error("Laudo %s emitido, mas o PDF não foi gerado: %s", report_id, exc)
+        message = f"Laudo emitido. PDF oficial pendente: {exc}"
     except Exception as exc:
-        logger.error("Laudo %s emitido, mas o PDF não entrou na fila: %s", report_id, exc)
-        message = "Laudo emitido. PDF pendente: a fila está indisponível."
+        logger.exception("Laudo %s emitido, mas o PDF falhou: %s", report_id, exc)
+        message = "Laudo emitido. PDF oficial pendente: tente gerar de novo em instantes."
 
     return EmitResponse(
         ok=True,
         report_id=report_id,
         report_number=emitido.data[0].get("report_number"),
-        pdf_job_id=pdf_job_id,
         message=message,
+    )
+
+
+@router.post("/pdf/{report_id}/gerar", summary="Gera o PDF oficial de um laudo emitido que ficou sem PDF")
+async def gerar_pdf_laudo(report_id: str, current_user: CurrentUserDep, token: Annotated[str, Depends(get_user_token)]) -> dict[str, Any]:
+    if not current_user.is_reviewer:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Acesso restrito a supervisores e administradores")
+    visivel = _supabase_user_client(token).table("reports").select("id").eq("id", report_id).eq("tenant_id", current_user.tenant_id).execute()
+    if not visivel.data:
+        raise HTTPException(status_code=404, detail="Laudo não encontrado")
+    try:
+        resultado = await _gerar_pdf(report_id, current_user.tenant_id)
+    except ErroPdf as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
+    return {"ok": True, "status": resultado["status"], "sha256": resultado.get("sha256")}
+
+
+@router.get("/pdf/{report_id}", summary="Baixa o PDF oficial do laudo, conferido pelo SHA-256 registrado")
+async def baixar_pdf_laudo(report_id: str, current_user: CurrentUserDep, token: Annotated[str, Depends(get_user_token)]) -> Response:
+    # O acesso segue as regras do banco: inspetor dono ou revisor da empresa
+    visivel = (
+        _supabase_user_client(token).table("reports").select("id, report_number, revision")
+        .eq("id", report_id).eq("tenant_id", current_user.tenant_id).execute()
+    )
+    if not visivel.data:
+        raise HTTPException(status_code=404, detail="Laudo não encontrado")
+    laudo = visivel.data[0]
+    admin = _supabase_admin()
+    registro = admin.table("report_pdfs").select("storage_path, sha256").eq("report_id", report_id).eq("tenant_id", current_user.tenant_id).execute()
+    if not registro.data:
+        raise HTTPException(status_code=404, detail="Este laudo ainda não tem PDF oficial")
+    pdf = admin.storage.from_("report-pdfs").download(registro.data[0]["storage_path"])
+    if sha256_hex(pdf) != registro.data[0]["sha256"]:
+        logger.error("PDF do laudo %s não confere com o SHA-256 registrado", report_id)
+        raise HTTPException(status_code=409, detail="O arquivo do PDF não confere com o registro. Fale com o suporte.")
+    nome = f"{laudo.get('report_number') or 'laudo'}-rev{laudo.get('revision') or 0}.pdf"
+    return Response(
+        content=pdf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{nome}"', "X-Content-SHA256": registro.data[0]["sha256"]},
     )

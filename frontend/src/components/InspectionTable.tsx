@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { MoreHorizontal, FileText, Edit2, RefreshCw, History } from 'lucide-react'
 import { METHOD_LABELS, type InspectionReport, type ReportStatus } from '../types/inspection'
 import { ESTILO_TECNICO, htmlTecnico } from '../utils/impressaoLaudo'
+import { baixarPdfOficial } from '../services/fluxoLaudo'
 
 const AZUL_DESTAQUE = 'var(--card-met-azul, #2FB8D6)'
 
@@ -155,6 +156,13 @@ export const InspectionTable: React.FC<InspectionTableProps> = ({
   const gerarPdf = async (report: InspectionReport) => {
     setPdfGeneratingId(report.id)
     setPdfError(null)
+    // Laudo emitido: só vale o PDF oficial gerado e guardado no servidor
+    if (report.status === 'issued' || report.status === 'substituido') {
+      const r = await baixarPdfOficial(report.id)
+      if (!r.ok) setPdfError({ id: report.id, message: r.mensagem })
+      setPdfGeneratingId(null)
+      return
+    }
     try {
       const emitido = estaEmitido(report)
       // TODO: Integrar com pdf_worker existente (backend) quando o endpoint de emissão estiver disponível.

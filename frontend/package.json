@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "test:db": "node ../supabase/tests/run_tests.mjs"
+    "test:db": "node ../supabase/tests/run_tests.mjs",
+    "gerar:campos-pdf": "node scripts/gerar-campos-pdf.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

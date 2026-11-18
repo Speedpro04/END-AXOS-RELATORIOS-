@@ -152,6 +152,48 @@ export async function emitir(id: string): Promise<Resultado> {
   }
 }
 
+async function chamarApi(caminho: string, metodo: 'GET' | 'POST'): Promise<Response | Resultado> {
+  const offline = semInternet()
+  if (offline) return offline
+  const { data: sessao } = await supabase.auth.getSession()
+  const token = sessao.session?.access_token
+  if (!token) return { ok: false, mensagem: 'Sua sessão expirou. Entre de novo.' }
+  try {
+    return await fetch(`${API_BASE_URL}${caminho}`, { method: metodo, headers: { Authorization: `Bearer ${token}` } })
+  } catch (err) {
+    return { ok: false, mensagem: traduzir(err, 'Sem conexão com o servidor. Tente de novo.') }
+  }
+}
+
+/** Baixa o PDF oficial guardado no servidor (o servidor confere o SHA-256 antes de entregar). */
+export async function baixarPdfOficial(id: string): Promise<Resultado & { semPdf?: boolean }> {
+  const resposta = await chamarApi(`/api/sync/pdf/${id}`, 'GET')
+  if (!(resposta instanceof Response)) return resposta
+  if (!resposta.ok) {
+    const corpo = await resposta.json().catch(() => ({}))
+    return { ok: false, semPdf: resposta.status === 404, mensagem: String(corpo.detail ?? 'Não foi possível baixar o PDF oficial.') }
+  }
+  const nome = /filename="([^"]+)"/.exec(resposta.headers.get('Content-Disposition') ?? '')?.[1] ?? 'laudo.pdf'
+  const url = URL.createObjectURL(await resposta.blob())
+  const link = document.createElement('a')
+  link.href = url
+  link.download = nome
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+  return { ok: true, mensagem: `PDF oficial baixado: ${nome}.` }
+}
+
+/** Gera o PDF oficial de um laudo emitido que ficou sem PDF (revisor). */
+export async function gerarPdfOficial(id: string): Promise<Resultado> {
+  const resposta = await chamarApi(`/api/sync/pdf/${id}/gerar`, 'POST')
+  if (!(resposta instanceof Response)) return resposta
+  const corpo = await resposta.json().catch(() => ({}))
+  if (!resposta.ok) return { ok: false, mensagem: String(corpo.detail ?? 'Não foi possível gerar o PDF oficial.') }
+  return { ok: true, mensagem: 'PDF oficial gerado. Agora é só baixar.' }
+}
+
 export async function novaRevisao(id: string): Promise<Resultado> {
   const offline = semInternet()
   if (offline) return offline

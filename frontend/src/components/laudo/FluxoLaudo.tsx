@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { CheckCircle2, CornerUpLeft, FilePlus2, Send, Stamp } from 'lucide-react'
+import { CheckCircle2, CornerUpLeft, Download, FilePlus2, FileCog, Send, Stamp } from 'lucide-react'
 import { useAuth } from '../../contexts/AuthContext'
 import { db } from '../../services/dbDexie'
-import { aprovar, devolver, emitir, enviarParaRevisao, lerSituacao, novaRevisao, ultimoComentario, type Resultado, type SituacaoLaudo, type StatusServidor } from '../../services/fluxoLaudo'
+import { aprovar, baixarPdfOficial, devolver, emitir, enviarParaRevisao, gerarPdfOficial, lerSituacao, novaRevisao, ultimoComentario, type Resultado, type SituacaoLaudo, type StatusServidor } from '../../services/fluxoLaudo'
 import { AreaTexto, Secao } from './CamposLaudo'
 
 // Situação do laudo no servidor e as ações de cada etapa, conforme quem está usando.
@@ -27,6 +27,7 @@ export const FluxoLaudo: React.FC<{ laudoId: string; onBloqueio: (bloqueado: boo
   const [textoDevolucao, setTextoDevolucao] = useState('')
   const [ocupado, setOcupado] = useState(false)
   const [resultado, setResultado] = useState<Resultado | null>(null)
+  const [semPdf, setSemPdf] = useState(false)
 
   const carregar = useCallback(async () => {
     const local = await db.reports.get(laudoId)
@@ -44,11 +45,12 @@ export const FluxoLaudo: React.FC<{ laudoId: string; onBloqueio: (bloqueado: boo
 
   useEffect(() => { void carregar() }, [carregar])
 
-  const executar = async (acao: () => Promise<Resultado>) => {
+  const executar = async (acao: () => Promise<Resultado & { semPdf?: boolean }>) => {
     setOcupado(true)
     setResultado(null)
     const r = await acao()
     setResultado(r)
+    setSemPdf(!r.ok && !!r.semPdf)
     setOcupado(false)
     if (r.ok) {
       setDevolvendo(false)
@@ -103,6 +105,16 @@ export const FluxoLaudo: React.FC<{ laudoId: string; onBloqueio: (bloqueado: boo
         {revisor && status === 'approved' && (
           <button type="button" className="lf-botao lf-botao-primario" disabled={ocupado} onClick={() => void executar(() => emitir(laudoId))}>
             <Stamp size={16} strokeWidth={1.75} /> {ocupado ? 'Emitindo...' : 'Emitir laudo'}
+          </button>
+        )}
+        {(status === 'issued' || status === 'superseded') && (
+          <button type="button" className="lf-botao lf-botao-primario" disabled={ocupado} onClick={() => void executar(() => baixarPdfOficial(laudoId))}>
+            <Download size={16} strokeWidth={1.75} /> Baixar PDF oficial
+          </button>
+        )}
+        {revisor && semPdf && (status === 'issued' || status === 'superseded') && (
+          <button type="button" className="lf-botao" disabled={ocupado} onClick={() => void executar(() => gerarPdfOficial(laudoId))}>
+            <FileCog size={16} strokeWidth={1.75} /> Gerar PDF oficial
           </button>
         )}
         {status === 'issued' && (

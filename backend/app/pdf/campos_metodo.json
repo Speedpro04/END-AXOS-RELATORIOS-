@@ -1,0 +1,1385 @@
+{
+  "aviso": "Gerado por frontend/scripts/gerar-campos-pdf.mjs. Não edite à mão.",
+  "metodos": {
+    "VT": {
+      "label": "VT",
+      "full": "Ensaio Visual",
+      "code": "ASME V Art. 9"
+    },
+    "PT": {
+      "label": "PT",
+      "full": "Líquidos Penetrantes",
+      "code": "ASME V Art. 6 / Petrobras N-1596"
+    },
+    "MT": {
+      "label": "MT",
+      "full": "Partículas Magnéticas",
+      "code": "Petrobras N-1598 / ASME VIII Ap. 6"
+    },
+    "UT": {
+      "label": "UT",
+      "full": "Ultrassom Convencional",
+      "code": "ASME V Art. 4 / Petrobras N-1594"
+    },
+    "RT": {
+      "label": "RT",
+      "full": "Radiografia Industrial",
+      "code": "ASME V Art. 2 / 3"
+    },
+    "ET": {
+      "label": "ET",
+      "full": "Correntes Parasitas Convencional",
+      "code": "ASME V Art. 7"
+    },
+    "LT": {
+      "label": "LT",
+      "full": "Ensaio de Estanqueidade",
+      "code": "ASME V Art. 10"
+    },
+    "LT_VACUO": {
+      "label": "LT Vácuo",
+      "full": "Estanqueidade por Caixa de Vácuo",
+      "code": "ASME V Art. 10"
+    },
+    "PAUT": {
+      "label": "PAUT",
+      "full": "Ultrassom Phased Array",
+      "code": "ASME V Art. 4 / ISO 13588"
+    },
+    "TOFD": {
+      "label": "ToFD",
+      "full": "Time of Flight Diffraction",
+      "code": "ASME V Art. 4"
+    },
+    "CRDR": {
+      "label": "CR/DR",
+      "full": "Radiografia Computadorizada/Digital",
+      "code": "ASTM E1742 / ISO 17636-2"
+    },
+    "ECA": {
+      "label": "ECA",
+      "full": "Eddy Current Array",
+      "code": "ASME V Art. 8 / ISO 15548"
+    },
+    "EA": {
+      "label": "EA",
+      "full": "Emissão Acústica",
+      "code": "ASME V Art. 12"
+    },
+    "IRT": {
+      "label": "IRT",
+      "full": "Termografia Infravermelha",
+      "code": "ISO 18434-1 / ASTM E1934"
+    },
+    "ACFM": {
+      "label": "ACFM",
+      "full": "Alternating Current Field Measurement",
+      "code": ""
+    },
+    "TFM": {
+      "label": "TFM",
+      "full": "TFM / FMC",
+      "code": "ISO 18563-3"
+    }
+  },
+  "campos": {
+    "VT": [
+      {
+        "chave": "modalidade",
+        "rotulo": "Modalidade",
+        "opcoes": [
+          {
+            "valor": "direta",
+            "rotulo": "Direta"
+          },
+          {
+            "valor": "remota",
+            "rotulo": "Remota (boroscópio ou drone)"
+          }
+        ]
+      },
+      {
+        "chave": "iluminacao",
+        "rotulo": "Iluminação (lux)",
+        "placeholder": "Ex: 500 lux"
+      },
+      {
+        "chave": "distancia",
+        "rotulo": "Distância e ângulo de observação",
+        "placeholder": "Ex: 300 mm / 90°"
+      },
+      {
+        "chave": "instrumentos",
+        "rotulo": "Instrumentos auxiliares",
+        "placeholder": "Ex: lupa, espelho, calibre"
+      },
+      {
+        "chave": "checklist",
+        "rotulo": "Itens verificados",
+        "placeholder": "Ex: reforço, mordedura, desalinhamento"
+      }
+    ],
+    "PT": [
+      {
+        "chave": "tipoPenetrante",
+        "rotulo": "Tipo de penetrante",
+        "opcoes": [
+          {
+            "valor": "visivel",
+            "rotulo": "Visível (colorido)"
+          },
+          {
+            "valor": "fluorescente",
+            "rotulo": "Fluorescente"
+          }
+        ]
+      },
+      {
+        "chave": "metodoRemocao",
+        "rotulo": "Método de remoção",
+        "opcoes": [
+          {
+            "valor": "solvente",
+            "rotulo": "Removível com solvente"
+          },
+          {
+            "valor": "agua",
+            "rotulo": "Lavável com água"
+          },
+          {
+            "valor": "pos_emulsificavel",
+            "rotulo": "Pós-emulsificável"
+          }
+        ]
+      },
+      {
+        "chave": "limpezaPrevia",
+        "rotulo": "Limpeza prévia e secagem",
+        "placeholder": "Ex: solvente, 5 min"
+      },
+      {
+        "chave": "penetrantBrand",
+        "rotulo": "Penetrante (marca e lote)",
+        "placeholder": "Ex: VP-30, lote 123"
+      },
+      {
+        "chave": "cleanerBrand",
+        "rotulo": "Removedor (marca e lote)"
+      },
+      {
+        "chave": "developerBrand",
+        "rotulo": "Revelador (marca e lote)",
+        "placeholder": "Ex: D-70, lote 456"
+      },
+      {
+        "chave": "dwellTime",
+        "rotulo": "Tempo de penetração",
+        "placeholder": "Ex: 20 min"
+      },
+      {
+        "chave": "developerTime",
+        "rotulo": "Tempo de revelação",
+        "placeholder": "Ex: 15 min"
+      },
+      {
+        "chave": "lightIntensity",
+        "rotulo": "Iluminação",
+        "placeholder": "Ex: 1250 lux, luz branca"
+      },
+      {
+        "chave": "luzUv",
+        "rotulo": "Luz UV-A (µW/cm²)",
+        "placeholder": "Só no fluorescente. Ex: 1200"
+      },
+      {
+        "chave": "indications",
+        "rotulo": "Descrição das indicações"
+      }
+    ],
+    "MT": [
+      {
+        "chave": "tecnicaMagnetizacao",
+        "rotulo": "Técnica de magnetização",
+        "opcoes": [
+          {
+            "valor": "yoke",
+            "rotulo": "Yoke"
+          },
+          {
+            "valor": "pontas",
+            "rotulo": "Pontas (prods)"
+          },
+          {
+            "valor": "bobina",
+            "rotulo": "Bobina"
+          },
+          {
+            "valor": "condutor_central",
+            "rotulo": "Condutor central"
+          },
+          {
+            "valor": "contato_direto",
+            "rotulo": "Contato direto"
+          },
+          {
+            "valor": "ima_permanente",
+            "rotulo": "Ímã permanente"
+          }
+        ]
+      },
+      {
+        "chave": "tipoCorrente",
+        "rotulo": "Tipo de corrente",
+        "opcoes": [
+          {
+            "valor": "ca",
+            "rotulo": "Alternada (CA)"
+          },
+          {
+            "valor": "cc",
+            "rotulo": "Contínua (CC)"
+          },
+          {
+            "valor": "meia_onda",
+            "rotulo": "Retificada de meia onda"
+          }
+        ]
+      },
+      {
+        "chave": "tipoParticulas",
+        "rotulo": "Partículas",
+        "opcoes": [
+          {
+            "valor": "umida_fluorescente",
+            "rotulo": "Via úmida fluorescente"
+          },
+          {
+            "valor": "umida_visivel",
+            "rotulo": "Via úmida visível"
+          },
+          {
+            "valor": "seca",
+            "rotulo": "Via seca"
+          }
+        ]
+      },
+      {
+        "chave": "particulas",
+        "rotulo": "Partículas (marca e lote)",
+        "placeholder": "Ex: 7HF, lote 123"
+      },
+      {
+        "chave": "tintaContraste",
+        "rotulo": "Tinta de contraste (marca e lote)",
+        "placeholder": "Ex: WCP-2, lote 456"
+      },
+      {
+        "chave": "concentracao",
+        "rotulo": "Concentração das partículas",
+        "placeholder": "Ex: 0,2 ml em 100 ml"
+      },
+      {
+        "chave": "verificacaoCampo",
+        "rotulo": "Verificação do campo",
+        "opcoes": [
+          {
+            "valor": "indicador",
+            "rotulo": "Indicador de campo"
+          },
+          {
+            "valor": "laminas",
+            "rotulo": "Lâminas (shims)"
+          },
+          {
+            "valor": "hall",
+            "rotulo": "Medidor Hall"
+          },
+          {
+            "valor": "levantamento",
+            "rotulo": "Teste de levantamento"
+          }
+        ]
+      },
+      {
+        "chave": "forcaLevantamento",
+        "rotulo": "Força de levantamento do yoke",
+        "placeholder": "Ex: 4,5 kg em CA"
+      },
+      {
+        "chave": "espacamento",
+        "rotulo": "Espaçamento entre polos ou pontas (mm)",
+        "placeholder": "Ex: 150"
+      },
+      {
+        "chave": "luzBranca",
+        "rotulo": "Luz branca (lux)",
+        "placeholder": "Ex: 1000"
+      },
+      {
+        "chave": "luzUv",
+        "rotulo": "Luz UV-A (µW/cm²)",
+        "placeholder": "Só no fluorescente. Ex: 1200"
+      },
+      {
+        "chave": "desmagnetizacao",
+        "rotulo": "Desmagnetização",
+        "opcoes": [
+          {
+            "valor": "feita",
+            "rotulo": "Feita"
+          },
+          {
+            "valor": "nao_feita",
+            "rotulo": "Não feita"
+          },
+          {
+            "valor": "nao_exigida",
+            "rotulo": "Não exigida"
+          }
+        ]
+      }
+    ],
+    "RT": [
+      {
+        "chave": "fonte",
+        "rotulo": "Fonte",
+        "opcoes": [
+          {
+            "valor": "ir192",
+            "rotulo": "Ir-192"
+          },
+          {
+            "valor": "se75",
+            "rotulo": "Se-75"
+          },
+          {
+            "valor": "co60",
+            "rotulo": "Co-60"
+          },
+          {
+            "valor": "raios_x",
+            "rotulo": "Raios X"
+          }
+        ]
+      },
+      {
+        "chave": "atividadeTensao",
+        "rotulo": "Atividade (Ci) ou tensão (kV)",
+        "placeholder": "Ex: 30 Ci ou 200 kV"
+      },
+      {
+        "chave": "pontoFocal",
+        "rotulo": "Tamanho do ponto focal (mm)",
+        "placeholder": "Ex: 3",
+        "numerico": true
+      },
+      {
+        "chave": "tempoExposicao",
+        "rotulo": "Tempo de exposição",
+        "placeholder": "Ex: 2,5 min"
+      },
+      {
+        "chave": "tecnicaExposicao",
+        "rotulo": "Técnica de exposição",
+        "opcoes": [
+          {
+            "valor": "ps_vs",
+            "rotulo": "Parede simples, vista simples"
+          },
+          {
+            "valor": "pd_vs",
+            "rotulo": "Parede dupla, vista simples"
+          },
+          {
+            "valor": "pd_vd",
+            "rotulo": "Parede dupla, vista dupla"
+          },
+          {
+            "valor": "panoramica",
+            "rotulo": "Panorâmica"
+          }
+        ]
+      },
+      {
+        "chave": "distanciaFonteFilme",
+        "rotulo": "Distância fonte-filme (mm)",
+        "placeholder": "Ex: 700",
+        "numerico": true
+      },
+      {
+        "chave": "espessuraReforco",
+        "rotulo": "Espessura da peça mais reforço (mm)",
+        "placeholder": "Ex: 12 + 2"
+      },
+      {
+        "chave": "filme",
+        "rotulo": "Filme (marca e classe)",
+        "placeholder": "Ex: D7, classe I"
+      },
+      {
+        "chave": "filmesPorChassi",
+        "rotulo": "Filmes por chassi",
+        "opcoes": [
+          {
+            "valor": "1",
+            "rotulo": "1"
+          },
+          {
+            "valor": "2",
+            "rotulo": "2"
+          }
+        ]
+      },
+      {
+        "chave": "ecran",
+        "rotulo": "Écran (tipo e espessura)",
+        "placeholder": "Ex: chumbo 0,027 mm"
+      },
+      {
+        "chave": "iqi",
+        "rotulo": "IQI (tipo e número)",
+        "placeholder": "Ex: fios ASTM 1A"
+      },
+      {
+        "chave": "posicaoIqi",
+        "rotulo": "Posição do IQI",
+        "opcoes": [
+          {
+            "valor": "fonte",
+            "rotulo": "Lado da fonte"
+          },
+          {
+            "valor": "filme",
+            "rotulo": "Lado do filme"
+          }
+        ]
+      },
+      {
+        "chave": "fioEssencial",
+        "rotulo": "Fio ou furo essencial",
+        "placeholder": "Ex: fio 6"
+      },
+      {
+        "chave": "faixaDensidade",
+        "rotulo": "Faixa de densidade",
+        "placeholder": "Ex: 2,0 a 4,0"
+      },
+      {
+        "chave": "densitometro",
+        "rotulo": "Densitômetro (identificação)"
+      },
+      {
+        "chave": "penumbra",
+        "rotulo": "Penumbra geométrica, Ug (mm)",
+        "placeholder": "Ex: 0,5",
+        "numerico": true
+      }
+    ],
+    "CRDR": [
+      {
+        "chave": "fonte",
+        "rotulo": "Fonte",
+        "opcoes": [
+          {
+            "valor": "ir192",
+            "rotulo": "Ir-192"
+          },
+          {
+            "valor": "se75",
+            "rotulo": "Se-75"
+          },
+          {
+            "valor": "co60",
+            "rotulo": "Co-60"
+          },
+          {
+            "valor": "raios_x",
+            "rotulo": "Raios X"
+          }
+        ]
+      },
+      {
+        "chave": "atividadeTensao",
+        "rotulo": "Atividade (Ci) ou tensão (kV)",
+        "placeholder": "Ex: 30 Ci ou 200 kV"
+      },
+      {
+        "chave": "pontoFocal",
+        "rotulo": "Tamanho do ponto focal (mm)",
+        "placeholder": "Ex: 3",
+        "numerico": true
+      },
+      {
+        "chave": "tempoExposicao",
+        "rotulo": "Tempo de exposição",
+        "placeholder": "Ex: 2,5 min"
+      },
+      {
+        "chave": "tecnicaExposicao",
+        "rotulo": "Técnica de exposição",
+        "opcoes": [
+          {
+            "valor": "ps_vs",
+            "rotulo": "Parede simples, vista simples"
+          },
+          {
+            "valor": "pd_vs",
+            "rotulo": "Parede dupla, vista simples"
+          },
+          {
+            "valor": "pd_vd",
+            "rotulo": "Parede dupla, vista dupla"
+          },
+          {
+            "valor": "panoramica",
+            "rotulo": "Panorâmica"
+          }
+        ]
+      },
+      {
+        "chave": "distanciaFonteDetector",
+        "rotulo": "Distância fonte-detector (mm)",
+        "placeholder": "Ex: 700",
+        "numerico": true
+      },
+      {
+        "chave": "espessuraReforco",
+        "rotulo": "Espessura da peça mais reforço (mm)",
+        "placeholder": "Ex: 12 + 2"
+      },
+      {
+        "chave": "detector",
+        "rotulo": "Detector",
+        "opcoes": [
+          {
+            "valor": "cr",
+            "rotulo": "Placa de fósforo (CR)"
+          },
+          {
+            "valor": "dr",
+            "rotulo": "Painel digital (DR)"
+          }
+        ]
+      },
+      {
+        "chave": "detectorModelo",
+        "rotulo": "Detector (marca, modelo e série)"
+      },
+      {
+        "chave": "leitor",
+        "rotulo": "Leitor da placa (marca e modelo)",
+        "placeholder": "Só no CR"
+      },
+      {
+        "chave": "pixel",
+        "rotulo": "Tamanho do pixel (µm)",
+        "placeholder": "Ex: 100",
+        "numerico": true
+      },
+      {
+        "chave": "ecran",
+        "rotulo": "Écran ou filtro",
+        "placeholder": "Ex: cobre 0,1 mm"
+      },
+      {
+        "chave": "iqi",
+        "rotulo": "IQI (tipo e número)",
+        "placeholder": "Ex: fios ASTM 1A"
+      },
+      {
+        "chave": "posicaoIqi",
+        "rotulo": "Posição do IQI",
+        "opcoes": [
+          {
+            "valor": "fonte",
+            "rotulo": "Lado da fonte"
+          },
+          {
+            "valor": "detector",
+            "rotulo": "Lado do detector"
+          }
+        ]
+      },
+      {
+        "chave": "fioEssencial",
+        "rotulo": "Fio ou furo essencial",
+        "placeholder": "Ex: fio 6"
+      },
+      {
+        "chave": "duploFio",
+        "rotulo": "IQI de duplo fio (par resolvido)",
+        "placeholder": "Ex: D10"
+      },
+      {
+        "chave": "snr",
+        "rotulo": "Relação sinal-ruído (SNRn)",
+        "placeholder": "Ex: 100",
+        "numerico": true
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      },
+      {
+        "chave": "penumbra",
+        "rotulo": "Penumbra geométrica, Ug (mm)",
+        "placeholder": "Ex: 0,5",
+        "numerico": true
+      }
+    ],
+    "TOFD": [
+      {
+        "chave": "sondas",
+        "rotulo": "Sondas (marca, frequência e tamanho)",
+        "placeholder": "Ex: 5 MHz, 6 mm"
+      },
+      {
+        "chave": "anguloSapatas",
+        "rotulo": "Ângulo das sapatas (°)",
+        "placeholder": "Ex: 60",
+        "numerico": true
+      },
+      {
+        "chave": "pcs",
+        "rotulo": "Distância entre sondas, PCS (mm)",
+        "placeholder": "Ex: 54",
+        "numerico": true
+      },
+      {
+        "chave": "profundidadeFoco",
+        "rotulo": "Profundidade de foco",
+        "placeholder": "Ex: 2/3 da espessura"
+      },
+      {
+        "chave": "paresZonas",
+        "rotulo": "Número de pares e zonas",
+        "placeholder": "Ex: 1 par, 1 zona"
+      },
+      {
+        "chave": "tipoVarredura",
+        "rotulo": "Tipo de varredura",
+        "opcoes": [
+          {
+            "valor": "nao_paralela",
+            "rotulo": "Não paralela"
+          },
+          {
+            "valor": "paralela",
+            "rotulo": "Paralela"
+          }
+        ]
+      },
+      {
+        "chave": "passoAquisicao",
+        "rotulo": "Passo de aquisição (mm)",
+        "placeholder": "Ex: 0,5",
+        "numerico": true
+      },
+      {
+        "chave": "acoplante",
+        "rotulo": "Acoplante"
+      },
+      {
+        "chave": "blocoCalibracao",
+        "rotulo": "Bloco de calibração (identificação)"
+      },
+      {
+        "chave": "ganho",
+        "rotulo": "Ganho (dB)",
+        "placeholder": "Ex: 42",
+        "numerico": true
+      },
+      {
+        "chave": "espessura",
+        "rotulo": "Espessura (mm)",
+        "placeholder": "Ex: 25",
+        "numerico": true
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      }
+    ],
+    "ET": [
+      {
+        "chave": "aplicacao",
+        "rotulo": "Aplicação",
+        "opcoes": [
+          {
+            "valor": "solda",
+            "rotulo": "Solda"
+          },
+          {
+            "valor": "superficie",
+            "rotulo": "Superfície"
+          },
+          {
+            "valor": "tubos",
+            "rotulo": "Tubos de trocador (sonda interna)"
+          },
+          {
+            "valor": "camada",
+            "rotulo": "Medição de camada"
+          }
+        ]
+      },
+      {
+        "chave": "sonda",
+        "rotulo": "Sonda (tipo, marca e modelo)",
+        "placeholder": "Ex: sonda de lápis, 100 kHz"
+      },
+      {
+        "chave": "configuracaoSonda",
+        "rotulo": "Configuração da sonda",
+        "opcoes": [
+          {
+            "valor": "absoluta",
+            "rotulo": "Absoluta"
+          },
+          {
+            "valor": "diferencial",
+            "rotulo": "Diferencial"
+          },
+          {
+            "valor": "reflexao",
+            "rotulo": "Reflexão (emissão e recepção)"
+          }
+        ]
+      },
+      {
+        "chave": "frequencia",
+        "rotulo": "Frequência (kHz)",
+        "placeholder": "Ex: 100",
+        "numerico": true
+      },
+      {
+        "chave": "ganho",
+        "rotulo": "Ganho (dB)",
+        "placeholder": "Ex: 42",
+        "numerico": true
+      },
+      {
+        "chave": "rotacaoFase",
+        "rotulo": "Rotação de fase (°)",
+        "placeholder": "Ex: 180",
+        "numerico": true
+      },
+      {
+        "chave": "blocoCalibracao",
+        "rotulo": "Bloco ou padrão de calibração (identificação)"
+      },
+      {
+        "chave": "espessuraRevestimento",
+        "rotulo": "Espessura do revestimento (µm)",
+        "placeholder": "Ex: 300",
+        "numerico": true
+      }
+    ],
+    "ECA": [
+      {
+        "chave": "sonda",
+        "rotulo": "Sonda array (marca, modelo e elementos)",
+        "placeholder": "Ex: 32 elementos"
+      },
+      {
+        "chave": "configuracaoSonda",
+        "rotulo": "Configuração da sonda",
+        "opcoes": [
+          {
+            "valor": "absoluta",
+            "rotulo": "Absoluta"
+          },
+          {
+            "valor": "diferencial",
+            "rotulo": "Diferencial"
+          },
+          {
+            "valor": "reflexao",
+            "rotulo": "Reflexão (emissão e recepção)"
+          }
+        ]
+      },
+      {
+        "chave": "frequencia",
+        "rotulo": "Frequência (kHz)",
+        "placeholder": "Ex: 100",
+        "numerico": true
+      },
+      {
+        "chave": "ganho",
+        "rotulo": "Ganho (dB)",
+        "placeholder": "Ex: 42",
+        "numerico": true
+      },
+      {
+        "chave": "rotacaoFase",
+        "rotulo": "Rotação de fase (°)",
+        "placeholder": "Ex: 180",
+        "numerico": true
+      },
+      {
+        "chave": "cobertura",
+        "rotulo": "Cobertura por passada (mm)",
+        "placeholder": "Ex: 50",
+        "numerico": true
+      },
+      {
+        "chave": "passoAquisicao",
+        "rotulo": "Passo de aquisição (mm)",
+        "placeholder": "Ex: 0,5",
+        "numerico": true
+      },
+      {
+        "chave": "blocoCalibracao",
+        "rotulo": "Bloco ou padrão de calibração (identificação)"
+      },
+      {
+        "chave": "espessuraRevestimento",
+        "rotulo": "Espessura do revestimento (µm)",
+        "placeholder": "Ex: 300",
+        "numerico": true
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      }
+    ],
+    "LT": [
+      {
+        "chave": "tecnicaEstanqueidade",
+        "rotulo": "Técnica",
+        "opcoes": [
+          {
+            "valor": "bolhas",
+            "rotulo": "Formação de bolhas com pressão positiva"
+          },
+          {
+            "valor": "variacao_pressao",
+            "rotulo": "Variação de pressão"
+          },
+          {
+            "valor": "helio",
+            "rotulo": "Detector de hélio"
+          },
+          {
+            "valor": "halogenio",
+            "rotulo": "Detector de halogênio"
+          }
+        ]
+      },
+      {
+        "chave": "fluidoTeste",
+        "rotulo": "Fluido de teste",
+        "placeholder": "Ex: ar comprimido, nitrogênio"
+      },
+      {
+        "chave": "pressaoTeste",
+        "rotulo": "Pressão de teste",
+        "placeholder": "Ex: 1,5 kgf/cm²"
+      },
+      {
+        "chave": "tempoPermanencia",
+        "rotulo": "Tempo de permanência",
+        "placeholder": "Ex: 15 min"
+      },
+      {
+        "chave": "manometro",
+        "rotulo": "Manômetro (identificação, faixa e calibração)",
+        "placeholder": "Ex: MN-03, 0 a 4 kgf/cm²"
+      },
+      {
+        "chave": "solucaoBolhas",
+        "rotulo": "Solução formadora de bolhas (marca e lote)"
+      },
+      {
+        "chave": "vazamentoPadrao",
+        "rotulo": "Vazamento padrão (calibração)",
+        "placeholder": "Só nos detectores"
+      },
+      {
+        "chave": "taxaVazamento",
+        "rotulo": "Taxa de vazamento medida",
+        "placeholder": "Ex: 1 × 10⁻⁶ mbar·L/s"
+      }
+    ],
+    "LT_VACUO": [
+      {
+        "chave": "caixaVacuo",
+        "rotulo": "Caixa de vácuo (identificação e tamanho)",
+        "placeholder": "Ex: CV-02, 750 × 150 mm"
+      },
+      {
+        "chave": "vacuo",
+        "rotulo": "Vácuo aplicado",
+        "placeholder": "Ex: 15 kPa abaixo da atmosfera"
+      },
+      {
+        "chave": "vacuometro",
+        "rotulo": "Vacuômetro (identificação e calibração)"
+      },
+      {
+        "chave": "tempoPosicao",
+        "rotulo": "Tempo por posição (s)",
+        "placeholder": "Ex: 10",
+        "numerico": true
+      },
+      {
+        "chave": "sobreposicao",
+        "rotulo": "Sobreposição entre posições (mm)",
+        "placeholder": "Ex: 50",
+        "numerico": true
+      },
+      {
+        "chave": "solucaoBolhas",
+        "rotulo": "Solução formadora de bolhas (marca e lote)"
+      },
+      {
+        "chave": "iluminacao",
+        "rotulo": "Iluminação (lux)",
+        "placeholder": "Ex: 1000",
+        "numerico": true
+      }
+    ],
+    "EA": [
+      {
+        "chave": "sistema",
+        "rotulo": "Sistema (marca, modelo e canais)",
+        "placeholder": "Ex: 16 canais"
+      },
+      {
+        "chave": "sensores",
+        "rotulo": "Sensores (marca, modelo e frequência)",
+        "placeholder": "Ex: R15, 150 kHz"
+      },
+      {
+        "chave": "numeroSensores",
+        "rotulo": "Número de sensores",
+        "placeholder": "Ex: 12",
+        "numerico": true
+      },
+      {
+        "chave": "ganhoPreAmp",
+        "rotulo": "Ganho do pré-amplificador (dB)",
+        "placeholder": "Ex: 40",
+        "numerico": true
+      },
+      {
+        "chave": "limiar",
+        "rotulo": "Limiar de detecção (dB)",
+        "placeholder": "Ex: 45",
+        "numerico": true
+      },
+      {
+        "chave": "verificacaoSensores",
+        "rotulo": "Verificação dos sensores",
+        "opcoes": [
+          {
+            "valor": "grafite",
+            "rotulo": "Quebra de grafite"
+          },
+          {
+            "valor": "pulsador",
+            "rotulo": "Pulsador eletrônico"
+          }
+        ]
+      },
+      {
+        "chave": "fluidoPressurizacao",
+        "rotulo": "Fluido de pressurização",
+        "placeholder": "Ex: água"
+      },
+      {
+        "chave": "pressaoPatamares",
+        "rotulo": "Pressão máxima e patamares",
+        "placeholder": "Ex: 110% da PMTA, 3 patamares de 10 min"
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      }
+    ],
+    "IRT": [
+      {
+        "chave": "camera",
+        "rotulo": "Câmera (marca, modelo e série)"
+      },
+      {
+        "chave": "resolucao",
+        "rotulo": "Resolução do detector",
+        "placeholder": "Ex: 320 × 240"
+      },
+      {
+        "chave": "faixaCamera",
+        "rotulo": "Faixa de temperatura da câmera",
+        "placeholder": "Ex: -20 a 650 °C"
+      },
+      {
+        "chave": "emissividade",
+        "rotulo": "Emissividade",
+        "placeholder": "Ex: 0,95",
+        "numerico": true
+      },
+      {
+        "chave": "temperaturaRefletida",
+        "rotulo": "Temperatura refletida (°C)",
+        "placeholder": "Ex: 25",
+        "numerico": true
+      },
+      {
+        "chave": "temperaturaAmbiente",
+        "rotulo": "Temperatura ambiente (°C)",
+        "placeholder": "Ex: 28",
+        "numerico": true
+      },
+      {
+        "chave": "umidade",
+        "rotulo": "Umidade relativa (%)",
+        "placeholder": "Ex: 60",
+        "numerico": true
+      },
+      {
+        "chave": "distanciaObjeto",
+        "rotulo": "Distância ao objeto (m)",
+        "placeholder": "Ex: 2",
+        "numerico": true
+      },
+      {
+        "chave": "vento",
+        "rotulo": "Velocidade do vento (m/s)",
+        "placeholder": "Ex: 1",
+        "numerico": true
+      },
+      {
+        "chave": "carga",
+        "rotulo": "Carga do equipamento (%)",
+        "placeholder": "Na inspeção elétrica",
+        "numerico": true
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      }
+    ],
+    "ACFM": [
+      {
+        "chave": "sonda",
+        "rotulo": "Sonda (tipo, marca e modelo)",
+        "placeholder": "Ex: sonda padrão de solda"
+      },
+      {
+        "chave": "frequencia",
+        "rotulo": "Frequência (kHz)",
+        "placeholder": "Ex: 5",
+        "numerico": true
+      },
+      {
+        "chave": "blocoCalibracao",
+        "rotulo": "Bloco ou padrão de calibração (identificação)"
+      },
+      {
+        "chave": "espessuraRevestimento",
+        "rotulo": "Espessura do revestimento (µm)",
+        "placeholder": "Ex: 300",
+        "numerico": true
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      }
+    ],
+    "TFM": [
+      {
+        "chave": "sonda",
+        "rotulo": "Sonda (marca, frequência e elementos)",
+        "placeholder": "Ex: 5 MHz, 64 elementos"
+      },
+      {
+        "chave": "sapata",
+        "rotulo": "Sapata (modelo e ângulo)",
+        "placeholder": "Ex: SA31, 36°"
+      },
+      {
+        "chave": "abertura",
+        "rotulo": "Abertura usada (elementos)",
+        "placeholder": "Ex: 64",
+        "numerico": true
+      },
+      {
+        "chave": "modoPropagacao",
+        "rotulo": "Modos de propagação",
+        "placeholder": "Ex: TT, TT-T, TT-TT"
+      },
+      {
+        "chave": "zonaReconstrucao",
+        "rotulo": "Zona de reconstrução (mm)",
+        "placeholder": "Ex: 60 × 30"
+      },
+      {
+        "chave": "pixel",
+        "rotulo": "Tamanho do pixel (mm)",
+        "placeholder": "Ex: 0,1",
+        "numerico": true
+      },
+      {
+        "chave": "velocidadeSom",
+        "rotulo": "Velocidade do som usada (m/s)",
+        "placeholder": "Ex: 3240"
+      },
+      {
+        "chave": "blocoCalibracao",
+        "rotulo": "Bloco ou padrão de calibração (identificação)"
+      },
+      {
+        "chave": "ganho",
+        "rotulo": "Ganho (dB)",
+        "placeholder": "Ex: 42",
+        "numerico": true
+      },
+      {
+        "chave": "passoAquisicao",
+        "rotulo": "Passo de aquisição (mm)",
+        "placeholder": "Ex: 0,5",
+        "numerico": true
+      },
+      {
+        "chave": "acoplante",
+        "rotulo": "Acoplante"
+      },
+      {
+        "chave": "software",
+        "rotulo": "Software e versão"
+      }
+    ]
+  },
+  "colunas": {
+    "VT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "PT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "MT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "UT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "RT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização (filme e posição)",
+        "placeholder": "Ex: filme 2, 0 a 30 cm"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "ET": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "LT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "LT_VACUO": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "PAUT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "TOFD": [
+      {
+        "chave": "posicaoInicial",
+        "rotulo": "Posição inicial (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "comprimento",
+        "rotulo": "Comprimento (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "profundidade",
+        "rotulo": "Profundidade (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "altura",
+        "rotulo": "Altura (mm)",
+        "numerico": true
+      }
+    ],
+    "CRDR": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "ECA": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "dimensoes",
+        "rotulo": "Dimensões (mm)"
+      }
+    ],
+    "EA": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização da fonte"
+      },
+      {
+        "chave": "classe",
+        "rotulo": "Classificação da fonte",
+        "placeholder": "Ex: classe B"
+      }
+    ],
+    "IRT": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "temperaturaMaxima",
+        "rotulo": "Temperatura máxima (°C)",
+        "numerico": true
+      },
+      {
+        "chave": "temperaturaReferencia",
+        "rotulo": "Temperatura de referência (°C)",
+        "numerico": true
+      },
+      {
+        "chave": "deltaT",
+        "rotulo": "Diferença, ΔT (°C)",
+        "numerico": true
+      }
+    ],
+    "ACFM": [
+      {
+        "chave": "localizacao",
+        "rotulo": "Localização"
+      },
+      {
+        "chave": "comprimento",
+        "rotulo": "Comprimento (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "profundidade",
+        "rotulo": "Profundidade estimada (mm)",
+        "numerico": true
+      }
+    ],
+    "TFM": [
+      {
+        "chave": "posicaoInicial",
+        "rotulo": "Posição inicial (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "comprimento",
+        "rotulo": "Comprimento (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "profundidade",
+        "rotulo": "Profundidade (mm)",
+        "numerico": true
+      },
+      {
+        "chave": "altura",
+        "rotulo": "Altura (mm)",
+        "numerico": true
+      }
+    ]
+  },
+  "tiposDefeito": [
+    {
+      "valor": "FP",
+      "rotulo": "FP, falta de penetração"
+    },
+    {
+      "valor": "FF",
+      "rotulo": "FF, falta de fusão"
+    },
+    {
+      "valor": "PO",
+      "rotulo": "PO, poro ou porosidade"
+    },
+    {
+      "valor": "TL",
+      "rotulo": "TL, trinca longitudinal"
+    },
+    {
+      "valor": "TT",
+      "rotulo": "TT, trinca transversal"
+    },
+    {
+      "valor": "IE",
+      "rotulo": "IE, inclusão de escória"
+    }
+  ]
+}
