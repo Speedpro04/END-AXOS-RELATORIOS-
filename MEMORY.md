@@ -663,4 +663,9 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - revisão do texto técnico por profissional de END;
   - depois do teste do PDF no ar, tirar os avisos "Em desenvolvimento" da LP e das páginas (no gerador, `FLUXO`);
   - enviar o mapa do site no Google Search Console e no Bing Webmaster Tools.
+- Conferido no ar depois do Deploy (commit b5a6a95): as 17 páginas respondem 200 com o título certo; a LP liga a elas; `sitemap.xml` e `llms.txt` estão atualizados; celular e computador sem rolagem lateral nem erro no console.
+- Problemas achados nessa conferência, corrigidos em `frontend/nginx.conf` (falta Deploy e conferir no ar):
+  - Sem `Cache-Control`, o navegador guardava a LP por horas e mostrava a versão antiga depois do Deploy. Agora a LP (`location = /`) e o resto das páginas (`location /`) têm `expires -1`: o navegador sempre confere e recebe 304 se nada mudou. `expires` não é `add_header`, então os cabeçalhos de segurança continuam.
+  - Endereço sem barra final redirecionava para `http://…/` antes do https. Agora `absolute_redirect off` faz o endereço seguir direto para a mesma página com a barra no final.
+  - Sem nginx nesta máquina: a configuração só foi revisada à mão.
 - Achado, não corrigido: a norma padrão de ET é "ASME V Art. 7" em `types/inspection.ts` (`METHOD_LABELS`) e em `data/methodsCatalog.ts`, mas o Art. 7 é de partículas magnéticas e correntes parasitas é o Art. 8. Ela entra como "Norma de referência" inicial do laudo de ET (`CamposLaudo.tsx`). RT traz "ASME V Art. 2 / 3", que também merece conferência.
