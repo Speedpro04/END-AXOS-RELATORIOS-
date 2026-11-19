@@ -447,6 +447,7 @@ Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**
 - Toda mudança visível é testada no navegador, no computador e no celular, em todas as telas afetadas.
 - Depois de cada publicação, o resultado é conferido também no site no ar.
 - O resumo final diz o que foi testado, o resultado e o que ficou sem teste.
+- Complemento de 18/11/2026: em campo as empresas usam notebook, tablet e iPad, mas o AXOS inteiro tem de funcionar também no celular. Testar sempre nos três tamanhos: computador, tablet e celular.
 
 ## Responsivo do App (08/11/2026)
 
@@ -518,14 +519,21 @@ Testado no computador e no tamanho de celular com servidor simulado, e com 28 te
 
 **Ordem para publicar (se o site for antes da API, o card para de funcionar para quem não tem login):**
 1. Rodar `0010_contratacao_sem_conta.sql` no SQL Editor.
-2. Publicar a API no EasyPanel com `backend/Dockerfile`, Redis, e as variáveis `FRONTEND_URL=https://axosrelatorios.com`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `REDIS_URL`. Domínio `axosrelatorios.com`, caminho `/api`: sem subdomínio.
+2. Publicar a API no EasyPanel com `backend/Dockerfile`, Redis, e as variáveis `FRONTEND_URL=https://axosrelatorios.com`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET` (opcional desde 18/11/2026), `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `REDIS_URL`. Domínio `axosrelatorios.com`, caminho `/api`: sem subdomínio.
 3. Stripe: 30 dias grátis nos 4 links; depois do pagamento, ir para `https://axosrelatorios.com/?pagamento=ok`; webhook em `https://axosrelatorios.com/api/stripe/webhook` com `checkout.session.completed`, `customer.subscription.updated` e `customer.subscription.deleted`.
 4. Supabase: e-mail próprio (SMTP), porque o envio padrão não atende clientes; traduzir o modelo "Invite user"; confirmar `/redefinir-senha` em Redirect URLs.
 5. `VITE_API_URL=https://axosrelatorios.com` no site e Deploy do site por último.
 
-**Pendências:**
-- A página de pagamento mostra "Axos Hub" como nome da conta, e não "AXOS Relatórios". O dono do produto decide se troca.
-- Os nomes dos produtos na Stripe terminam em " -". Tirar.
+**Situação em 19/11/2026:**
+- Feito: a API no ar tem `STRIPE_SECRET_KEY` e `STRIPE_WEBHOOK_SECRET`; um aviso falso enviado ao webhook recebe 400 "Assinatura inválida", então a assinatura é conferida. O destino do webhook foi criado na Stripe com os 3 eventos; os eventos de cartão e de conta bancária que ficaram marcados junto são ignorados pela API. Os 4 links enviados pelo dono do produto foram conferidos de novo: são os mesmos do código e abrem a página de pagamento.
+- Decidido: a página de pagamento continua mostrando "Axos Hub". A Axos Hub é a empresa dona dos produtos e da conta Stripe, e o nome e a logo da conta valem para todos os produtos. O que identifica o AXOS Relatórios é o nome de cada produto na Stripe (ex.: "AXOS Relatórios — Plano Individual").
+- Falta, com o dono do produto:
+  1. Nos 4 links, ajustar três coisas: em "Após o pagamento", ir para `https://axosrelatorios.com/?pagamento=ok`; dar 30 dias grátis; tirar o " -" do fim do nome do produto.
+  2. Supabase: pôr `https://axosrelatorios.com/redefinir-senha` em Redirect URLs.
+  3. Confirmar se 0009 e 0010 já foram rodados.
+  4. Configurar e-mail próprio (SMTP). Sem ele o convite só chega a quem é da equipe do projeto Supabase; sugestão: Resend ou Brevo, com DNS na Hostinger.
+  5. Teste completo no modo de teste da Stripe, nunca com pagamento real.
+- Falta no código (opcional): o aviso de cancelamento ainda diz "teste grátis terminou" também para quem pagou e cancelou; a AXOS não recebe aviso quando um pedido pago fica em análise.
 
 ## Fotos de Campo (08/11/2026)
 
@@ -637,3 +645,5 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
 - Site: `pages/VerificarPage.tsx`, aberta por `main.tsx` quando o endereço começa com `/verificar/` (sem login, fora do `App`). "Conferir arquivo" calcula o SHA-256 do PDF no próprio navegador e compara com o oficial; o arquivo não sai do aparelho. Aviso de que não substitui assinatura ICP-Brasil.
 - Testado no navegador com resposta simulada (a API não roda nesta máquina): válido, substituído, sem conexão, conferência de arquivo igual e alterado (uma letra trocada é detectada); computador, tablet e celular; `/app` continua normal.
 - `docs/conformidade/analise-de-lacunas.md` atualizado com o que mudou em 18/11/2026.
+
+**Pendente (adiado pelo dono do produto em 19/11/2026):** conferir se o Deploy do site e o da API já incluem as fases 1 a 4. Depois, testar o caminho completo no ar com conta real: cadastrar a qualificação na Equipe, criar obra e laudo com fotos e croqui, enviar para revisão, aprovar, emitir, baixar o PDF oficial, abrir o QR e conferir o arquivo.

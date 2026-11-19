@@ -4,7 +4,7 @@
 
 - **Nunca escrever a sigla inglesa proibida (nenhuma capitalização)** em UI, textos, comentários, identificadores, mocks, testes ou docs. Usar sempre "END" (Ensaios Não Destrutivos).
 - Se o usuário ou exemplo externo usar a sigla inglesa proibida, converter para "END" sem perguntar.
-- Antes de concluir qualquer tarefa, rodar busca por a sigla inglesa proibida (case-insensitive, palavra inteira) excluindo node_modules, dev-dist e .git → resultado esperado: ZERO ocorrências.
+- Antes de concluir qualquer tarefa, rodar busca por a sigla inglesa proibida (case-insensitive, palavra inteira) excluindo node_modules, dev-dist, .git e `backend/.venv` (bibliotecas de terceiros fora do repositório) → resultado esperado: ZERO ocorrências.
 
 ## 2. Diretrizes Comportamentais (Karpathy Guidelines)
 
@@ -24,8 +24,9 @@ Todas as operações seguem a skill https://github.com/multica-ai/andrej-karpath
 
 - **Frontend:** rodar `npx tsc -b` dentro de `frontend/` — resultado esperado: sem erros de tipo.
 - **Backend Python:** rodar `python -m py_compile` em cada `.py` alterado — resultado esperado: sem erros.
-- **Terminologia:** busca pela sigla inglesa proibida (case-insensitive, palavra inteira) em todo o repositório, excetuando `node_modules`, `dev-dist` e `.git` — resultado esperado: ZERO ocorrências.
+- **Terminologia:** busca pela sigla inglesa proibida (case-insensitive, palavra inteira) em todo o repositório, excetuando `node_modules`, `dev-dist`, `.git` e `backend/.venv` — resultado esperado: ZERO ocorrências.
 - **Resposta final:** curta e objetiva (arquivos alterados + resultado das verificações), em português, sem jargão técnico desnecessário (o usuário não programa).
+- **Sempre em português:** toda mensagem ao usuário, inclusive as de andamento entre uma ação e outra.
 - Ao fim de cada etapa, parar; não improvisar em ambiguidades — perguntar antes de seguir.
 
 ## 5. Git (commit e push)
@@ -39,7 +40,9 @@ Todas as operações seguem a skill https://github.com/multica-ai/andrej-karpath
 
 ## 6. Testar Sempre (obrigatório)
 
-Nenhuma alteração é dada como pronta sem teste: no navegador, no computador e no celular, quando for visível, e no site no ar depois de publicar. A resposta final diz o que foi testado e o que ficou sem teste.
+Nenhuma alteração é dada como pronta sem teste: no navegador, no computador, no tablet e no celular, quando for visível, e no site no ar depois de publicar. A resposta final diz o que foi testado e o que ficou sem teste.
+
+Em campo as empresas usam notebook, tablet e iPad, mas o AXOS inteiro tem de funcionar também no celular.
 
 ## 7. Pagamentos (Stripe)
 
@@ -47,6 +50,7 @@ Nenhuma alteração é dada como pronta sem teste: no navegador, no computador e
 - Plano só é liberado pelo servidor ou pela AXOS. O usuário nunca altera plano nem prazo.
 - Não colocar nome, e-mail, CPF ou CNPJ no endereço do pagamento.
 - Caminho de quem não tem conta: card, formulário da empresa, pagamento, volta à LP, e-mail para criar a senha, Entrar, login, Obras. A conta só nasce depois do pagamento, criada pelo servidor.
+- A conta Stripe é da Axos Hub, empresa dona dos produtos: a página de pagamento mostra "Axos Hub", e o nome de cada produto deixa claro que é o AXOS Relatórios.
 - Nunca fazer pagamento real em teste. Situação e pendências: seção "Pagamento pela Stripe" em `MEMORY.md`.
 
 ## 8. Conformidade: ISO 27001, ISO 9001 e ABNT

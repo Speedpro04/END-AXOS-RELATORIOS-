@@ -227,13 +227,19 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 - Prefixo configurável por tenant (`report_prefix`, padrão `END`).
 - Não alterar o `sync_worker` nesta tarefa; a chamada à função deve ser documentada na tarefa F (backend de sincronização).
 
-**PDF (cabeçalho e rodapé):**
-- `pdf_worker.py` reescrito com Jinja2 + WeasyPrint.
-- Cabeçalho e rodapé alimentados pelo `header_snapshot` (nunca pela configuração atual).
-- Logo buscada no Storage (`tenant-assets`) pelo `logo_path`; SHA-256 conferido contra o snapshot (falha se divergir).
-- QR code apontando para `axosrelatorios.com/verificar/{documento}/{revisao}`.
-- Upload para bucket privado `report-pdfs`; registro em `report_pdfs` (apenas inserção).
+**PDF oficial (revisto em 18/11/2026):**
+- Gerado pela API no momento da emissão (`backend/app/pdf/laudo_pdf.py`, WeasyPrint), só com dados do servidor: cabeçalho e rodapé pelo `header_snapshot` (nunca pela configuração atual); cliente, obra, inspetor e qualificação pelo `client_snapshot`; corpo técnico do método; conclusão; **fotos, croqui e esboço**; responsáveis (inspetor, aprovador, emissor, responsável técnico).
+- Logo e cada foto conferidas pelo SHA-256 guardado no banco; se algo divergir, o PDF não é gerado.
+- Tabela com o SHA-256 de cada evidência e quadro de autenticidade: QR para `axosrelatorios.com/verificar/{documento}/{revisao}`, SHA-256 do conteúdo (`data_hash`) e aviso de que não é assinatura digital ICP-Brasil.
+- Um PDF por revisão: guardado no bucket privado `report-pdfs` sem sobrescrever e registrado em `report_pdfs` (apenas inserção). A API só entrega o PDF a quem enxerga o laudo e confere o SHA-256 antes de entregar.
 - `QR_BASE_URL` = `https://axosrelatorios.com/verificar`.
+- Nomes dos campos por método no PDF: `backend/app/pdf/campos_metodo.json`, gerado do app por `npm run gerar:campos-pdf`.
+
+**Verificação pública (`/verificar/{documento}/{revisao}`):** sem login. Mostra se o laudo é válido ou foi substituído (com a revisão vigente), número, revisão, método, data de emissão, empresa emissora e os SHA-256 do conteúdo e do PDF. Não mostra pessoas, cliente nem obra. Limite de 120 consultas por hora por origem. Quem recebeu o PDF pode conferir o arquivo: o SHA-256 é calculado no próprio aparelho e o arquivo não é enviado.
+
+**Qualificações (SNQC):** o administrador cadastra na Equipe (pessoa, método, nível, número, órgão certificador e validade). No laudo, o inspetor escolhe a sua, do mesmo método; qualificação vencida na data do ensaio não passa.
+
+**Fluxo na tela:** painel "Situação do laudo" nas telas de laudo. O inspetor envia para revisão (só laudo de obra, com qualificação e já sincronizado); administrador ou supervisor aprova, devolve com motivo ou emite. Laudo emitido só muda por nova revisão. Em revisão, aprovado, emitido ou substituído, o formulário fica só leitura.
 
 **Tabelas/Storage:**
 - `report_pdfs`: id, tenant_id, report_id, storage_path, sha256, generated_at. Só inserção (trigger bloqueia update/delete). RLS de leitura por tenant.
@@ -454,7 +460,7 @@ Vocabulário: empresa emissora = o tenant que usa o app e assina o laudo. Contra
 
 **Número do laudo:** gerado pelo gatilho do banco na transição `approved → issued`. Revisão mantém o número do documento. `reports.client_revision` é o contador do aparelho; `reports.revision` é a revisão do documento.
 
-**Emissão:** `POST /api/sync/emitir/{id}` usa o JWT do revisor e enfileira o PDF real no `pdf_worker`.
+**Emissão:** `POST /api/sync/emitir/{id}` usa o JWT do revisor e gera o PDF oficial na hora (ver seção 11).
 
 ---
 
@@ -478,12 +484,15 @@ Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo
 - Assinatura encerrada interrompe laudos novos e mantém os dados.
 - Pedido sem pagamento é apagado depois de 7 dias, quando o pedido seguinte chega.
 - Chave secreta e segredo de webhook da Stripe ficam só no servidor, nunca em variável `VITE_` nem no repositório.
+- A conta Stripe é da **Axos Hub**, empresa dona dos produtos. A página de pagamento mostra "Axos Hub" (decisão de 19/11/2026); o nome de cada produto na Stripe deixa claro que é o AXOS Relatórios.
+- Depois do pagamento, a Stripe leva a pessoa para `https://axosrelatorios.com/?pagamento=ok`.
 
 ## Regra Permanente: Testar Sempre
 
 Regra permanente, definida pelo dono do produto em 08/11/2026: **testar sempre**. Nenhuma alteração é dada como pronta sem teste.
 
 - Toda mudança visível é testada no navegador, no computador e no celular, em todas as telas afetadas.
+- Em campo as empresas usam notebook, tablet e iPad, mas o AXOS inteiro tem de funcionar também no celular: testar nos três tamanhos (computador, tablet e celular).
 - Depois de cada publicação, o resultado é conferido também no site no ar.
 - O resumo final diz o que foi testado, o resultado e o que ficou sem teste.
 
