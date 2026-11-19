@@ -52,12 +52,14 @@ interface SelecaoProps {
   aoMudar: (valor: string) => void
   opcoes: Array<{ valor: string; rotulo: string }>
   vazio?: string
+  /** Classe extra no bloco do campo (ex.: escolha trazida da página inicial, mais fraca) */
+  className?: string
 }
 
-export const Selecao: React.FC<SelecaoProps> = ({ rotulo, valor, aoMudar, opcoes, vazio }) => {
+export const Selecao: React.FC<SelecaoProps> = ({ rotulo, valor, aoMudar, opcoes, vazio, className }) => {
   const id = useId()
   return (
-    <div className="lf-campo">
+    <div className={className ? `lf-campo ${className}` : 'lf-campo'}>
       <label htmlFor={id}>{rotulo}</label>
       <select id={id} value={valor} onChange={(e) => aoMudar(e.target.value)}>
         {vazio !== undefined && <option value="">{vazio}</option>}

@@ -33,7 +33,8 @@ export function lembrarPlanoDaUrl() {
 export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () => void; encerrado: boolean }> = ({ aoVoltar, aoIrAoSistema, encerrado }) => {
   const { user, profile, tenant } = useAuth()
   const [plano, setPlano] = useState(() => localStorage.getItem(CHAVE_PLANO_ESCOLHIDO) ?? '')
-  const [planoDaPaginaInicial] = useState(() => Boolean(localStorage.getItem(CHAVE_PLANO_ESCOLHIDO)))
+  const [planoInicial] = useState(() => localStorage.getItem(CHAVE_PLANO_ESCOLHIDO) ?? '')
+  const planoDaPaginaInicial = planoInicial !== ''
   // Dados que a empresa já tem no AXOS: entram preenchidos e ficam em cinza até o cliente mudar
   const [doCadastro] = useState(() => ({
     razao: tenant?.legal_name && tenant.legal_name !== profile?.full_name ? tenant.legal_name : '',
@@ -160,7 +161,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
       )}
       <form onSubmit={enviar} className="lf-coluna-secoes contratar-form">
         <Secao titulo="Plano" descricao={planoDaPaginaInicial ? 'Este é o plano que você escolheu na página inicial. Se quiser outro, troque aqui.' : undefined}>
-          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} />
+          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} className={cinza(plano, planoInicial)} />
         </Secao>
         <Secao
           titulo="Dados da empresa"
