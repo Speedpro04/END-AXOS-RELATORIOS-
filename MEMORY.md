@@ -735,4 +735,12 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - "Enviar pedido" só no plano sob consulta.
 - LP (texto dos valores e pergunta frequente) e Termos: 30 dias grátis na primeira contratação, cobrança no 31º dia, uma vez por CPF ou CNPJ, e-mail e empresa.
 - Testes: 10 novos em `tests/test_contratacao.py`, 75 passam. Página criada pelo servidor sem chamada real à Stripe. Não testado no ar: depende do Deploy da API e do site. A chave secreta da Stripe precisa poder ler links de pagamento e criar sessões de Checkout (a chave padrão pode; uma chave restrita talvez não).
-- Na Stripe não é mais preciso ligar o teste nos links. Continuam pendentes os e-mails de aviso, o cancelamento quando todas as cobranças falharem e o " -" no nome do produto.
+- Conferido no ar em 19/11/2026, depois do Deploy da API e do site (commit 2abfadb):
+  - `POST /api/contratacao/pagamento` existe e pede login;
+  - o dono do produto abriu a contratação no próprio navegador (plano Equipe 5) e a página da Stripe mostrou "30 dias grátis" e "Depois, R$ 597,00 por mês, começando em 19 de dezembro de 2026";
+  - nenhum pagamento foi feito.
+  - O primeiro Deploy daquele dia atualizou só o site: a API seguia antiga e a contratação ficou parada até o Deploy da API. Lembrar: mudança em `backend/` precisa do Deploy do serviço da API.
+  - A Stripe pode pedir confirmação pelo "Link" (pagamento rápido da Stripe) quando o e-mail já tem cadastro lá; dá para desligar em Configurações → Formas de pagamento → Link.
+  - Nomes dos produtos corrigidos pelo dono do produto no mesmo dia: os 4 planos aparecem como "Axos Relatórios - Plano ..." sem o " -" (conferido nas páginas dos links).
+- Na Stripe não é mais preciso ligar o teste nos links. Continuam pendentes os e-mails de aviso e o cancelamento quando todas as cobranças falharem.
+- Página inicial: o rodapé passou a dizer "Tecnologia em inspeção · Desenvolvido por Axos Hub" (pedido do dono do produto, só na LP). Testado no computador, no tablet e no celular, sem rolagem lateral.
