@@ -678,4 +678,20 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - em `localhost` e `127.0.0.1`, continua `http://localhost:8000`;
   - `VITE_API_URL`, se existir, ainda vale, e o código tira espaços e a barra do fim.
 - Testado antes de publicar: o site foi montado sem a variável (`VITE_API_URL= npx vite build`) e aberto em `http://producao.localhost:4173` (configuração `frontend-producao` em `.claude/launch.json`). A página do QR chamou `/api/verificar/...` no próprio endereço. Tipos conferidos (`npx tsc -b`).
-- Falta: Deploy do site e conferir no ar a página do QR, o formulário de contratação até a página da Stripe (sem pagar) e o envio de um laudo.
+- Conferido no ar depois do Deploy (commit d0cac79):
+  - a página do QR chama `https://axosrelatorios.com/api/verificar/...` e mostra "Laudo não encontrado" para código inventado;
+  - o formulário de contratação abre, e a rota `/api/contratacao/pedido` responde (pedido vazio recusado com 422, sem gravar nada);
+  - login e LP normais.
+- Falta testar no ar, com dados de teste: formulário de contratação até a página da Stripe (o pedido sem pagamento some em 7 dias, sem pagar) e o envio de um laudo.
+
+## Contratação: de onde vêm os dados (19/11/2026)
+
+- Pedido do dono do produto: manter o preenchimento automático para quem já tem conta, mas explicar bem no formulário. `pages/ContratarPage.tsx`:
+  - "Plano": quando o plano veio do card da página inicial, avisa "Este é o plano que você escolheu na página inicial. Se quiser outro, troque aqui.";
+  - "Dados da empresa", com conta: explica que os dados vieram do cadastro da empresa no AXOS e pede para conferir e corrigir;
+  - "Dados da empresa", sem conta: explica que vão para o pedido e a cobrança e que o e-mail recebe o link de criar a senha.
+- Também a pedido do dono do produto: dado trazido do cadastro fica cinza (`--text-muted`) até o cliente mudar o texto; o que ele digita fica na cor normal. O dado cinza vai no pedido como está. Para isso, `Campo` (`CamposLaudo.tsx`) aceita `className`, a regra é `.contratar-form .campo-do-cadastro input` em `index.css` e `ContratarPage` compara cada valor com o original do cadastro.
+- Testado no servidor de teste, sem conta: computador, tablet e celular sem rolagem lateral, console sem erro, nenhuma caixa cinza. A cor cinza foi conferida simulando a tela com conta pelo console (cinza #9AA0A6 contra o branco normal). A versão com conta, de verdade, não foi testada aqui. A senha da conta de demonstração em `frontend/.env.local` parece ser uma senha de verdade da conta do dono, por isso não foi usada: se não bater com a de demonstração, o login vai ao Supabase real. Conferir no Chrome do dono depois do Deploy.
+- Achados, não corrigidos:
+  - `frontend/.env.local`: a conta de demonstração usa o e-mail real do dono; a senha deve ser diferente da senha real.
+  - `components/TenantFooter.tsx` mostra "CERTIFICAÇÃO DIGITAL SHA-256". "Certificação digital" no Brasil lembra o certificado ICP-Brasil, que o AXOS não tem (ver regra 8 do AGENTS e o aviso do PDF). Sugestão: "Integridade SHA-256".

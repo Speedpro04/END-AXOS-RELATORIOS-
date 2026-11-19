@@ -18,12 +18,14 @@ interface CampoProps {
   numerico?: boolean
   tipo?: 'text' | 'date' | 'email'
   sugestoes?: string[]
+  /** Classe extra no bloco do campo (ex.: dado trazido do cadastro, em cinza) */
+  className?: string
 }
 
-export const Campo: React.FC<CampoProps> = ({ rotulo, valor, aoMudar, placeholder, obrigatorio, numerico, tipo = 'text', sugestoes }) => {
+export const Campo: React.FC<CampoProps> = ({ rotulo, valor, aoMudar, placeholder, obrigatorio, numerico, tipo = 'text', sugestoes, className }) => {
   const id = useId()
   return (
-    <div className="lf-campo">
+    <div className={className ? `lf-campo ${className}` : 'lf-campo'}>
       <label htmlFor={id}>{rotulo}{obrigatorio ? ' (obrigatório)' : ''}</label>
       <input
         id={id}
