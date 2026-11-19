@@ -486,7 +486,7 @@ Objetivo definido pelo dono do produto em 08/11/2026: preparar o AXOS para audit
 
 ## Teste Grátis e Contratação (08/11/2026)
 
-Decisão do dono do produto: teste de 30 dias, sem cartão, com PDF provisório. Login só com e-mail e senha. Cadastro só com nome, e-mail, senha e aceite. Dados da empresa, CPF ou CNPJ e pagamento ficam na contratação (`pages/ContratarPage.tsx`), aberta pelo aviso de teste ou pelos cards da LP (`/app?plano=...&criar=1`). Migração `0007_teste_e_contratacao.sql`: `tenants.trial_ends_at`, `pedidos_contratacao`, `solicitar_contratacao` e bloqueio de laudo novo com teste encerrado. CPF só no plano Individual.
+**Substituído em 19/11/2026: o teste grátis agora é só com cartão, pela Stripe (ver "Teste grátis só com cartão").** Decisão original do dono do produto: teste de 30 dias, sem cartão, com PDF provisório. Login só com e-mail e senha. Cadastro só com nome, e-mail, senha e aceite. Dados da empresa, CPF ou CNPJ e pagamento ficam na contratação (`pages/ContratarPage.tsx`), aberta pelo aviso de teste ou pelos cards da LP (`/app?plano=...&criar=1`). Migração `0007_teste_e_contratacao.sql`: `tenants.trial_ends_at`, `pedidos_contratacao`, `solicitar_contratacao` e bloqueio de laudo novo com teste encerrado. CPF só no plano Individual.
 
 **Pendências:** sem liberação automática: o pedido é registrado, o cliente paga pelo link da Stripe e a AXOS libera o plano no banco (`plan` e `trial_ends_at` nulo), e não há aviso automático de pedido novo; aviso por e-mail do fim do teste.
 
@@ -697,3 +697,25 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - `components/TenantFooter.tsx` mostra "CERTIFICAÇÃO DIGITAL SHA-256". "Certificação digital" no Brasil lembra o certificado ICP-Brasil, que o AXOS não tem (ver regra 8 do AGENTS e o aviso do PDF). Sugestão: "Integridade SHA-256".
 - Conferido no ar depois do Deploy (commit 65c97e9): o menu do plano vindo da página inicial aparecia com 15% de visibilidade (`color(srgb … / 0.15)`; depois mudou para 20%) e o aviso do plano aparece. A versão com conta deve ser conferida no Chrome do dono.
 - Achado no mesmo Deploy, não corrigido: o modo app (`registerType: 'autoUpdate'` no `vite.config.ts` e `registerSW({ immediate: true })` no `main.tsx`) **recarrega sozinho todas as abas abertas do app** quando a versão nova fica pronta. O formulário de contratação de teste foi apagado assim. Risco: um inspetor com laudo aberto e ainda não registrado perde o que digitou se houver Deploy enquanto ele está conectado. Sugestão: trocar para aviso "Nova versão disponível" com botão Atualizar (`registerType: 'prompt'`).
+
+## Teste grátis só com cartão (19/11/2026)
+
+- Decisão do dono do produto, depois de avaliar o risco de abuso: os 30 dias grátis existem **só na contratação pela Stripe, com cartão**. Antes havia dois caminhos: o "Criar conta" dava 30 dias sem cartão, repetíveis com outro e-mail, e somáveis com os 30 dias da Stripe (60 dias grátis).
+- Banco: `0011_teste_so_com_cartao.sql`:
+  - `criar_empresa_inicial` cria a empresa com `trial_ends_at = now()`, ou seja, sem dias grátis;
+  - `exigir_teste_ativo` passou a bloquear também quando o prazo é igual a agora (`<=`), com mensagem neutra "sua conta está sem plano ativo";
+  - empresas que já estavam em teste mantêm o prazo;
+  - a 0011 também está em `instalacao_completa.sql` (0001 a 0011) e pode ser rodada de novo.
+- Tela de entrar (`LoginPage.tsx`): "Criar conta" só aparece com convite da equipe (`axos_convite`); sem convite, aparece "Não tem conta? Ver planos" (`/#valores`). `?criar=1` não abre mais o cadastro.
+- Avisos: "Seu teste grátis terminou" virou "Sua conta está sem plano ativo", na faixa do `App.tsx` e na `ContratarPage`. Isso também resolve o caso de quem pagou e cancelou.
+- Termos de Uso: saiu a frase do teste sem cartão; data de 19/11/2026; `VERSAO_DOCUMENTOS_LEGAIS` = `2026-11-19`.
+- Testado:
+  - `npm run test:db`: o teste 11 foi atualizado, com 11.1 "conta do cadastro sem dias grátis" e 11.1b "conta sem plano não grava laudo";
+  - script de instalação completo e 0011 repetida, rodados no PGlite;
+  - tela de entrar com e sem convite no computador, no tablet e no celular, sem erro;
+  - `npx tsc -b`.
+- Falta:
+  - rodar a 0011 no SQL Editor do Supabase;
+  - Deploy do site;
+  - na Stripe, ligar o teste de 30 dias nos 4 links (senão a cobrança é na hora), cancelar a assinatura quando todas as tentativas de cobrança falharem e ligar os e-mails de aviso de fim do teste e de pagamento que falhou;
+  - fazer os testes de ponta a ponta no ar (contratação até a Stripe e PDF oficial).

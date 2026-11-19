@@ -120,7 +120,9 @@ export const LoginPage: React.FC<{ aoEntrar: () => void }> = ({ aoEntrar }) => {
 
   // Fluxo simples de Esqueci a senha
   const [isResetMode, setIsResetMode]   = useState(false)
-  const [isCadastro, setIsCadastro]     = useState(() => new URLSearchParams(window.location.search).get('criar') === '1' || Boolean(localStorage.getItem(CHAVE_CONVITE)))
+  // Teste grátis só com cartão (19/11/2026): criar conta pela tela é só para quem recebeu convite da equipe
+  const temConvite = Boolean(localStorage.getItem(CHAVE_CONVITE))
+  const [isCadastro, setIsCadastro]     = useState(temConvite)
   const [cadastroEnviado, setCadastroEnviado] = useState<string | null>(null)
   const [resetSent, setResetSent]       = useState(false)
   const [resetLoading, setResetLoading] = useState(false)
@@ -463,7 +465,7 @@ export const LoginPage: React.FC<{ aoEntrar: () => void }> = ({ aoEntrar }) => {
                   {novaSenha
                     ? 'Escolha a nova senha da sua conta.'
                     : isCadastro
-                    ? (localStorage.getItem(CHAVE_CONVITE) ? 'Você foi convidado para a equipe de uma empresa. Crie seu acesso ou volte para entrar.' : 'Comece com 30 dias grátis, sem cartão.')
+                    ? 'Você foi convidado para a equipe de uma empresa. Crie seu acesso ou volte para entrar.'
                     : isResetMode
                     ? 'Informe seu e-mail para receber o link de recuperação.'
                     : 'Use o e-mail e a senha da sua conta.'}
@@ -708,17 +710,31 @@ export const LoginPage: React.FC<{ aoEntrar: () => void }> = ({ aoEntrar }) => {
                     gap: '8px',
                     marginBottom: '16px',
                   }}>
-                    <button
-                      type="button"
-                      onClick={() => { setIsCadastro(true); setCadastroEnviado(null); setLocalError(null) }}
-                      style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        fontSize: '13px', fontWeight: 600, color: C.cyan, textDecoration: 'underline',
-                        padding: 0, minHeight: '24px', fontFamily: "'IBM Plex Sans', sans-serif",
-                      }}
-                    >
-                      Criar conta
-                    </button>
+                    {temConvite ? (
+                      <button
+                        type="button"
+                        onClick={() => { setIsCadastro(true); setCadastroEnviado(null); setLocalError(null) }}
+                        style={{
+                          background: 'none', border: 'none', cursor: 'pointer',
+                          fontSize: '13px', fontWeight: 600, color: C.cyan, textDecoration: 'underline',
+                          padding: 0, minHeight: '24px', fontFamily: "'IBM Plex Sans', sans-serif",
+                        }}
+                      >
+                        Criar conta
+                      </button>
+                    ) : (
+                      // Sem convite, a conta nasce na contratação (30 dias grátis com cartão, pela Stripe)
+                      <a
+                        href="/#valores"
+                        style={{
+                          display: 'inline-flex', alignItems: 'center', minHeight: '24px',
+                          fontSize: '13px', fontWeight: 600, color: C.cyan, textDecoration: 'underline',
+                          fontFamily: "'IBM Plex Sans', sans-serif",
+                        }}
+                      >
+                        Não tem conta? Ver planos
+                      </a>
+                    )}
                     <span style={{ fontSize: '13px', color: C.textSec }}>
                       Suporte: suporte@axosrelatorios.com
                     </span>

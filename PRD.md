@@ -481,6 +481,7 @@ Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo
 - Individual, Equipe 3, Equipe 5 e Equipe 10 abrem o link de pagamento da Stripe (`pages/ContratarPage.tsx`), na moeda BRL, com cobrança mensal. O número do pedido vai como `client_reference_id`, para ligar o pagamento ao pedido.
 - Acima de 10 inspetores: sob consulta, sem link. A AXOS entra em contato.
 - Os 30 dias grátis dos cards são da Stripe: o cartão entra na contratação e a primeira cobrança vem depois do prazo.
+- Teste grátis só com cartão (decisão de 19/11/2026): não existe teste sem cartão. "Criar conta" na tela de entrar é só para quem recebeu convite da equipe; a conta criada assim, sem convite, nasce sem dias grátis e precisa contratar um plano para registrar laudos (`0011_teste_so_com_cartao.sql`). Os 4 links da Stripe precisam ter o teste de 30 dias ligado.
 - O servidor só libera o plano com aviso assinado pela Stripe e valor igual ao do plano. Conta ou CNPJ já existentes e valor diferente ficam em análise da AXOS.
 - Assinatura encerrada interrompe laudos novos e mantém os dados.
 - Pedido sem pagamento é apagado depois de 7 dias, quando o pedido seguinte chega.

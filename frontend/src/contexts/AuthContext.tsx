@@ -49,7 +49,7 @@ interface AuthContextType {
 export const CHAVE_CONVITE = 'axos_convite'
 
 // Data da última atualização dos Termos e da Política
-export const VERSAO_DOCUMENTOS_LEGAIS = '2026-11-09'
+export const VERSAO_DOCUMENTOS_LEGAIS = '2026-11-19'
 
 export const DEFAULT_OPERATIONAL_UNITS = [
   'Unidade Operacional Principal',

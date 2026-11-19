@@ -142,7 +142,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
       <CabecalhoLaudo titulo="Contratar plano" aoVoltar={aoVoltar} />
       {encerrado && (
         <p className="lf-alerta" role="alert" style={{ marginBottom: '24px' }}>
-          Seu teste grátis terminou. Seus dados continuam guardados: escolha um plano para voltar a registrar laudos.
+          Sua conta está sem plano ativo. Seus dados continuam guardados: escolha um plano para registrar laudos.
         </p>
       )}
       {semConta && (

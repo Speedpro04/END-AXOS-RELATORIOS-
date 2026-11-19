@@ -491,7 +491,7 @@ function AppContent() {
       {/* ÁREA PRINCIPAL DO APP */}
       {diasRestantes !== null && currentPage !== 'CONTRATAR' && (
         <div className="teste-aviso" role={testeEncerrado ? 'alert' : 'status'}>
-          <span>{testeEncerrado ? 'Seu teste grátis terminou. Seus dados continuam guardados.' : `Teste grátis: ${diasRestantes === 1 ? 'falta 1 dia' : `faltam ${diasRestantes} dias`}.`}</span>
+          <span>{testeEncerrado ? 'Sua conta está sem plano ativo. Seus dados continuam guardados.' : `Teste grátis: ${diasRestantes === 1 ? 'falta 1 dia' : `faltam ${diasRestantes} dias`}.`}</span>
           <button type="button" className="lf-botao" onClick={() => setCurrentPage('CONTRATAR')}>Contratar plano</button>
         </div>
       )}

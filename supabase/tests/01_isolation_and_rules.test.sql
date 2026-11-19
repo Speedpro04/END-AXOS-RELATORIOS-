@@ -667,9 +667,9 @@ begin
   t_p := public.criar_empresa_inicial('Pessoa P', 'Pessoa P');
 
   perform set_config('role', 'none', true);
-  if not exists (select 1 from public.tenants where id = t_p and plan = 'trial'
-                 and trial_ends_at between now() + interval '29 days' and now() + interval '31 days') then
-    raise exception 'FALHA 11.1: conta nova sem 30 dias de teste';
+  -- 0011: teste grátis só com cartão (Stripe); conta do cadastro nasce sem dias grátis
+  if not exists (select 1 from public.tenants where id = t_p and plan = 'trial' and trial_ends_at <= now()) then
+    raise exception 'FALHA 11.1: conta nova do cadastro ganhou dias grátis sem cartão';
   end if;
   insert into public.profiles (id, tenant_id, role, can_inspect, full_name) values (u_i, t_p, 'inspector', true, 'Inspetor P');
   insert into public.clients (id, tenant_id, legal_name) values (c_p, t_p, 'Cliente P');
@@ -707,6 +707,19 @@ begin
   select count(*) into v_n from public.pedidos_contratacao;
   if v_n <> 0 then raise exception 'FALHA 11.6: inspetor viu pedido'; end if;
 
+  begin
+    insert into public.reports (tenant_id, work_order_id, template_id, inspector_id, equipment_tag, inspection_date)
+      values (t_p, w_p, v_tpl, u_i, 'SEM-PLANO', current_date);
+    raise exception 'FALHA 11.1b: conta sem plano gravou laudo';
+  exception when others then
+    get stacked diagnostics v_err = message_text;
+    if v_err not like '%TESTE_ENCERRADO%' then raise exception 'Erro inesperado em 11.1b: %', v_err; end if;
+  end;
+
+  -- Empresa antiga, criada antes da 0011, ainda dentro do teste
+  perform set_config('role', 'none', true);
+  update public.tenants set trial_ends_at = now() + interval '30 days' where id = t_p;
+  perform set_config('role', 'authenticated', true);
   insert into public.reports (tenant_id, work_order_id, template_id, inspector_id, equipment_tag, inspection_date)
     values (t_p, w_p, v_tpl, u_i, 'DENTRO-DO-TESTE', current_date);
 
@@ -731,7 +744,7 @@ begin
     values (t_p, w_p, v_tpl, u_i, 'PLANO-ATIVO', current_date);
 
   perform set_config('role', 'none', true);
-  raise notice '[PASS] TESTE 11: teste de 30 dias, pedido de contratação e bloqueio de laudo novo';
+  raise notice '[PASS] TESTE 11: conta do cadastro sem dias grátis, pedido de contratação e bloqueio de laudo novo';
 end $$;
 
 

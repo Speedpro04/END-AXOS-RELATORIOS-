@@ -50,6 +50,7 @@ Em campo as empresas usam notebook, tablet e iPad, mas o AXOS inteiro tem de fun
 - Plano só é liberado pelo servidor ou pela AXOS. O usuário nunca altera plano nem prazo.
 - Não colocar nome, e-mail, CPF ou CNPJ no endereço do pagamento.
 - Caminho de quem não tem conta: card, formulário da empresa, pagamento, volta à LP, e-mail para criar a senha, Entrar, login, Obras. A conta só nasce depois do pagamento, criada pelo servidor.
+- Teste grátis só com cartão, pela Stripe (30 dias). Não existe teste sem cartão: "Criar conta" na tela de entrar é só para convite da equipe.
 - A conta Stripe é da Axos Hub, empresa dona dos produtos: a página de pagamento mostra "Axos Hub", e o nome de cada produto deixa claro que é o AXOS Relatórios.
 - Nunca fazer pagamento real em teste. Situação e pendências: seção "Pagamento pela Stripe" em `MEMORY.md`.
 
