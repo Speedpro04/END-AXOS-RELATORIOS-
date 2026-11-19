@@ -688,6 +688,8 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
 
 - Histórico do dia: primeiro o formulário de quem tem conta vinha preenchido com os dados do cadastro (nome, CNPJ, responsável, e-mail) e com o plano do card da página inicial; depois ganhou explicações; depois os dados e o plano ficaram com o texto 15% e então 20% visível.
 - **Decisão final do dono do produto: os cards "Plano" e "Dados da empresa" começam totalmente vazios**, com ou sem conta, mesmo vindo do card da página inicial (`?plano=`). `pages/ContratarPage.tsx` não lê mais o plano guardado nem os dados do cadastro; `Campo`, `Selecao` e `index.css` voltaram ao que eram. "Dados da empresa" explica que os dados vão para o pedido e a cobrança, e, sem conta, que o e-mail recebe o link de criar a senha.
+- Corrigido em seguida: o aviso "Escolha um plano." (e os outros avisos do formulário) ficava na tela mesmo depois de o cliente escolher o plano, até o próximo clique. Agora o `<form>` apaga o aviso em qualquer mudança (`onChange`). Testado no servidor de teste: o aviso aparece sem plano e some ao escolher.
+- 30 dias grátis: o cliente informa o cartão na Stripe e a primeira cobrança vem depois do prazo. O webhook confere o `unit_amount` do preço (e não o valor cobrado no dia), então o teste grátis, com primeiro valor zero, libera o plano normalmente. Os 4 links precisam ter o teste de 30 dias ligado na Stripe.
 - `lembrarPlanoDaUrl` ainda guarda o plano do endereço (`axos_plano_escolhido`), mas o formulário não usa mais esse valor.
 - Testado no servidor de teste, sem conta, vindo de `/app?plano=equipe_10`: plano em "Escolha um plano" e todas as caixas vazias. Com conta, não testado aqui.
 - Achados, não corrigidos:

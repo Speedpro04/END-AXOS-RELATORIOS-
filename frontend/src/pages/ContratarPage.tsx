@@ -150,7 +150,8 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
           Já tem conta? <a href={`/app?entrar=1${plano ? `&plano=${plano}` : ''}`} style={{ color: 'var(--accent-text)' }}>Entre para contratar</a>.
         </p>
       )}
-      <form onSubmit={enviar} className="lf-coluna-secoes contratar-form">
+      {/* O aviso de erro some assim que o cliente corrige algo (antes ficava até o próximo clique) */}
+      <form onSubmit={enviar} onChange={() => setErro(null)} className="lf-coluna-secoes contratar-form">
         <Secao titulo="Plano">
           <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} />
         </Secao>
