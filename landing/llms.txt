@@ -16,6 +16,28 @@
 - Equipe 10: até 10 inspetores ativos, R$ 997.
 - Acima de 10 inspetores ativos: sob consulta.
 
+## Laudos por método
+
+Cada página mostra o que o laudo daquele método registra no sistema.
+
+- [Todos os métodos](https://axosrelatorios.com/laudos/)
+- [Ensaio visual (VT)](https://axosrelatorios.com/laudos/ensaio-visual/)
+- [Líquidos penetrantes (PT)](https://axosrelatorios.com/laudos/liquidos-penetrantes/)
+- [Partículas magnéticas (MT)](https://axosrelatorios.com/laudos/particulas-magneticas/)
+- [Ultrassom convencional (UT)](https://axosrelatorios.com/laudos/ultrassom/)
+- [Radiografia industrial (RT)](https://axosrelatorios.com/laudos/radiografia-industrial/)
+- [Correntes parasitas (ET)](https://axosrelatorios.com/laudos/correntes-parasitas/)
+- [Ensaio de estanqueidade (LT)](https://axosrelatorios.com/laudos/estanqueidade/)
+- [Estanqueidade por caixa de vácuo](https://axosrelatorios.com/laudos/estanqueidade-caixa-de-vacuo/)
+- [Ultrassom Phased Array (PAUT)](https://axosrelatorios.com/laudos/ultrassom-phased-array/)
+- [ToFD, Time of Flight Diffraction](https://axosrelatorios.com/laudos/tofd/)
+- [Radiografia computadorizada e digital (CR/DR)](https://axosrelatorios.com/laudos/radiografia-computadorizada-e-digital/)
+- [Eddy Current Array (ECA)](https://axosrelatorios.com/laudos/eddy-current-array/)
+- [Emissão acústica (EA)](https://axosrelatorios.com/laudos/emissao-acustica/)
+- [Termografia infravermelha (IRT)](https://axosrelatorios.com/laudos/termografia-infravermelha/)
+- [ACFM, Alternating Current Field Measurement](https://axosrelatorios.com/laudos/acfm/)
+- [TFM e FMC, Total Focusing Method](https://axosrelatorios.com/laudos/tfm-fmc/)
+
 ## Páginas
 
 - [Página inicial](https://axosrelatorios.com/)

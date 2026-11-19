@@ -142,6 +142,7 @@ export interface DadosPadrao extends IdentificacaoEnsaio, AparelhoEnsaio {
 
 // O PDF oficial (API) usa uma cópia destes nomes: depois de mudar campos, colunas ou tipos de defeito,
 // rode `npm run gerar:campos-pdf` para atualizar backend/app/pdf/campos_metodo.json.
+// As páginas públicas dos métodos (landing/laudos/) também usam estes campos: rode `npm run gerar:paginas-metodos`.
 
 /** Campo técnico próprio de um método. A chave é a mesma já usada em laudos antigos. */
 export interface CampoMetodo {

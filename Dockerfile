@@ -28,6 +28,8 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 COPY landing/index.html /usr/share/nginx/html/lp.html
 COPY landing/robots.txt landing/sitemap.xml landing/llms.txt landing/politica-de-privacidade.html landing/termos-de-uso.html /usr/share/nginx/html/
 COPY landing/assets/ /usr/share/nginx/html/assets/
+# Páginas dos métodos (geradas por frontend/scripts/gerar-paginas-metodos.mjs)
+COPY landing/laudos/ /usr/share/nginx/html/laudos/
 
 EXPOSE 80
 

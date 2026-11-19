@@ -472,6 +472,7 @@ Site estático em `landing/`, separado do app, para buscadores lerem o conteúdo
 - SEO: um H1, H2 por seção, H3 nos itens, dados estruturados (Organization, SoftwareApplication, FAQPage), `robots.txt` e `sitemap.xml`.
 - Texto da página só promete o que está no PRD: sem depoimentos, clientes, números de mercado ou preços inventados.
 - `assets/imagem-1.svg`, `imagem-2.svg` e `imagem-3.svg` são espaços reservados para as 3 imagens definitivas (1200 x 900).
+- Páginas por método (19/11/2026): `/laudos/` e uma página para cada um dos 16 métodos, para quem procura "laudo de líquido penetrante", "laudo de ultrassom" etc. e para as IAs. São geradas a partir dos campos do próprio formulário do app (`npm run gerar:paginas-metodos`), então só mostram o que o laudo registra. Estão no `sitemap.xml` e no `llms.txt`.
 
 ## Contratação e Pagamento (revisto em 09/11/2026)
 

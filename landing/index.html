@@ -390,6 +390,8 @@
     .methods ul { border-top: 1px solid var(--border); }
     .methods li { display: flex; justify-content: space-between; gap: var(--s-4); padding: var(--s-3) 0; border-bottom: 1px solid var(--border); }
     .methods li span { color: var(--text-muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+    .methods li a { color: var(--text); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 4px; transition: color 140ms ease-out; }
+    .methods li a:hover { color: var(--accent-text); text-decoration-color: currentColor; }
 
     /* Valores */
     .precos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--s-4); list-style: none; }
@@ -706,30 +708,31 @@
           <div>
             <h3>Ensaios convencionais</h3>
             <ul>
-              <li>Ensaio Visual <span>VT</span></li>
-              <li>Líquidos Penetrantes <span>PT</span></li>
-              <li>Partículas Magnéticas <span>MT</span></li>
-              <li>Ultrassom Convencional <span>UT</span></li>
-              <li>Radiografia Industrial <span>RT</span></li>
-              <li>Correntes Parasitas <span>ET</span></li>
-              <li>Ensaio de Estanqueidade <span>LT</span></li>
-              <li>Estanqueidade por Caixa de Vácuo <span>LT</span></li>
+              <li><a href="/laudos/ensaio-visual/">Ensaio Visual</a> <span>VT</span></li>
+              <li><a href="/laudos/liquidos-penetrantes/">Líquidos Penetrantes</a> <span>PT</span></li>
+              <li><a href="/laudos/particulas-magneticas/">Partículas Magnéticas</a> <span>MT</span></li>
+              <li><a href="/laudos/ultrassom/">Ultrassom Convencional</a> <span>UT</span></li>
+              <li><a href="/laudos/radiografia-industrial/">Radiografia Industrial</a> <span>RT</span></li>
+              <li><a href="/laudos/correntes-parasitas/">Correntes Parasitas</a> <span>ET</span></li>
+              <li><a href="/laudos/estanqueidade/">Ensaio de Estanqueidade</a> <span>LT</span></li>
+              <li><a href="/laudos/estanqueidade-caixa-de-vacuo/">Estanqueidade por Caixa de Vácuo</a> <span>LT</span></li>
             </ul>
           </div>
           <div>
             <h3>Ensaios avançados e especiais</h3>
             <ul>
-              <li>Ultrassom Phased Array <span>PAUT</span></li>
-              <li>Time of Flight Diffraction <span>ToFD</span></li>
-              <li>Radiografia Computadorizada e Digital <span>CR/DR</span></li>
-              <li>Eddy Current Array <span>ECA</span></li>
-              <li>Emissão Acústica <span>EA</span></li>
-              <li>Termografia Infravermelha <span>IRT</span></li>
-              <li>Alternating Current Field Measurement <span>ACFM</span></li>
-              <li>Total Focusing Method <span>TFM/FMC</span></li>
+              <li><a href="/laudos/ultrassom-phased-array/">Ultrassom Phased Array</a> <span>PAUT</span></li>
+              <li><a href="/laudos/tofd/">Time of Flight Diffraction</a> <span>ToFD</span></li>
+              <li><a href="/laudos/radiografia-computadorizada-e-digital/">Radiografia Computadorizada e Digital</a> <span>CR/DR</span></li>
+              <li><a href="/laudos/eddy-current-array/">Eddy Current Array</a> <span>ECA</span></li>
+              <li><a href="/laudos/emissao-acustica/">Emissão Acústica</a> <span>EA</span></li>
+              <li><a href="/laudos/termografia-infravermelha/">Termografia Infravermelha</a> <span>IRT</span></li>
+              <li><a href="/laudos/acfm/">Alternating Current Field Measurement</a> <span>ACFM</span></li>
+              <li><a href="/laudos/tfm-fmc/">Total Focusing Method</a> <span>TFM/FMC</span></li>
             </ul>
           </div>
         </div>
+        <p class="note"><a href="/laudos/">Veja o que o laudo de cada método registra</a></p>
       </div>
     </section>
 
@@ -899,10 +902,11 @@
         <nav aria-label="Métodos END">
           <p class="footer-title">Métodos END</p>
           <ul>
-            <li><a href="#metodos">Ultrassom e Phased Array</a></li>
-            <li><a href="#metodos">Radiografia industrial</a></li>
-            <li><a href="#metodos">Líquidos penetrantes</a></li>
-            <li><a href="#metodos">Todos os 16 métodos</a></li>
+            <li><a href="/laudos/ultrassom/">Ultrassom</a></li>
+            <li><a href="/laudos/ultrassom-phased-array/">Phased Array</a></li>
+            <li><a href="/laudos/radiografia-industrial/">Radiografia industrial</a></li>
+            <li><a href="/laudos/liquidos-penetrantes/">Líquidos penetrantes</a></li>
+            <li><a href="/laudos/">Todos os 16 métodos</a></li>
           </ul>
         </nav>
         <div>

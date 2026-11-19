@@ -1,0 +1,238 @@
+// Textos das páginas públicas de cada método (landing/laudos/). Usados por gerar-paginas-metodos.mjs.
+// Regra da LP: só prometer o que o AXOS faz. Os campos do laudo vêm do próprio app (laudoEnsaio.ts);
+// aqui ficam só a explicação do método e o que é específico de UT e PAUT, que têm formulário próprio.
+// Antes de publicar texto técnico novo, peça revisão de um profissional de END.
+
+export const GRUPOS = {
+  convencional: 'Ensaios convencionais',
+  avancado: 'Ensaios avançados e especiais',
+}
+
+export const METODOS = [
+  {
+    codigo: 'VT', slug: 'ensaio-visual', grupo: 'convencional', sigla: 'VT', nome: 'Ensaio Visual',
+    h1: 'Laudo de ensaio visual (VT)',
+    titulo: 'Laudo de Ensaio Visual (VT) | AXOS Relatórios',
+    descricao: 'Laudo de ensaio visual (VT) com modalidade, iluminação, itens verificados, indicações, fotos e croqui. Feito em campo, mesmo sem internet.',
+    resumo: 'Condição da superfície e da solda, direta ou remota.',
+    intro: 'O ensaio visual é a primeira etapa de quase toda inspeção: o inspetor examina a superfície da peça ou da solda, a olho nu ou com instrumentos, em busca de descontinuidades e desvios de forma. No AXOS Relatórios, o laudo de VT guarda as condições de observação, os itens verificados, as indicações encontradas e as fotos que comprovam cada uma.',
+    explicacao: [
+      'No ensaio visual direto, o inspetor observa a superfície de perto, com iluminação e ângulo adequados. No remoto, a observação é feita por boroscópio, câmera ou drone, quando o acesso é difícil.',
+      'Em soldas, o VT verifica, por exemplo, mordedura, reforço excessivo, concavidade, sobreposição, porosidade, trincas, respingos e desalinhamento. O resultado orienta os ensaios seguintes e registra a condição da peça antes deles.',
+    ],
+    relacionados: ['PT', 'MT', 'UT'],
+  },
+  {
+    codigo: 'PT', slug: 'liquidos-penetrantes', grupo: 'convencional', sigla: 'PT', nome: 'Líquidos Penetrantes',
+    h1: 'Laudo de líquidos penetrantes (PT)',
+    titulo: 'Laudo de Líquidos Penetrantes (PT) | AXOS Relatórios',
+    descricao: 'Laudo de líquidos penetrantes (PT) com produtos, lotes, tempos, iluminação, indicações, fotos e croqui. Feito em campo, mesmo sem internet.',
+    resumo: 'Descontinuidades abertas para a superfície.',
+    intro: 'O ensaio por líquidos penetrantes revela descontinuidades abertas para a superfície, como trincas e poros, em materiais não porosos. No AXOS Relatórios, o laudo de PT registra os produtos usados com marca e lote, os tempos de cada etapa, a iluminação e cada indicação com foto.',
+    explicacao: [
+      'O penetrante é aplicado sobre a superfície limpa e seca e entra nas aberturas durante o tempo de penetração. Depois que o excesso é removido, o revelador puxa o líquido retido e forma a indicação, avaliada sob luz branca, no penetrante visível, ou sob luz ultravioleta, no fluorescente.',
+      'É um ensaio comum em soldas, peças fundidas e forjadas, de materiais ferrosos e não ferrosos. As indicações costumam ser classificadas como lineares ou arredondadas, e o critério de aceitação vem do procedimento e do contrato.',
+    ],
+    relacionados: ['MT', 'VT', 'ET'],
+  },
+  {
+    codigo: 'MT', slug: 'particulas-magneticas', grupo: 'convencional', sigla: 'MT', nome: 'Partículas Magnéticas',
+    h1: 'Laudo de partículas magnéticas (MT)',
+    titulo: 'Laudo de Partículas Magnéticas (MT) | AXOS Relatórios',
+    descricao: 'Laudo de partículas magnéticas (MT) com magnetização, corrente, partículas, verificação do campo, indicações, fotos e croqui. Feito em campo.',
+    resumo: 'Descontinuidades superficiais em materiais ferromagnéticos.',
+    intro: 'O ensaio por partículas magnéticas detecta descontinuidades superficiais e próximas da superfície em materiais ferromagnéticos. No AXOS Relatórios, o laudo de MT registra a técnica de magnetização, o tipo de corrente, as partículas, a verificação do campo, a iluminação e a desmagnetização, junto com cada indicação.',
+    explicacao: [
+      'A peça é magnetizada, e uma descontinuidade perturba o campo magnético. As partículas, aplicadas por via seca ou úmida, visíveis ou fluorescentes, se acumulam nesse ponto e desenham a indicação.',
+      'É muito usado em soldas e componentes de aço carbono. A magnetização pode ser feita com yoke, pontas, bobina, condutor central, contato direto ou ímã permanente, e o campo é conferido com indicador de campo, lâminas ou medidor Hall.',
+    ],
+    relacionados: ['PT', 'VT', 'ACFM'],
+  },
+  {
+    codigo: 'UT', slug: 'ultrassom', grupo: 'convencional', sigla: 'UT', nome: 'Ultrassom Convencional',
+    h1: 'Laudo de ultrassom convencional (UT)',
+    titulo: 'Laudo de Ultrassom Convencional (UT) | AXOS Relatórios',
+    descricao: 'Laudo de ultrassom (UT) em solda com cabeçotes, ganhos, croqui da junta e indicações com níveis em dB e tipo de defeito. Feito em campo.',
+    resumo: 'Descontinuidades internas em soldas, com feixe angular.',
+    intro: 'O ultrassom convencional usa ondas sonoras de alta frequência para encontrar descontinuidades internas e medir espessuras. No AXOS Relatórios, o laudo de UT foi feito para soldas: registra os cabeçotes, a calibração com os ganhos, o croqui da junta e cada indicação com os níveis em dB e o tipo de defeito.',
+    explicacao: [
+      'Um cabeçote emite o pulso, que se propaga no material e volta quando encontra uma interface ou uma descontinuidade. A posição e a amplitude do eco na tela do aparelho permitem localizar e avaliar a indicação. Em soldas, é comum o uso de cabeçotes de feixe angular.',
+      'O laudo registra a localização de cada indicação a partir do ponto zero, o percurso sônico, a profundidade e o comprimento, os níveis de indicação e de referência, o fator de atenuação e o nível da descontinuidade, além dos soldadores da raiz e do enchimento.',
+    ],
+    proprios: {
+      resumoFaq: 'os cabeçotes, a calibração com os ganhos',
+      condicoes: ['Temperatura da superfície (°C)', 'Condição da superfície', 'Acoplante', 'Técnica', 'Bloco padrão', 'Bloco de referência', 'Tipo de junta', 'Tratamento térmico'],
+      extras: [
+        { titulo: 'Cabeçotes e calibração', itens: ['Dimensões e ângulo real (°) de cada cabeçote', 'Frequência (MHz)', 'Espessura da peça e do bloco (mm)', 'Ganho de referência, auxiliar, corrigido e de varredura (dB)', 'Superfície de inspeção de cada cabeçote'] },
+      ],
+      indicacoes: ['Peça ou junta', 'Tipo provável', 'Comprimento e profundidade (mm)', 'Percurso sônico (mm)', 'Distância da borda da solda (mm)', 'Localização a partir do ponto zero (mm)', 'Superfície de inspeção e cabeçote', 'Nível da indicação (A), nível de referência (B), fator de atenuação (C) e nível da descontinuidade (D)', 'Soldador da raiz e do enchimento', 'Tipo de defeito: falta de penetração, falta de fusão, porosidade, trinca longitudinal ou transversal e inclusão de escória', 'Resultado: aprovada ou reprovada'],
+    },
+    relacionados: ['PAUT', 'TOFD', 'TFM'],
+  },
+  {
+    codigo: 'RT', slug: 'radiografia-industrial', grupo: 'convencional', sigla: 'RT', nome: 'Radiografia Industrial',
+    h1: 'Laudo de radiografia industrial (RT)',
+    titulo: 'Laudo de Radiografia Industrial (RT) | AXOS Relatórios',
+    descricao: 'Laudo de radiografia industrial (RT) com fonte, técnica de exposição, filme, IQI, densidade e indicações por filme e posição. Feito em campo.',
+    resumo: 'Imagem interna da peça em filme, com raios X ou gama.',
+    intro: 'A radiografia industrial registra em filme a imagem interna da peça, obtida com raios X ou raios gama. No AXOS Relatórios, o laudo de RT registra a fonte, a técnica de exposição, o filme, o IQI, a densidade e a penumbra geométrica, e localiza cada indicação pelo filme e pela posição.',
+    explicacao: [
+      'A radiação atravessa a peça e é absorvida de forma diferente onde há variação de espessura ou de densidade. Descontinuidades volumétricas, como porosidade e inclusões, aparecem no filme revelado. O IQI comprova a sensibilidade alcançada em cada exposição.',
+      'É muito usada em soldas de tubulações e vasos. Como envolve radiação ionizante, o ensaio exige controle da área e proteção radiológica.',
+    ],
+    relacionados: ['CRDR', 'UT', 'PAUT'],
+  },
+  {
+    codigo: 'ET', slug: 'correntes-parasitas', grupo: 'convencional', sigla: 'ET', nome: 'Correntes Parasitas',
+    h1: 'Laudo de correntes parasitas (ET)',
+    titulo: 'Laudo de Correntes Parasitas (ET) | AXOS Relatórios',
+    descricao: 'Laudo de correntes parasitas (ET) com aplicação, sonda, frequência, ganho, rotação de fase, calibração, indicações e fotos. Feito em campo.',
+    resumo: 'Trincas e corrosão em materiais condutores.',
+    intro: 'O ensaio por correntes parasitas induz correntes elétricas em materiais condutores e mede como elas mudam diante de trincas, corrosão ou variação de espessura. No AXOS Relatórios, o laudo de ET registra a aplicação, a sonda e sua configuração, a frequência, o ganho, a rotação de fase e o padrão de calibração.',
+    explicacao: [
+      'Uma bobina com corrente alternada gera um campo magnético que induz correntes na peça. Descontinuidades alteram essas correntes, e o aparelho mostra a mudança no sinal. O ensaio não exige contato direto com o metal e pode ser feito sobre revestimentos finos.',
+      'As aplicações previstas no laudo são solda, superfície, tubos de trocador de calor com sonda interna e medição de camada.',
+    ],
+    relacionados: ['ECA', 'ACFM', 'PT'],
+  },
+  {
+    codigo: 'LT', slug: 'estanqueidade', grupo: 'convencional', sigla: 'LT', nome: 'Ensaio de Estanqueidade',
+    h1: 'Laudo de ensaio de estanqueidade (LT)',
+    titulo: 'Laudo de Ensaio de Estanqueidade (LT) | AXOS Relatórios',
+    descricao: 'Laudo de estanqueidade (LT) com técnica, fluido, pressão, tempo de permanência, manômetro e taxa de vazamento. Feito em campo, sem internet.',
+    resumo: 'Vazamentos em vasos, tanques, tubulações e soldas.',
+    intro: 'O ensaio de estanqueidade verifica se um vaso, tanque, tubulação ou solda tem vazamentos. No AXOS Relatórios, o laudo de LT registra a técnica, o fluido e a pressão de teste, o tempo de permanência, o manômetro, a solução formadora de bolhas e a taxa de vazamento medida.',
+    explicacao: [
+      'As técnicas previstas no laudo são formação de bolhas com pressão positiva, variação de pressão, detector de hélio e detector de halogênio. Cada uma tem sensibilidade e preparo próprios, definidos no procedimento.',
+      'Os vazamentos encontrados são registrados como contínuos ou intermitentes, com localização e foto.',
+    ],
+    relacionados: ['LT_VACUO', 'EA', 'VT'],
+  },
+  {
+    codigo: 'LT_VACUO', slug: 'estanqueidade-caixa-de-vacuo', grupo: 'convencional', sigla: 'LT', nome: 'Estanqueidade por Caixa de Vácuo',
+    h1: 'Laudo de estanqueidade por caixa de vácuo',
+    titulo: 'Laudo de Estanqueidade por Caixa de Vácuo | AXOS Relatórios',
+    descricao: 'Laudo de estanqueidade por caixa de vácuo com vácuo aplicado, vacuômetro, tempo e sobreposição por posição, vazamentos e fotos. Feito em campo.',
+    resumo: 'Vazamentos em soldas acessíveis por um só lado.',
+    intro: 'A estanqueidade por caixa de vácuo procura vazamentos em soldas acessíveis por um só lado, como as do fundo de tanques de armazenamento. No AXOS Relatórios, o laudo registra a caixa de vácuo, o vácuo aplicado, o vacuômetro, o tempo por posição, a sobreposição entre posições e a solução usada.',
+    explicacao: [
+      'A solda é coberta com solução formadora de bolhas, a caixa com visor é apoiada sobre ela e o vácuo é aplicado. Se houver vazamento, o ar atravessa a solda e forma bolhas, vistas pelo visor.',
+      'A caixa é deslocada ao longo do cordão com sobreposição entre as posições, para não deixar trecho sem ensaio. Cada vazamento é registrado como contínuo ou intermitente, com localização e foto.',
+    ],
+    relacionados: ['LT', 'VT', 'PT'],
+  },
+  {
+    codigo: 'PAUT', slug: 'ultrassom-phased-array', grupo: 'avancado', sigla: 'PAUT', nome: 'Ultrassom Phased Array',
+    h1: 'Laudo de ultrassom Phased Array (PAUT)',
+    titulo: 'Laudo de Ultrassom Phased Array (PAUT) | AXOS Relatórios',
+    descricao: 'Laudo de Phased Array (PAUT) para solda e mapeamento de espessura: sonda, cunha, ganhos, indicações e pontos abaixo da espessura mínima.',
+    resumo: 'Solda e mapeamento de espessura com sonda de vários elementos.',
+    intro: 'O ultrassom Phased Array usa uma sonda com vários elementos, acionados com atrasos controlados, para varrer o material em diferentes ângulos e gerar imagens. No AXOS Relatórios, o laudo de PAUT atende dois usos: inspeção de solda e mapeamento de espessura (B-scan).',
+    explicacao: [
+      'Na solda, o laudo registra a sonda, a cunha, os ganhos primário, de varredura e de avaliação, a junta e cada indicação com posição, comprimento, profundidade e tipo de defeito.',
+      'No mapeamento de espessura, o inspetor cola a lista de medições e informa a espessura mínima aceita, e o sistema destaca os pontos abaixo dela.',
+    ],
+    proprios: {
+      resumoFaq: 'a sonda, a cunha, os ganhos, as medições de espessura',
+      semRecomendacao: true,
+      condicoes: ['O que está sendo ensaiado: solda ou espessura (B-scan)', 'Fabricante, modelo e número de série do aparelho', 'Sonda e cunha', 'Ganho primário, de varredura e de avaliação (dB)'],
+      extras: [
+        { titulo: 'Solda', itens: ['Junta e tipo de junta', 'Diâmetro externo e espessura (mm)'] },
+        { titulo: 'Mapeamento de espessura', itens: ['Peça e tubo ou diâmetro', 'Espessura nominal (mm)', 'Comprimento de varredura (mm)', 'Espessura mínima aceita (mm)', 'Lista de medições, com os pontos abaixo da espessura mínima destacados'] },
+      ],
+      indicacoes: ['Posição', 'Comprimento e profundidade (mm)', 'Tipo de defeito: falta de penetração, falta de fusão, porosidade, trinca longitudinal ou transversal e inclusão de escória', 'Resultado: aprovada ou reprovada'],
+    },
+    relacionados: ['UT', 'TOFD', 'TFM'],
+  },
+  {
+    codigo: 'TOFD', slug: 'tofd', grupo: 'avancado', sigla: 'ToFD', nome: 'Time of Flight Diffraction',
+    h1: 'Laudo de ToFD (Time of Flight Diffraction)',
+    titulo: 'Laudo de ToFD (Time of Flight Diffraction) | AXOS Relatórios',
+    descricao: 'Laudo de ToFD com sondas, ângulo das sapatas, PCS, zonas, varredura e indicações com posição, comprimento, profundidade e altura.',
+    resumo: 'Ondas difratadas para dimensionar a altura das indicações.',
+    intro: 'O ToFD (Time of Flight Diffraction) usa um par de sondas, uma emissora e outra receptora, para captar as ondas difratadas nas pontas de uma descontinuidade. No AXOS Relatórios, o laudo de ToFD registra a configuração das sondas e cada indicação com posição, comprimento, profundidade e altura.',
+    explicacao: [
+      'Como o tempo de percurso das ondas difratadas depende da posição das pontas da descontinuidade, o ToFD é conhecido pela capacidade de dimensionar a altura das indicações. É muito usado em soldas, muitas vezes junto com o Phased Array.',
+      'O laudo guarda o ângulo das sapatas, a distância entre sondas (PCS), a profundidade de foco, os pares e zonas, o tipo de varredura, o passo de aquisição, o bloco de calibração, o ganho e o software.',
+    ],
+    relacionados: ['PAUT', 'TFM', 'UT'],
+  },
+  {
+    codigo: 'CRDR', slug: 'radiografia-computadorizada-e-digital', grupo: 'avancado', sigla: 'CR/DR', nome: 'Radiografia Computadorizada e Digital',
+    h1: 'Laudo de radiografia computadorizada e digital (CR/DR)',
+    titulo: 'Laudo de Radiografia Computadorizada e Digital | AXOS Relatórios',
+    descricao: 'Laudo de radiografia CR/DR com fonte, detector, leitor, pixel, IQI, IQI de duplo fio, SNRn, software e indicações. Feito em campo.',
+    resumo: 'Radiografia com placa de fósforo ou painel digital.',
+    intro: 'A radiografia computadorizada (CR) e a digital (DR) substituem o filme por placas de fósforo ou por painéis digitais, e a imagem é avaliada no computador. No AXOS Relatórios, o laudo de CR/DR registra a fonte, o detector, o leitor, o tamanho do pixel, o IQI, o IQI de duplo fio e a relação sinal-ruído.',
+    explicacao: [
+      'Na CR, a placa de fósforo é exposta e depois lida por um equipamento que gera a imagem digital. Na DR, o painel entrega a imagem direto. Em ambas, a qualidade da imagem é comprovada por indicadores como o IQI de duplo fio, ligado à resolução, e a relação sinal-ruído normalizada (SNRn).',
+      'O laudo também registra o software e a versão usados na avaliação, o que ajuda a rastrear como cada imagem foi analisada.',
+    ],
+    relacionados: ['RT', 'PAUT', 'UT'],
+  },
+  {
+    codigo: 'ECA', slug: 'eddy-current-array', grupo: 'avancado', sigla: 'ECA', nome: 'Eddy Current Array',
+    h1: 'Laudo de Eddy Current Array (ECA)',
+    titulo: 'Laudo de Eddy Current Array (ECA) | AXOS Relatórios',
+    descricao: 'Laudo de Eddy Current Array (ECA) com sonda array, frequência, ganho, cobertura por passada, passo de aquisição e indicações com fotos.',
+    resumo: 'Correntes parasitas com várias bobinas e imagem da área.',
+    intro: 'O Eddy Current Array usa várias bobinas na mesma sonda, o que cobre uma faixa maior a cada passada e gera um mapa da área inspecionada. No AXOS Relatórios, o laudo de ECA registra a sonda array, a configuração, a frequência, o ganho, a cobertura por passada e o passo de aquisição.',
+    explicacao: [
+      'Comparado às correntes parasitas convencionais, o array reduz o número de passadas e facilita a leitura, porque as indicações aparecem em imagem. É usado na busca de trincas superficiais e de corrosão.',
+      'Como no ensaio convencional, o laudo guarda a espessura do revestimento e o padrão de calibração, além do software e da versão usados.',
+    ],
+    relacionados: ['ET', 'ACFM', 'PAUT'],
+  },
+  {
+    codigo: 'EA', slug: 'emissao-acustica', grupo: 'avancado', sigla: 'EA', nome: 'Emissão Acústica',
+    h1: 'Laudo de emissão acústica (EA)',
+    titulo: 'Laudo de Emissão Acústica (EA) | AXOS Relatórios',
+    descricao: 'Laudo de emissão acústica (EA) com sistema, sensores, ganho, limiar, verificação dos sensores, patamares de pressão e fontes classificadas.',
+    resumo: 'Fontes ativas captadas durante a solicitação da estrutura.',
+    intro: 'A emissão acústica capta as ondas elásticas liberadas pelo próprio material quando uma descontinuidade está ativa, por exemplo durante um teste de pressão. No AXOS Relatórios, o laudo de EA registra o sistema, os sensores, o ganho do pré-amplificador, o limiar de detecção, a verificação dos sensores e os patamares de pressão.',
+    explicacao: [
+      'Diferente dos ensaios que procuram descontinuidades na peça parada, a EA mostra o que se manifesta sob carga. Com vários sensores distribuídos, o sistema localiza as fontes de emissão.',
+      'Cada fonte é registrada com localização e classificação, como fonte ativa, fonte crítica ou ruído. A verificação dos sensores pode ser feita por quebra de grafite ou por pulsador eletrônico.',
+    ],
+    relacionados: ['LT', 'UT', 'PAUT'],
+  },
+  {
+    codigo: 'IRT', slug: 'termografia-infravermelha', grupo: 'avancado', sigla: 'IRT', nome: 'Termografia Infravermelha',
+    h1: 'Laudo de termografia infravermelha (IRT)',
+    titulo: 'Laudo de Termografia Infravermelha (IRT) | AXOS Relatórios',
+    descricao: 'Laudo de termografia (IRT) com câmera, emissividade, temperatura refletida, ambiente, carga e anomalias com temperatura máxima e ΔT.',
+    resumo: 'Pontos com aquecimento anormal, medidos à distância.',
+    intro: 'A termografia infravermelha mede a temperatura da superfície à distância e mostra, em imagem, os pontos com aquecimento anormal. No AXOS Relatórios, o laudo de IRT registra a câmera, a emissividade, a temperatura refletida, as condições do ambiente, a distância, o vento e a carga do equipamento.',
+    explicacao: [
+      'É muito usada em painéis e conexões elétricas, isolamentos e refratários. Como a leitura depende da emissividade, da temperatura refletida, da distância e do ambiente, esses dados precisam constar no laudo.',
+      'Cada anomalia é registrada com localização, temperatura máxima, temperatura de referência e a diferença entre elas (ΔT), com a imagem térmica anexada como foto.',
+    ],
+    relacionados: ['VT', 'EA', 'ET'],
+  },
+  {
+    codigo: 'ACFM', slug: 'acfm', grupo: 'avancado', sigla: 'ACFM', nome: 'Alternating Current Field Measurement',
+    h1: 'Laudo de ACFM (Alternating Current Field Measurement)',
+    titulo: 'Laudo de ACFM | AXOS Relatórios',
+    descricao: 'Laudo de ACFM com sonda, frequência, calibração, espessura do revestimento e trincas com comprimento e profundidade estimada. Feito em campo.',
+    resumo: 'Trincas superficiais detectadas e dimensionadas.',
+    intro: 'O ACFM (Alternating Current Field Measurement) induz um campo de corrente alternada na superfície e mede as perturbações do campo magnético causadas por trincas. No AXOS Relatórios, o laudo de ACFM registra a sonda, a frequência, o padrão de calibração, a espessura do revestimento e cada trinca com comprimento e profundidade estimada.',
+    explicacao: [
+      'O ACFM detecta e dimensiona trincas superficiais e pode ser aplicado sobre revestimentos, com menos preparo da superfície. Por isso é comum em estruturas soldadas, inclusive offshore.',
+      'As indicações são registradas como trinca no pé da solda, longitudinal ou transversal, com localização e foto.',
+    ],
+    relacionados: ['MT', 'ET', 'ECA'],
+  },
+  {
+    codigo: 'TFM', slug: 'tfm-fmc', grupo: 'avancado', sigla: 'TFM/FMC', nome: 'Total Focusing Method',
+    h1: 'Laudo de TFM e FMC (Total Focusing Method)',
+    titulo: 'Laudo de TFM e FMC (Total Focusing Method) | AXOS Relatórios',
+    descricao: 'Laudo de TFM/FMC com sonda, sapata, abertura, modos de propagação, zona de reconstrução, pixel e indicações com altura dimensionada.',
+    resumo: 'Imagem focada em cada ponto, a partir de dados FMC.',
+    intro: 'O TFM (Total Focusing Method) reconstrói a imagem focando o feixe em cada ponto de uma região, a partir de dados FMC (Full Matrix Capture), que registram todas as combinações de emissão e recepção da sonda. No AXOS Relatórios, o laudo de TFM registra a aquisição, a reconstrução e cada indicação com posição, comprimento, profundidade e altura.',
+    explicacao: [
+      'Por focar em toda a zona de reconstrução, o TFM gera imagens de alta resolução, úteis para caracterizar e dimensionar indicações.',
+      'O laudo guarda a sonda e a sapata, a abertura usada, os modos de propagação, a zona de reconstrução, o tamanho do pixel, a velocidade do som, o bloco de calibração, o ganho, o passo de aquisição, o acoplante e o software.',
+    ],
+    relacionados: ['PAUT', 'TOFD', 'UT'],
+  },
+]

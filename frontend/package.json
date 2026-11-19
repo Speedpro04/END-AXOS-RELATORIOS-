@@ -9,7 +9,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:db": "node ../supabase/tests/run_tests.mjs",
-    "gerar:campos-pdf": "node scripts/gerar-campos-pdf.mjs"
+    "gerar:campos-pdf": "node scripts/gerar-campos-pdf.mjs",
+    "gerar:paginas-metodos": "node scripts/gerar-paginas-metodos.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

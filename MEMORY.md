@@ -646,4 +646,21 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
 - Testado no navegador com resposta simulada (a API não roda nesta máquina): válido, substituído, sem conexão, conferência de arquivo igual e alterado (uma letra trocada é detectada); computador, tablet e celular; `/app` continua normal.
 - `docs/conformidade/analise-de-lacunas.md` atualizado com o que mudou em 18/11/2026.
 
-**Pendente (adiado pelo dono do produto em 19/11/2026):** conferir se o Deploy do site e o da API já incluem as fases 1 a 4. Depois, testar o caminho completo no ar com conta real: cadastrar a qualificação na Equipe, criar obra e laudo com fotos e croqui, enviar para revisão, aprovar, emitir, baixar o PDF oficial, abrir o QR e conferir o arquivo.
+**Pendente (adiado pelo dono do produto em 19/11/2026):** testar o caminho completo no ar com conta real: cadastrar a qualificação na Equipe, criar obra e laudo com fotos e croqui, enviar para revisão, aprovar, emitir, baixar o PDF oficial, abrir o QR e conferir o arquivo. Conferido no ar em 19/11/2026: site e API já têm as fases 1 a 4 (`/api/verificar` responde 404 "Laudo não encontrado" para código inexistente, `/api/sync/pdf` pede login, telas novas no código publicado). O laudo de teste, depois de emitido, fica registrado para sempre: combinar com o dono do produto antes de emitir.
+
+## Páginas dos métodos para o Google e as IAs (19/11/2026)
+
+- 17 páginas estáticas em `landing/laudos/`: o índice `/laudos/` e uma por método (`/laudos/liquidos-penetrantes/` etc.). Geradas por `npm run gerar:paginas-metodos` (`frontend/scripts/gerar-paginas-metodos.mjs`) com os campos do próprio app (`laudoEnsaio.ts`) e os textos de `frontend/scripts/textos-metodos.mjs`. UT e PAUT têm formulário próprio, então os campos deles estão escritos à mão nesse arquivo. Rodar o gerador sempre que mudar campos ou textos.
+- Cada página tem:
+  - título e descrição próprios e trilha Início › Métodos END › método (BreadcrumbList);
+  - explicação do método e o que o laudo registra, nos mesmos blocos do formulário;
+  - fluxo do campo à emissão, com os mesmos avisos "Em desenvolvimento" da LP;
+  - 4 perguntas (FAQPage), métodos relacionados e rodapé com os 16 links.
+  - Não tem script, então não há nada para a CSP barrar.
+- LP: a lista dos 16 métodos e o rodapé ligam às páginas. Também foram atualizados `sitemap.xml` (20 endereços) e `llms.txt`, e o `Dockerfile` da raiz passou a copiar `landing/laudos/`.
+- Testado no navegador pelo servidor local da LP: computador, tablet e celular sem rolagem lateral, links e cliques, console sem erro. Dados estruturados conferidos por script: um H1 por página, perguntas iguais às visíveis, nenhum link quebrado. Não testado no ar, porque falta o Deploy do site.
+- Pendente:
+  - revisão do texto técnico por profissional de END;
+  - depois do teste do PDF no ar, tirar os avisos "Em desenvolvimento" da LP e das páginas (no gerador, `FLUXO`);
+  - enviar o mapa do site no Google Search Console e no Bing Webmaster Tools.
+- Achado, não corrigido: a norma padrão de ET é "ASME V Art. 7" em `types/inspection.ts` (`METHOD_LABELS`) e em `data/methodsCatalog.ts`, mas o Art. 7 é de partículas magnéticas e correntes parasitas é o Art. 8. Ela entra como "Norma de referência" inicial do laudo de ET (`CamposLaudo.tsx`). RT traz "ASME V Art. 2 / 3", que também merece conferência.
