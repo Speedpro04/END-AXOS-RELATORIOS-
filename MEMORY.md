@@ -743,4 +743,4 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - A Stripe pode pedir confirmação pelo "Link" (pagamento rápido da Stripe) quando o e-mail já tem cadastro lá; dá para desligar em Configurações → Formas de pagamento → Link.
   - Nomes dos produtos corrigidos pelo dono do produto no mesmo dia: os 4 planos aparecem como "Axos Relatórios - Plano ..." sem o " -" (conferido nas páginas dos links).
 - Na Stripe não é mais preciso ligar o teste nos links. Continuam pendentes os e-mails de aviso e o cancelamento quando todas as cobranças falharem.
-- Página inicial: o rodapé passou a dizer "Tecnologia em inspeção · Desenvolvido por Axos Hub" (pedido do dono do produto, só na LP). Testado no computador, no tablet e no celular, sem rolagem lateral.
+- Página inicial: o rodapé passou a dizer "Tecnologia em inspeção · Desenvolvido por Axos Hub", com "Axos Hub" ligado a https://axoshub.com/ em nova aba (pedido do dono do produto, só na LP). Testado no computador, no tablet e no celular, sem rolagem lateral.
