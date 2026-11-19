@@ -6,14 +6,17 @@ import { CHAVE_CONVITE, useAuth, VERSAO_DOCUMENTOS_LEGAIS } from '../contexts/Au
 import { CabecalhoLaudo, Campo, Secao, Selecao } from '../components/laudo/CamposLaudo'
 import { mensagemErroAuth } from '../utils/errosAuth'
 
-// Links de pagamento são públicos: quem paga abre a página da Stripe
-export const PLANOS: { valor: string; rotulo: string; linkPagamento?: string }[] = [
-  { valor: 'individual', rotulo: 'Individual: 1 inspetor, R$ 147 por mês', linkPagamento: 'https://buy.stripe.com/cNicN50uF3nu2Sd4Eo1wY0e' },
-  { valor: 'equipe_3', rotulo: 'Equipe 3: até 3 inspetores, R$ 397 por mês', linkPagamento: 'https://buy.stripe.com/7sY7sLa5f2jqakFdaU1wY0f' },
-  { valor: 'equipe_5', rotulo: 'Equipe 5: até 5 inspetores, R$ 597 por mês', linkPagamento: 'https://buy.stripe.com/00w14n2CN0bi50l9YI1wY0g' },
-  { valor: 'equipe_10', rotulo: 'Equipe 10: até 10 inspetores, R$ 997 por mês', linkPagamento: 'https://buy.stripe.com/fZu7sL2CN0bi50l9YI1wY0h' },
+// Planos com pagamento pela Stripe: o servidor cria a página de pagamento de cada pedido
+// (30 dias grátis na primeira contratação, cartão obrigatório). Ver routers/contratacao.py.
+export const PLANOS: { valor: string; rotulo: string; pagamentoOnline?: boolean }[] = [
+  { valor: 'individual', rotulo: 'Individual: 1 inspetor, R$ 147 por mês', pagamentoOnline: true },
+  { valor: 'equipe_3', rotulo: 'Equipe 3: até 3 inspetores, R$ 397 por mês', pagamentoOnline: true },
+  { valor: 'equipe_5', rotulo: 'Equipe 5: até 5 inspetores, R$ 597 por mês', pagamentoOnline: true },
+  { valor: 'equipe_10', rotulo: 'Equipe 10: até 10 inspetores, R$ 997 por mês', pagamentoOnline: true },
   { valor: 'sob_consulta', rotulo: 'Acima de 10 inspetores: sob consulta' },
 ]
+
+type Pagamento = { pagamento_url: string; teste_gratis: boolean }
 
 export const CHAVE_PLANO_ESCOLHIDO = 'axos_plano_escolhido'
 
@@ -44,14 +47,20 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
   const [erro, setErro] = useState<string | null>(null)
   const [enviado, setEnviado] = useState(false)
   const [aceite, setAceite] = useState(false)
+  // Quem já usou os 30 dias grátis: avisa que a cobrança começa hoje e espera a confirmação
+  const [semTeste, setSemTeste] = useState<string | null>(null)
 
   const semConta = !user
   const individual = plano === 'individual'
   const digitos = documento.replace(/\D/g, '')
-  const linkPagamento = PLANOS.find((p) => p.valor === plano)?.linkPagamento
+  const pagamentoOnline = Boolean(PLANOS.find((p) => p.valor === plano)?.pagamentoOnline)
 
   const enviar = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (semTeste) {
+      window.location.assign(semTeste)
+      return
+    }
     setErro(null)
     if (!plano) return setErro('Escolha um plano.')
     if (individual ? ![11, 14].includes(digitos.length) : digitos.length !== 14) {
@@ -65,13 +74,45 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
       return setErro(pedido.erro)
     }
     localStorage.removeItem(CHAVE_PLANO_ESCOLHIDO)
-    // O número do pedido vai junto para ligar o pagamento à empresa na Stripe
-    if (linkPagamento) {
-      window.location.assign(`${linkPagamento}?client_reference_id=${pedido.id}`)
+    if (!pagamentoOnline) {
+      setEnviando(false)
+      setEnviado(true)
       return
     }
-    setEnviando(false)
-    setEnviado(true)
+    // O servidor cria a página da Stripe deste pedido (o número do pedido já vai junto).
+    // Sem conta, a página já veio junto com o pedido; com conta, o servidor cria agora.
+    const pagamento: Pagamento | { erro: string } = semConta
+      ? (pedido as { id: string } & Pagamento)
+      : await abrirPagamentoDaConta(pedido.id)
+    if ('erro' in pagamento) {
+      setEnviando(false)
+      return setErro(pagamento.erro)
+    }
+    if (!pagamento.teste_gratis) {
+      setSemTeste(pagamento.pagamento_url)
+      setEnviando(false)
+      return
+    }
+    window.location.assign(pagamento.pagamento_url)
+  }
+
+  const abrirPagamentoDaConta = async (pedidoId: string): Promise<Pagamento | { erro: string }> => {
+    const falha = 'Não foi possível abrir o pagamento. Tente novamente.'
+    const { data: sessao } = await supabase.auth.getSession()
+    const token = sessao.session?.access_token
+    if (!token) return { erro: 'Sua sessão expirou. Entre de novo para contratar.' }
+    try {
+      const resposta = await fetch(`${API_BASE_URL}/api/contratacao/pagamento`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ pedido_id: pedidoId }),
+      })
+      const corpo = await resposta.json().catch(() => null)
+      if (!resposta.ok) return { erro: typeof corpo?.detail === 'string' ? corpo.detail : falha }
+      return corpo as Pagamento
+    } catch {
+      return { erro: falha }
+    }
   }
 
   const gravarPedidoDaConta = async (): Promise<{ id: string } | { erro: string }> => {
@@ -88,7 +129,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
     return { id: data as string }
   }
 
-  const gravarPedidoSemConta = async (): Promise<{ id: string } | { erro: string }> => {
+  const gravarPedidoSemConta = async (): Promise<({ id: string } & Pagamento) | { erro: string }> => {
     const falha = 'Não foi possível enviar o pedido. Tente novamente.'
     try {
       const resposta = await fetch(`${API_BASE_URL}/api/contratacao/pedido`, {
@@ -107,7 +148,7 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
       })
       const corpo = await resposta.json().catch(() => null)
       if (!resposta.ok) return { erro: typeof corpo?.detail === 'string' ? corpo.detail : falha }
-      return { id: corpo.pedido_id }
+      return { id: corpo.pedido_id, pagamento_url: corpo.pagamento_url, teste_gratis: corpo.teste_gratis }
     } catch {
       return { erro: falha }
     }
@@ -151,9 +192,10 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
         </p>
       )}
       {/* O aviso de erro some assim que o cliente corrige algo (antes ficava até o próximo clique) */}
-      <form onSubmit={enviar} onChange={() => setErro(null)} className="lf-coluna-secoes contratar-form">
+      {/* Mudou algo depois do aviso de "sem teste grátis": o próximo clique cria um pedido novo */}
+      <form onSubmit={enviar} onChange={() => { setErro(null); setSemTeste(null) }} className="lf-coluna-secoes contratar-form">
         <Secao titulo="Plano">
-          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} />
+          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.pagamentoOnline) : PLANOS} aoMudar={setPlano} />
         </Secao>
         <Secao
           titulo="Dados da empresa"
@@ -172,9 +214,9 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
         </Secao>
         <Secao
           titulo="Pagamento"
-          descricao={!linkPagamento && !semConta
+          descricao={plano === 'sob_consulta'
             ? 'Depois do pedido, entramos em contato para combinar o pagamento e liberar o plano.'
-            : `No próximo passo, você informa o cartão na página segura da Stripe. A primeira cobrança vem só depois de 30 dias grátis. ${semConta ? 'Em seguida, enviamos para o e-mail acima o link para criar sua senha.' : 'Liberamos o plano assim que a Stripe confirmar.'}`}
+            : `No próximo passo, você informa o cartão na página segura da Stripe. Na primeira contratação, são 30 dias grátis e a primeira cobrança vem só no 31º dia. ${semConta ? 'Em seguida, enviamos para o e-mail acima o link para criar sua senha.' : 'Liberamos o plano assim que a Stripe confirmar.'}`}
         >
           {semConta && (
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: '8px', lineHeight: 1.4, marginBottom: '16px' }}>
@@ -186,10 +228,15 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
             </label>
           )}
           {erro && <p className="lf-alerta" role="alert">{erro}</p>}
+          {semTeste && (
+            <p className="lf-alerta" role="alert">
+              Este CPF ou CNPJ, este e-mail ou esta empresa já usou os 30 dias grátis. Se continuar, a primeira cobrança é feita hoje.
+            </p>
+          )}
           <div className="lf-acoes">
             <button type="button" className="lf-botao" onClick={aoVoltar}>Cancelar</button>
             <button type="submit" className="lf-botao lf-botao-primario" disabled={enviando}>
-              {enviando ? 'Enviando...' : linkPagamento ? 'Continuar para o pagamento' : 'Enviar pedido'}
+              {enviando ? 'Enviando...' : semTeste ? 'Continuar, com cobrança hoje' : plano === 'sob_consulta' ? 'Enviar pedido' : 'Continuar para o pagamento'}
             </button>
           </div>
         </Secao>

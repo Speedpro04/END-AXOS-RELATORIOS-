@@ -719,3 +719,20 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - Deploy do site;
   - na Stripe, ligar o teste de 30 dias nos 4 links (senão a cobrança é na hora), cancelar a assinatura quando todas as tentativas de cobrança falharem e ligar os e-mails de aviso de fim do teste e de pagamento que falhou;
   - fazer os testes de ponta a ponta no ar (contratação até a Stripe e PDF oficial).
+
+## Teste de 30 dias criado pelo próprio AXOS (19/11/2026)
+
+- Achado: os 4 links da Stripe estavam **sem teste grátis**. A página mostrava só "R$ 397,00 por mês" e cobrava na hora, ao contrário da LP, dos Termos e do formulário. Decisão do dono do produto: o AXOS cria o teste sozinho, sem depender da configuração dos links.
+- `backend/app/routers/contratacao.py`:
+  - o servidor cria a página de pagamento (Stripe Checkout) de cada pedido, com `mode=subscription`, `payment_method_collection=always` (cartão obrigatório mesmo com R$ 0,00 no dia), `subscription_data[trial_period_days]=30` (cobrança no 31º dia), `client_reference_id` com o pedido, volta para `/?pagamento=ok`, `customer_email` do pedido e `locale=pt-BR`;
+  - o preço sai do link de pagamento do próprio plano (`LINKS_PAGAMENTO`; o servidor lista os links pela API da Stripe e confere valor, moeda BRL e cobrança mensal antes de usar), guardado em memória;
+  - **teste só uma vez**: sem teste quando já existe outro pedido que passou pela Stripe (`pago_em` ou `stripe_session_id` preenchido) com o mesmo documento, e-mail ou empresa; nesse caso a página sai sem os 30 dias;
+  - `POST /api/contratacao/pedido` (sem conta) passou a devolver `pagamento_url` e `teste_gratis`; `POST /api/contratacao/pagamento` (novo, com login de administrador, só pedido da própria empresa e ainda não pago) faz o mesmo para quem já tem conta.
+- Site (`ContratarPage.tsx`):
+  - não usa mais os links fixos (`PLANOS` tem só `pagamentoOnline`) e vai para a página criada pelo servidor;
+  - sem teste, avisa "já usou os 30 dias grátis... a primeira cobrança é feita hoje" e o botão vira "Continuar, com cobrança hoje";
+  - mudar qualquer campo cancela esse aviso;
+  - "Enviar pedido" só no plano sob consulta.
+- LP (texto dos valores e pergunta frequente) e Termos: 30 dias grátis na primeira contratação, cobrança no 31º dia, uma vez por CPF ou CNPJ, e-mail e empresa.
+- Testes: 10 novos em `tests/test_contratacao.py`, 75 passam. Página criada pelo servidor sem chamada real à Stripe. Não testado no ar: depende do Deploy da API e do site. A chave secreta da Stripe precisa poder ler links de pagamento e criar sessões de Checkout (a chave padrão pode; uma chave restrita talvez não).
+- Na Stripe não é mais preciso ligar o teste nos links. Continuam pendentes os e-mails de aviso, o cancelamento quando todas as cobranças falharem e o " -" no nome do produto.

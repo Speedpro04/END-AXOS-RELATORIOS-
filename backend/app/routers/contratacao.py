@@ -1,8 +1,13 @@
 """
 Contratação pela página inicial.
 
-POST /api/contratacao/pedido  grava o pedido de quem ainda não tem conta.
-POST /api/stripe/webhook      recebe o aviso da Stripe e libera o plano.
+POST /api/contratacao/pedido     grava o pedido de quem ainda não tem conta e abre o pagamento.
+POST /api/contratacao/pagamento  abre o pagamento do pedido de quem já tem conta (administrador).
+POST /api/stripe/webhook         recebe o aviso da Stripe e libera o plano.
+
+O servidor cria a página de pagamento da Stripe (Checkout) para cada pedido: cartão
+obrigatório e 30 dias grátis só na primeira vez de cada CPF ou CNPJ, e-mail ou empresa.
+A cobrança começa no 31º dia. O cliente nunca recebe um link fixo.
 
 A conta só nasce depois do pagamento: o servidor cria o acesso e a pessoa recebe
 um e-mail para criar a senha. O plano só é liberado aqui, com aviso assinado pela
@@ -14,6 +19,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
+import re
 from typing import Any, Literal
 from urllib.parse import quote
 from uuid import UUID
@@ -26,6 +32,7 @@ from redis.exceptions import RedisError
 
 from app.core.config import settings
 from app.core.redis import get_redis
+from app.core.security import CurrentUserDep
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +49,18 @@ PRECOS_CENTAVOS = {
     "equipe_5": 59700,
     "equipe_10": 99700,
 }
+
+TESTE_GRATIS_DIAS = 30  # cobrança a partir do 31º dia
+
+# Links de pagamento criados na Stripe (públicos). O servidor só usa cada link para achar
+# o preço do plano; o cliente recebe uma página de pagamento própria, criada a cada pedido.
+LINKS_PAGAMENTO = {
+    "individual": "https://buy.stripe.com/cNicN50uF3nu2Sd4Eo1wY0e",
+    "equipe_3": "https://buy.stripe.com/7sY7sLa5f2jqakFdaU1wY0f",
+    "equipe_5": "https://buy.stripe.com/00w14n2CN0bi50l9YI1wY0g",
+    "equipe_10": "https://buy.stripe.com/fZu7sL2CN0bi50l9YI1wY0h",
+}
+_precos_por_plano: dict[str, str] = {}
 
 
 class PedidoSemConta(BaseModel):
@@ -107,8 +126,108 @@ async def _limitar_pedidos(request: Request) -> None:
         )
 
 
-@router.post("/contratacao/pedido", summary="Grava o pedido de quem ainda não tem conta")
-async def registrar_pedido(pedido: PedidoSemConta, request: Request) -> dict[str, str]:
+def _cabecalhos_stripe() -> dict[str, str]:
+    return {"Authorization": f"Bearer {settings.STRIPE_SECRET_KEY}"}
+
+
+def _sem_pagamento(motivo: str) -> HTTPException:
+    logger.error("Página de pagamento não criada: %s", motivo)
+    return HTTPException(
+        status.HTTP_502_BAD_GATEWAY,
+        "Não foi possível abrir o pagamento agora. Tente de novo em alguns minutos.",
+    )
+
+
+async def _preco_do_plano(plano: str) -> str:
+    """Acha, pelo link de pagamento do plano, o preço cadastrado na Stripe e confere o valor."""
+    if plano in _precos_por_plano:
+        return _precos_por_plano[plano]
+    if not settings.STRIPE_SECRET_KEY:
+        raise _sem_pagamento("chave da Stripe não configurada")
+
+    link_id: str | None = None
+    parametros: dict[str, Any] = {"limit": 100}
+    while link_id is None:
+        resposta = await _requisitar("GET", f"{STRIPE_API}/payment_links", headers=_cabecalhos_stripe(), params=parametros)
+        if resposta.status_code != 200:
+            raise _sem_pagamento(f"lista de links, status {resposta.status_code}")
+        corpo = resposta.json()
+        links = corpo.get("data", [])
+        link_id = next((link["id"] for link in links if link.get("url") == LINKS_PAGAMENTO[plano]), None)
+        if link_id is None:
+            if not corpo.get("has_more") or not links:
+                raise _sem_pagamento(f"link do plano {plano} não encontrado")
+            parametros = {"limit": 100, "starting_after": links[-1]["id"]}
+
+    resposta = await _requisitar("GET", f"{STRIPE_API}/payment_links/{link_id}/line_items", headers=_cabecalhos_stripe())
+    if resposta.status_code != 200:
+        raise _sem_pagamento(f"itens do link, status {resposta.status_code}")
+    itens = resposta.json().get("data", [])
+    preco = (itens[0].get("price") or {}) if len(itens) == 1 else {}
+    if (
+        preco.get("unit_amount") != PRECOS_CENTAVOS[plano]
+        or preco.get("currency") != "brl"
+        or (preco.get("recurring") or {}).get("interval") != "month"
+    ):
+        raise _sem_pagamento(f"preço do plano {plano} diferente do esperado")
+    _precos_por_plano[plano] = preco["id"]
+    return preco["id"]
+
+
+async def _ja_usou_teste(pedido_id: str, documento: str, email: str | None, tenant_id: str | None) -> bool:
+    """Teste grátis só uma vez: CPF ou CNPJ, e-mail ou empresa que já passou pela Stripe."""
+    filtros: list[dict[str, str]] = [{"documento": f"eq.{documento}"}]
+    if email:
+        filtros.append({"email": f"eq.{email.strip().lower()}"})
+    if tenant_id:
+        filtros.append({"tenant_id": f"eq.{tenant_id}"})
+    for filtro in filtros:
+        resposta = await _requisitar(
+            "GET",
+            _url_supabase("/rest/v1/pedidos_contratacao"),
+            headers=_cabecalhos_supabase(),
+            params={
+                "select": "id",
+                "id": f"neq.{pedido_id}",
+                "or": "(pago_em.not.is.null,stripe_session_id.not.is.null)",
+                "limit": "1",
+                **filtro,
+            },
+        )
+        if resposta.status_code != 200:
+            raise _sem_pagamento(f"consulta de teste anterior, status {resposta.status_code}")
+        if resposta.json():
+            return True
+    return False
+
+
+async def _criar_pagina_de_pagamento(pedido_id: str, plano: str, email: str | None, teste_gratis: bool) -> str:
+    """Página da Stripe só deste pedido: cartão obrigatório, mesmo com R$ 0,00 no dia."""
+    preco = await _preco_do_plano(plano)
+    base = settings.FRONTEND_URL.rstrip("/")
+    dados = {
+        "mode": "subscription",
+        "line_items[0][price]": preco,
+        "line_items[0][quantity]": "1",
+        "client_reference_id": pedido_id,
+        "success_url": f"{base}/?pagamento=ok",
+        "cancel_url": f"{base}/#valores",
+        "payment_method_collection": "always",
+        "locale": "pt-BR",
+        "subscription_data[metadata][pedido]": pedido_id,
+    }
+    if teste_gratis:
+        dados["subscription_data[trial_period_days]"] = str(TESTE_GRATIS_DIAS)
+    if email:
+        dados["customer_email"] = email.strip()
+    resposta = await _requisitar("POST", f"{STRIPE_API}/checkout/sessions", headers=_cabecalhos_stripe(), data=dados)
+    if resposta.status_code != 200:
+        raise _sem_pagamento(f"criação da página, status {resposta.status_code}")
+    return resposta.json()["url"]
+
+
+@router.post("/contratacao/pedido", summary="Grava o pedido de quem ainda não tem conta e abre o pagamento")
+async def registrar_pedido(pedido: PedidoSemConta, request: Request) -> dict[str, Any]:
     await _limitar_pedidos(request)
     resposta = await _rpc(
         "registrar_pedido_sem_conta",
@@ -124,7 +243,12 @@ async def registrar_pedido(pedido: PedidoSemConta, request: Request) -> dict[str
         },
     )
     if resposta.status_code == 200:
-        return {"pedido_id": resposta.json()}
+        pedido_id = resposta.json()
+        documento = re.sub(r"\D", "", pedido.documento)
+        email = pedido.email.strip().lower()
+        teste_gratis = not await _ja_usou_teste(pedido_id, documento, email, None)
+        url = await _criar_pagina_de_pagamento(pedido_id, pedido.plano, email, teste_gratis)
+        return {"pedido_id": pedido_id, "pagamento_url": url, "teste_gratis": teste_gratis}
 
     erro = resposta.json() if resposta.content else {}
     if erro.get("code") == "P0001":
@@ -138,12 +262,33 @@ async def _ler_pedido(pedido_id: str) -> dict[str, Any] | None:
         "GET",
         _url_supabase("/rest/v1/pedidos_contratacao"),
         headers=_cabecalhos_supabase(),
-        params={"id": f"eq.{pedido_id}", "select": "id,plano,email,tenant_id,pago_em"},
+        params={"id": f"eq.{pedido_id}", "select": "id,plano,email,tenant_id,pago_em,documento"},
     )
     if resposta.status_code != 200:
         raise _tentar_de_novo(f"leitura do pedido, status {resposta.status_code}")
     linhas = resposta.json()
     return linhas[0] if linhas else None
+
+
+class PagamentoDaConta(BaseModel):
+    pedido_id: UUID
+
+
+@router.post("/contratacao/pagamento", summary="Abre o pagamento do pedido da conta logada")
+async def abrir_pagamento_da_conta(dados: PagamentoDaConta, usuario: CurrentUserDep) -> dict[str, Any]:
+    if not usuario.is_admin:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Só o administrador da conta pode contratar um plano.")
+    pedido_id = str(dados.pedido_id)
+    pedido = await _ler_pedido(pedido_id)
+    if pedido is None or pedido.get("tenant_id") != usuario.tenant_id:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Pedido não encontrado.")
+    if pedido.get("pago_em"):
+        raise HTTPException(status.HTTP_409_CONFLICT, "Este pedido já foi pago.")
+    if pedido["plano"] not in PRECOS_CENTAVOS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Este plano é sob consulta: a AXOS entra em contato.")
+    teste_gratis = not await _ja_usou_teste(pedido_id, pedido["documento"], pedido.get("email"), usuario.tenant_id)
+    url = await _criar_pagina_de_pagamento(pedido_id, pedido["plano"], pedido.get("email"), teste_gratis)
+    return {"pagamento_url": url, "teste_gratis": teste_gratis}
 
 
 async def _valor_confere(session_id: str, plano: str) -> bool:
