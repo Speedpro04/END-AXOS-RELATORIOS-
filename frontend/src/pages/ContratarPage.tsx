@@ -31,22 +31,14 @@ export function lembrarPlanoDaUrl() {
 }
 
 export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () => void; encerrado: boolean }> = ({ aoVoltar, aoIrAoSistema, encerrado }) => {
-  const { user, profile, tenant } = useAuth()
-  const [plano, setPlano] = useState(() => localStorage.getItem(CHAVE_PLANO_ESCOLHIDO) ?? '')
-  const [planoInicial] = useState(() => localStorage.getItem(CHAVE_PLANO_ESCOLHIDO) ?? '')
-  const planoDaPaginaInicial = planoInicial !== ''
-  // Dados que a empresa já tem no AXOS: entram preenchidos e ficam em cinza até o cliente mudar
-  const [doCadastro] = useState(() => ({
-    razao: tenant?.legal_name && tenant.legal_name !== profile?.full_name ? tenant.legal_name : '',
-    documento: tenant?.cnpj ?? '',
-    responsavel: profile?.full_name ?? '',
-    email: user?.email ?? '',
-  }))
-  const [razao, setRazao] = useState(doCadastro.razao)
-  const [documento, setDocumento] = useState(doCadastro.documento)
-  const [responsavel, setResponsavel] = useState(doCadastro.responsavel)
+  const { user, profile } = useAuth()
+  // Decisão do dono do produto (19/11/2026): o formulário começa vazio, sem plano nem dados preenchidos
+  const [plano, setPlano] = useState('')
+  const [razao, setRazao] = useState('')
+  const [documento, setDocumento] = useState('')
+  const [responsavel, setResponsavel] = useState('')
   const [telefone, setTelefone] = useState('')
-  const [email, setEmail] = useState(doCadastro.email)
+  const [email, setEmail] = useState('')
   const [endereco, setEndereco] = useState('')
   const [enviando, setEnviando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -54,7 +46,6 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
   const [aceite, setAceite] = useState(false)
 
   const semConta = !user
-  const cinza = (valor: string, original: string) => (original !== '' && valor === original ? 'campo-do-cadastro' : undefined)
   const individual = plano === 'individual'
   const digitos = documento.replace(/\D/g, '')
   const linkPagamento = PLANOS.find((p) => p.valor === plano)?.linkPagamento
@@ -160,21 +151,21 @@ export const ContratarPage: React.FC<{ aoVoltar: () => void; aoIrAoSistema: () =
         </p>
       )}
       <form onSubmit={enviar} className="lf-coluna-secoes contratar-form">
-        <Secao titulo="Plano" descricao={planoDaPaginaInicial ? 'Este é o plano que você escolheu na página inicial. Se quiser outro, troque aqui.' : undefined}>
-          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} className={cinza(plano, planoInicial)} />
+        <Secao titulo="Plano">
+          <Selecao rotulo="Plano escolhido" valor={plano} vazio="Escolha um plano" opcoes={semConta ? PLANOS.filter((p) => p.linkPagamento) : PLANOS} aoMudar={setPlano} />
         </Secao>
         <Secao
           titulo="Dados da empresa"
           descricao={semConta
             ? 'Esses dados vão para o pedido e para a cobrança. Use um e-mail que você acessa: é para ele que mandamos o link de criar a senha.'
-            : 'Os dados em cinza vieram do cadastro da sua empresa no AXOS. Confira cada um: se estiver certo, pode deixar; se estiver diferente, apague e digite o certo. Eles vão para o pedido e para a cobrança.'}
+            : 'Esses dados vão para o pedido e para a cobrança.'}
         >
           <div className="lf-grade contratar-grade">
-            <Campo rotulo={individual ? 'Nome ou razão social' : 'Razão social'} obrigatorio valor={razao} aoMudar={setRazao} className={cinza(razao, doCadastro.razao)} />
-            <Campo rotulo={individual ? 'CPF ou CNPJ' : 'CNPJ'} obrigatorio numerico valor={documento} aoMudar={setDocumento} className={cinza(documento, doCadastro.documento)} />
-            <Campo rotulo="Responsável" obrigatorio valor={responsavel} aoMudar={setResponsavel} className={cinza(responsavel, doCadastro.responsavel)} />
+            <Campo rotulo={individual ? 'Nome ou razão social' : 'Razão social'} obrigatorio valor={razao} aoMudar={setRazao} />
+            <Campo rotulo={individual ? 'CPF ou CNPJ' : 'CNPJ'} obrigatorio numerico valor={documento} aoMudar={setDocumento} />
+            <Campo rotulo="Responsável" obrigatorio valor={responsavel} aoMudar={setResponsavel} />
             <Campo rotulo="Telefone" valor={telefone} aoMudar={setTelefone} />
-            <Campo rotulo={semConta ? 'E-mail' : 'E-mail de cobrança'} obrigatorio={semConta} tipo={semConta ? 'email' : 'text'} valor={email} aoMudar={setEmail} className={cinza(email, doCadastro.email)} />
+            <Campo rotulo={semConta ? 'E-mail' : 'E-mail de cobrança'} obrigatorio={semConta} tipo={semConta ? 'email' : 'text'} valor={email} aoMudar={setEmail} />
             <Campo rotulo="Endereço" valor={endereco} aoMudar={setEndereco} />
           </div>
         </Secao>

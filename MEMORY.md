@@ -684,14 +684,12 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - login e LP normais.
 - Falta testar no ar, com dados de teste: formulário de contratação até a página da Stripe (o pedido sem pagamento some em 7 dias, sem pagar) e o envio de um laudo.
 
-## Contratação: de onde vêm os dados (19/11/2026)
+## Contratação: formulário vazio (19/11/2026)
 
-- Pedido do dono do produto: manter o preenchimento automático para quem já tem conta, mas explicar bem no formulário. `pages/ContratarPage.tsx`:
-  - "Plano": quando o plano veio do card da página inicial, avisa "Este é o plano que você escolheu na página inicial. Se quiser outro, troque aqui.";
-  - "Dados da empresa", com conta: explica que os dados vieram do cadastro da empresa no AXOS e pede para conferir e corrigir;
-  - "Dados da empresa", sem conta: explica que vão para o pedido e a cobrança e que o e-mail recebe o link de criar a senha.
-- Também a pedido do dono do produto: dado trazido do cadastro fica com o texto 20% visível (`color-mix` de `--text-primary` a 20%; a borda, o fundo e o cursor ficam normais) até o cliente mudar o texto. O dono do produto escolheu 15% e depois 20%, sabendo que fica abaixo do contraste mínimo de leitura. O menu "Plano escolhido" segue a mesma regra quando o plano veio do card da página inicial (`Selecao` também aceita `className`); a lista aberta continua legível, e o tema escuro precisou de regra própria com `!important`, porque `html.dark select` força a cor; o que ele digita fica na cor normal. O dado cinza vai no pedido como está. Para isso, `Campo` (`CamposLaudo.tsx`) aceita `className`, a regra é `.contratar-form .campo-do-cadastro input` em `index.css` e `ContratarPage` compara cada valor com o original do cadastro.
-- Testado no servidor de teste, sem conta: computador, tablet e celular sem rolagem lateral, console sem erro, nenhuma caixa cinza. A cor cinza foi conferida simulando a tela com conta pelo console (cinza #9AA0A6 contra o branco normal). A versão com conta, de verdade, não foi testada aqui. A senha da conta de demonstração em `frontend/.env.local` parece ser uma senha de verdade da conta do dono, por isso não foi usada: se não bater com a de demonstração, o login vai ao Supabase real. Conferir no Chrome do dono depois do Deploy.
+- Histórico do dia: primeiro o formulário de quem tem conta vinha preenchido com os dados do cadastro (nome, CNPJ, responsável, e-mail) e com o plano do card da página inicial; depois ganhou explicações; depois os dados e o plano ficaram com o texto 15% e então 20% visível.
+- **Decisão final do dono do produto: os cards "Plano" e "Dados da empresa" começam totalmente vazios**, com ou sem conta, mesmo vindo do card da página inicial (`?plano=`). `pages/ContratarPage.tsx` não lê mais o plano guardado nem os dados do cadastro; `Campo`, `Selecao` e `index.css` voltaram ao que eram. "Dados da empresa" explica que os dados vão para o pedido e a cobrança, e, sem conta, que o e-mail recebe o link de criar a senha.
+- `lembrarPlanoDaUrl` ainda guarda o plano do endereço (`axos_plano_escolhido`), mas o formulário não usa mais esse valor.
+- Testado no servidor de teste, sem conta, vindo de `/app?plano=equipe_10`: plano em "Escolha um plano" e todas as caixas vazias. Com conta, não testado aqui.
 - Achados, não corrigidos:
   - `frontend/.env.local`: a conta de demonstração usa o e-mail real do dono; a senha deve ser diferente da senha real.
   - `components/TenantFooter.tsx` mostra "CERTIFICAÇÃO DIGITAL SHA-256". "Certificação digital" no Brasil lembra o certificado ICP-Brasil, que o AXOS não tem (ver regra 8 do AGENTS e o aviso do PDF). Sugestão: "Integridade SHA-256".
