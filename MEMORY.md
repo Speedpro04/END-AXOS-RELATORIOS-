@@ -599,7 +599,7 @@ Feito direto, sem rodada de aprovação, porque o dono do produto disse que segu
 - Sem Docker nesta máquina: a imagem não foi montada aqui; só a instalação do `pyproject.toml` foi simulada.
 
 **API publicada (18/11/2026):** serviço separado no EasyPanel, Caminho de Build `/backend`, domínio `axosrelatorios.com`, caminho público `/api` com destino porta 8000 e caminho `/api` (o `/api` chega inteiro à API). Variáveis da API sem prefixo `VITE_` (o primeiro Deploy caiu com 502 porque estavam como `VITE_...`). Conferido no ar: `/api/sync/healthz` responde, sem login e com login falso dá 401, `/api/docs` escondido (404), CORS libera só `https://axosrelatorios.com`, site normal.
-- Incidente no mesmo dia: o Deploy do site foi feito sem as variáveis `VITE_` (página em branco, "Invalid URL") e depois com `VITE_SUPABASE_URL` terminando em `/rest/v1/` ("Falha ao carregar dados do usuário"). Corrigido pelo dono do produto; o app abriu normal com login real. Regra: site usa `VITE_SUPABASE_URL` (só até `.supabase.co`), `VITE_SUPABASE_ANON_KEY` e `VITE_API_URL`; API usa `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `FRONTEND_URL` e `REDIS_URL`, sem `VITE_`.
+- Incidente no mesmo dia: o Deploy do site foi feito sem as variáveis `VITE_` (página em branco, "Invalid URL") e depois com `VITE_SUPABASE_URL` terminando em `/rest/v1/` ("Falha ao carregar dados do usuário"). Corrigido pelo dono do produto; o app abriu normal com login real. Regra: site usa `VITE_SUPABASE_URL` (só até `.supabase.co`), `VITE_SUPABASE_ANON_KEY` e, se quiser, `VITE_API_URL` (opcional desde 19/11/2026, ver "Endereço da API no site"); API usa `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `FRONTEND_URL` e `REDIS_URL`, sem `VITE_`.
 - Não testado no ar: envio real de laudo com login de verdade (ES256) e fotos para o Storage. Lembrar: laudo sem obra não sobe.
 
 ## Varredura completa no ar e no código (18/11/2026)
@@ -669,3 +669,13 @@ Diagnóstico aprovado pelo dono do produto. O banco já garante: emitido travado
   - Endereço sem barra final redirecionava para `http://…/` antes do https. Agora `absolute_redirect off` faz o endereço seguir direto para a mesma página com a barra no final.
   - Sem nginx nesta máquina: a configuração só foi revisada à mão.
 - Achado, não corrigido: a norma padrão de ET é "ASME V Art. 7" em `types/inspection.ts` (`METHOD_LABELS`) e em `data/methodsCatalog.ts`, mas o Art. 7 é de partículas magnéticas e correntes parasitas é o Art. 8. Ela entra como "Norma de referência" inicial do laudo de ET (`CamposLaudo.tsx`). RT traz "ASME V Art. 2 / 3", que também merece conferência.
+
+## Endereço da API no site (19/11/2026)
+
+- Achado na conferência do Deploy: o site publicado chamava a API em `http://localhost:8000`. O site tinha sido montado no EasyPanel sem `VITE_API_URL`, e o código usava o endereço de teste como reserva. Por isso falhavam no ar o formulário de contratação (o cliente não chegava ao pagamento), o envio de laudos ao servidor, emitir, baixar o PDF oficial, a verificação pelo QR e o avanço da obra. O login funcionava porque fala direto com o Supabase.
+- Corrigido em `frontend/src/config.ts`:
+  - fora do computador de teste, sem a variável, a API é o próprio endereço do site (caminho relativo `/api/...`, que o EasyPanel já leva à API);
+  - em `localhost` e `127.0.0.1`, continua `http://localhost:8000`;
+  - `VITE_API_URL`, se existir, ainda vale, e o código tira espaços e a barra do fim.
+- Testado antes de publicar: o site foi montado sem a variável (`VITE_API_URL= npx vite build`) e aberto em `http://producao.localhost:4173` (configuração `frontend-producao` em `.claude/launch.json`). A página do QR chamou `/api/verificar/...` no próprio endereço. Tipos conferidos (`npx tsc -b`).
+- Falta: Deploy do site e conferir no ar a página do QR, o formulário de contratação até a página da Stripe (sem pagar) e o envio de um laudo.

@@ -17,6 +17,22 @@
       "port": 5173
     },
     {
+      "name": "frontend-producao",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "preview",
+        "--prefix",
+        "frontend",
+        "--",
+        "--port",
+        "4173",
+        "--strictPort"
+      ],
+      "port": 4173,
+      "url": "http://producao.localhost:4173"
+    },
+    {
       "name": "landing",
       "runtimeExecutable": "python",
       "runtimeArgs": [
